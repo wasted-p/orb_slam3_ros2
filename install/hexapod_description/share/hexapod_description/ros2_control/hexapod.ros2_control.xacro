@@ -17,6 +17,41 @@
 				</command_interface>
 				<state_interface name="position"/>
 			</joint>
+<joint name="arm_abductor_joint">
+				<command_interface name="position">
+					<param name="min">-1</param>
+					<param name="max">1</param>
+				</command_interface>
+				<state_interface name="position"/>
+			</joint>
+<joint name="arm_retractor_joint">
+				<command_interface name="position">
+					<param name="min">-1</param>
+					<param name="max">1</param>
+				</command_interface>
+				<state_interface name="position"/>
+			</joint>
+<joint name="top_left_rotate_joint">
+				<command_interface name="position">
+					<param name="min">-1</param>
+					<param name="max">1</param>
+				</command_interface>
+				<state_interface name="position"/>
+			</joint>
+<joint name="top_left_abduct_joint">
+				<command_interface name="position">
+					<param name="min">-1</param>
+					<param name="max">1</param>
+				</command_interface>
+				<state_interface name="position"/>
+			</joint>
+<joint name="top_left_retract_joint">
+				<command_interface name="position">
+					<param name="min">-1</param>
+					<param name="max">1</param>
+				</command_interface>
+				<state_interface name="position"/>
+			</joint>
 
 
 		</ros2_control>

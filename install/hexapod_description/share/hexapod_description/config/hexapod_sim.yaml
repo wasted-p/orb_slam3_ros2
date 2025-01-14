@@ -11,4 +11,6 @@ forward_position_controller:
     type: forward_command_controller/ForwardCommandController
     joints:
       - arm_rotator_joint
+      - arm_abductor_joint
+      - arm_retractor_joint
     interface_name: position

@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<robot name="hexapod_waffle"
+	xmlns:xacro="http://ros.org/wiki/xacro">
+
+
+	<xacro:property name="r200_cam_rgb_px" value="0.005"/>
+	<xacro:property name="r200_cam_rgb_py" value="0.018"/>
+	<xacro:property name="r200_cam_rgb_pz" value="0.013"/>
+	<xacro:property name="r200_cam_depth_offset" value="0.01"/>
+
+
+	<xacro:macro name="camera" params="parent *joint_origin">
+    <!-- Joints -->
+		<joint name="camera_case_mount" type="fixed">
+			<xacro:insert_block name="joint_origin"/>
+			<parent link="${parent}"/>
+			<child link="camera_link"/>
+		</joint>
+
+      <!-- Links -->
+	<link name="camera_link">
+		<inertial>
+			<origin xyz="0.07257325961305607 0.023187735063927437 0.09454807900867684" rpy="0 0 0"/>
+			<mass value="0.00672643608404174"/>
+			<inertia ixx="1e-06" iyy="2e-06" izz="3e-06" ixy="0.0" iyz="0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.041999 0.020484 -0.080935" rpy="0 0 0"/>
+			<geometry>
+          <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="red"/>
+		</visual>
+		<collision>
+			<origin xyz="0.041999 0.020484 -0.080935" rpy="0 0 0"/>
+			<geometry>
+          <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+  </link>
+
+      <!-- Gazebo -->
+  <gazebo reference="camera_link">
+    <sensor name="depth_camera" type="depth_camera">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>60</update_rate>
+      <topic>depth_camera/depth/image_raw</topic>
+      <frame_id>camera_depth_frame</frame_id>
+      <camera name="sipeed Max A10">
+        <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
+        <horizontal_fov>1.02974</horizontal_fov>
+        <image>
+          <width>1920</width>
+          <height>1080</height>
+            <format>R_FLOAT32</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>300</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+    </sensor>
+  </gazebo>
+</xacro:macro>
+</robot>

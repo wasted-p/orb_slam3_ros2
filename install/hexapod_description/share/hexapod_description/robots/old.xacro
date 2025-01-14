@@ -1,0 +1,655 @@
+<?xml version="1.0" ?>
+<robot name="hexapod_waffle"
+	xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:include filename="$(find hexapod_description)/urdf/materials.xacro" />
+	<xacro:include filename="$(find hexapod_description)/urdf/hexapod.trans" />
+	<xacro:include filename="$(find hexapod_description)/urdf/hexapod.gazebo" />
+	<xacro:include filename="$(find hexapod_description)/urdf/camera.xacro" />
+  <xacro:include filename="$(find hexapod_description)/urdf/hexapod_ros_control.xacro" />
+
+  <xacro:arg name="prefix" default="" />
+
+  <xacro:hexapod_ros2_control
+    name="RRBot" prefix="$(arg prefix)" />
+
+
+    <link name="base_footprint">
+
+</link>
+
+	<link name="base_link">
+		<inertial>
+			<origin xyz="0.005334608688478278 0.0002689766590861973 0.0184918721125776" rpy="0 0 0"/>
+			<mass value="0.1730647056842735"/>
+			<inertia ixx="0.000266" iyy="0.000406" izz="0.0006" ixy="4e-06" iyz="-0.0" ixz="-1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="tibia_left_mid">
+		<inertial>
+			<origin xyz="0.015589179677926173 0.010695585608516162 -0.0223992522730315" rpy="0 0 0"/>
+			<mass value="0.012279438354877548"/>
+			<inertia ixx="5e-06" iyy="6e-06" izz="2e-06" ixy="0.0" iyz="-1e-06" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.005374 -0.126425 0.009767" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.005374 -0.126425 0.009767" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_left_mid">
+		<inertial>
+			<origin xyz="-0.015011654934717145 0.020989624323966824 -0.005728252734904802" rpy="0 0 0"/>
+			<mass value="0.018823784549799234"/>
+			<inertia ixx="5e-06" iyy="3e-06" izz="5e-06" ixy="0.0" iyz="2e-06" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.024549 -0.086729 -0.008796" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.024549 -0.086729 -0.008796" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_right_bottom">
+		<inertial>
+			<origin xyz="-0.008603721430252856 -0.012234779114513435 -0.020345821820411635" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="3e-06" ixy="1e-06" iyz="-0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.067095 0.046741 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.067095 0.046741 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_right_bottom">
+		<inertial>
+			<origin xyz="-0.024991823926700282 -0.006428664528039543 -0.005728252734904812" rpy="0 0 0"/>
+			<mass value="0.018823784549799258"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="-1e-06" iyz="-1e-06" ixz="-1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.070339 0.083181 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.070339 0.083181 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="tibia_right_bottom">
+		<inertial>
+			<origin xyz="0.005067212029946339 -0.018214579199998596 -0.02239925387359126" rpy="0 0 0"/>
+			<mass value="0.01227943426517578"/>
+			<inertia ixx="6e-06" iyy="6e-06" izz="2e-06" ixy="0.0" iyz="1e-06" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.118778 0.094354 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.118778 0.094354 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_left_top">
+		<inertial>
+			<origin xyz="-0.009637325845936184 0.011438746363875617 -0.020345821820411534" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="4e-06" iyy="3e-06" izz="3e-06" ixy="-1e-06" iyz="0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.067095 -0.047401 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.067095 -0.047401 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_left_top">
+		<inertial>
+			<origin xyz="-0.02545664130175347 0.004226010120004273 -0.005728252734904712" rpy="0 0 0"/>
+			<mass value="0.018823784549799234"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="1e-06" iyz="1e-06" ixz="-1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.073503 -0.08342 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.073503 -0.08342 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="tibia_left_top">
+		<inertial>
+			<origin xyz="0.003460333944880545 0.018586637775616338 -0.022399252273031366" rpy="0 0 0"/>
+			<mass value="0.012279438354877548"/>
+			<inertia ixx="6e-06" iyy="6e-06" izz="2e-06" ixy="-0.0" iyz="-0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.122731 -0.090329 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.122731 -0.090329 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_left_bottom">
+		<inertial>
+			<origin xyz="0.011438219177299175 0.009637418710013737 -0.02034582182041158" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="3e-06" iyy="4e-06" izz="3e-06" ixy="1e-06" iyz="-0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.074451 -0.046824 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.074451 -0.046824 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_left_bottom">
+		<inertial>
+			<origin xyz="0.004226482933427866 0.025456734165830996 -0.005728252734904737" rpy="0 0 0"/>
+			<mass value="0.018823784549799234"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="-1e-06" iyz="1e-06" ixz="1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.110469 -0.053232 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.110469 -0.053232 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="tibia_right_top">
+		<inertial>
+			<origin xyz="0.018586559530669594 0.0034602008084927555 -0.022399253873591294" rpy="0 0 0"/>
+			<mass value="0.0122794342651758"/>
+			<inertia ixx="6e-06" iyy="6e-06" izz="2e-06" ixy="-0.0" iyz="0.0" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.118561 0.102377 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.118561 0.102377 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_right_top">
+		<inertial>
+			<origin xyz="0.004226929878396901 -0.02545677519948715 -0.0057282527349048" rpy="0 0 0"/>
+			<mass value="0.018823784549799258"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="1e-06" iyz="-1e-06" ixz="1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.111651 0.053149 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.111651 0.053149 -0.007896" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_right_top">
+		<inertial>
+			<origin xyz="0.011438666122268154 -0.009637459743669939 -0.02034582182041162" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="3e-06" iyy="4e-06" izz="3e-06" ixy="-1e-06" iyz="0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.075633 0.046741 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.075633 0.046741 -0.0297" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_top.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="tibia_right_mid">
+		<inertial>
+			<origin xyz="0.01558912860904865 -0.010696224262551526 -0.02239925387359104" rpy="0 0 0"/>
+			<mass value="0.01227943426517578"/>
+			<inertia ixx="5e-06" iyy="6e-06" izz="2e-06" ixy="-0.0" iyz="1e-06" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="0.005412 0.124594 0.009767" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="0.005412 0.124594 0.009767" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="femur_right_mid">
+		<inertial>
+			<origin xyz="-0.015011707953799585 -0.020989262104502707 -0.0057282527349046" rpy="0 0 0"/>
+			<mass value="0.018823784549799258"/>
+			<inertia ixx="5e-06" iyy="3e-06" izz="5e-06" ixy="-0.0" iyz="-2e-06" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.024511 0.084899 -0.008796" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.024511 0.084899 -0.008796" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/femur_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_right_mid">
+		<inertial>
+			<origin xyz="0.0012732730899744247 -0.014903072175514967 -0.020345821820411565" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="3e-06" iyy="4e-06" izz="3e-06" ixy="0.0" iyz="-0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.003574 0.054899 -0.0306" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.003574 0.054899 -0.0306" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_right_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="cox_left_mid">
+		<inertial>
+			<origin xyz="0.0012733261090569089 0.014903434394979126 -0.02034582182041162" rpy="0 0 0"/>
+			<mass value="0.01391683496290758"/>
+			<inertia ixx="3e-06" iyy="4e-06" izz="3e-06" ixy="-0.0" iyz="0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.003612 -0.056729 -0.0306" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.003612 -0.056729 -0.0306" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/cox_left_mid.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="tibia_left_bottom">
+		<inertial>
+			<origin xyz="0.01858611058903982 -0.003460241080802978 -0.022399252273031415" rpy="0 0 0"/>
+			<mass value="0.012279438354877544"/>
+			<inertia ixx="6e-06" iyy="6e-06" izz="2e-06" ixy="0.0" iyz="-0.0" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.117379 -0.10246 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.117379 -0.10246 0.010667" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/tibia_left_bottom.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="arm_rotator">
+		<inertial>
+			<origin xyz="-0.00046642883527773724 0.0027188082250819237 0.00576546998065737" rpy="0 0 0"/>
+			<mass value="0.02623546025799875"/>
+			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="0.0" iyz="-0.0" ixz="0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_rotator.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_rotator.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="arm_abductor">
+		<inertial>
+			<origin xyz="-0.014167725035919117 3.5639852713031765e-07 0.031090662760010462" rpy="0 0 0"/>
+			<mass value="0.016534189067873267"/>
+			<inertia ixx="5e-06" iyy="7e-06" izz="2e-06" ixy="-0.0" iyz="-0.0" ixz="1e-06"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_abductor.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_abductor.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="arm_retractor">
+		<inertial>
+			<origin xyz="-0.011027322351092845 -5.220911472792085e-05 0.023364114206742087" rpy="0 0 0"/>
+			<mass value="0.015328010788351278"/>
+			<inertia ixx="3e-06" iyy="5e-06" izz="4e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_retractor.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_retractor.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	<link name="arm_base">
+		<inertial>
+			<origin xyz="0.004115093716825637 0.020000308654227843 0.01035421864114821" rpy="0 0 0"/>
+			<mass value="0.014628769254330782"/>
+			<inertia ixx="2e-06" iyy="3e-06" izz="2e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
+		</inertial>
+		<visual>
+			<origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_base.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+			<material name="dark"/>
+		</visual>
+		<collision>
+			<origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
+			<geometry>
+				<mesh filename="file://$(find hexapod_description)/meshes/arm_base.stl" scale="0.001 0.001 0.001"/>
+			</geometry>
+		</collision>
+	</link>
+	
+    <!-- Joints -->
+	<joint name="rotate_bottom_right_joint" type="revolute">
+		<origin xyz="-0.067095 -0.046741 0.0297" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_right_bottom"/>
+		<axis xyz="0.0 0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="abduct_bottom_right_joint" type="revolute">
+		<origin xyz="-0.003244 -0.03644 -0.021804" rpy="0 0 0"/>
+		<parent link="cox_right_bottom"/>
+		<child link="femur_right_bottom"/>
+		<axis xyz="0.766044 -0.642788 0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="retract_bottom_right_joint" type="revolute">
+		<origin xyz="-0.048439 -0.011173 -0.018563" rpy="0 0 0"/>
+		<parent link="femur_right_bottom"/>
+		<child link="tibia_right_bottom"/>
+		<axis xyz="-0.765973 0.642872 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="rotate_bottom_left_joint" type="revolute">
+		<origin xyz="-0.067095 0.047401 0.0297" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_left_top"/>
+		<axis xyz="-0.0 0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="abduct_bottom_left_joint" type="revolute">
+		<origin xyz="-0.006408 0.036019 -0.021804" rpy="0 0 0"/>
+		<parent link="cox_left_top"/>
+		<child link="femur_left_top"/>
+		<axis xyz="-0.707107 -0.707107 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="retract_bottom_left_joint" type="revolute">
+		<origin xyz="-0.049228 0.006909 -0.018563" rpy="0 0 0"/>
+		<parent link="femur_left_top"/>
+		<child link="tibia_left_top"/>
+		<axis xyz="0.707029 0.707185 0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="rotate_top_left_joint" type="revolute">
+		<origin xyz="0.074451 0.046824 0.0297" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_left_bottom"/>
+		<axis xyz="0.0 0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="abduct_top_left_joint" type="revolute">
+		<origin xyz="0.036018 0.006408 -0.021804" rpy="0 0 0"/>
+		<parent link="cox_left_bottom"/>
+		<child link="femur_left_bottom"/>
+		<axis xyz="-0.707107 0.707107 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="retract_top_right_joint" type="revolute">
+		<origin xyz="0.00691 -0.049228 -0.018563" rpy="0 0 0"/>
+		<parent link="femur_right_top"/>
+		<child link="tibia_right_top"/>
+		<axis xyz="-0.707185 -0.707029 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="abduct_top_right_joint" type="revolute">
+		<origin xyz="0.036018 -0.006408 -0.021804" rpy="0 0 0"/>
+		<parent link="cox_right_top"/>
+		<child link="femur_right_top"/>
+		<axis xyz="0.707107 0.707107 0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="rotate_top_right_joint" type="revolute">
+		<origin xyz="0.075633 -0.046741 0.0297" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_right_top"/>
+		<axis xyz="0.0 0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="retract_mid_right_joint" type="revolute">
+		<origin xyz="-0.029923 -0.039695 -0.018563" rpy="0 0 0"/>
+		<parent link="femur_right_mid"/>
+		<child link="tibia_right_mid"/>
+		<axis xyz="-1.0 0.00011 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="abduct_mid_right_joint" type="revolute">
+		<origin xyz="0.020937 -0.03 -0.021804" rpy="0 0 0"/>
+		<parent link="cox_right_mid"/>
+		<child link="femur_right_mid"/>
+		<axis xyz="1.0 -0.0 0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="rotate_mid_right_joint" type="revolute">
+		<origin xyz="0.003574 -0.054899 0.0306" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_right_mid"/>
+		<axis xyz="-0.0 -0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="rotate_mid_left_joint" type="revolute">
+		<origin xyz="0.003612 0.056729 0.0306" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="cox_left_mid"/>
+		<axis xyz="0.0 0.0 -1.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="retract_top_left_joint" type="revolute">
+		<origin xyz="0.00691 0.049228 -0.018563" rpy="0 0 0"/>
+		<parent link="femur_left_bottom"/>
+		<child link="tibia_left_bottom"/>
+		<axis xyz="0.707185 -0.707029 0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="arm_rotator_joint" type="continuous">
+		<origin xyz="8.8e-05 0.019999 0.02995" rpy="0 0 0"/>
+		<parent link="arm_base"/>
+		<child link="arm_rotator"/>
+		<axis xyz="0.0 -0.0 -1.0"/>
+	</joint>
+	<joint name="arm_abductor_joint" type="revolute">
+		<origin xyz="0.014582 0.00069 0.013923" rpy="0 0 0"/>
+		<parent link="arm_rotator"/>
+		<child link="arm_abductor"/>
+		<axis xyz="-1.0 0.0 -0.0"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="arm_retractor_joint" type="revolute">
+		<origin xyz="-0.000401 0.0 0.046709" rpy="0 0 0"/>
+		<parent link="arm_abductor"/>
+		<child link="arm_retractor"/>
+		<axis xyz="-0.999993 0.0 -0.003676"/>
+		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+	</joint>
+	<joint name="arm_base_mount_joint" type="fixed">
+		<origin xyz="0.025588 -0.019423 0.0449" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="arm_base"/>
+	</joint>
+	<joint name="base_joint" type="fixed">
+		<parent link="base_footprint"/>
+		<child link="base_link" />
+		<origin xyz="0 0 0.010" rpy="0 0 0"/>
+	</joint>
+
+
+  <xacro:macro name="rrbot_ros2_control" params="name prefix">
+
+    <ros2_control name="${name}" type="system">
+      <hardware>
+        <plugin>ros2_control_demo_example_1/RRBotSystemPositionOnlyHardware</plugin>
+        <param name="example_param_hw_start_duration_sec">0</param>
+        <param name="example_param_hw_stop_duration_sec">3.0</param>
+        <param name="example_param_hw_slowdown">100</param>
+      </hardware>
+
+      <joint name="${prefix}joint1">
+        <command_interface name="position">
+          <param name="min">-1</param>
+          <param name="max">1</param>
+        </command_interface>
+        <state_interface name="position"/>
+      </joint>
+      <joint name="${prefix}joint2">
+        <command_interface name="position">
+          <param name="min">-1</param>
+          <param name="max">1</param>
+        </command_interface>
+        <state_interface name="position"/>
+      </joint>
+    </ros2_control>
+
+  </xacro:macro>
+
+</robot>

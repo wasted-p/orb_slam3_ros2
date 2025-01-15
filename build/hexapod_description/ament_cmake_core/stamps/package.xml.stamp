@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>TODO: Package description</description>
 
-  <maintainer email="hogehoge@gmail.com">Me</maintainer>
+  <maintainer email="3urdparty@gmail.com">3urdparty</maintainer>
 
   <license>MIT</license>
 
@@ -13,7 +13,6 @@
 
   <depend>xacro</depend>
   <depend>robot_state_publisher</depend>
-  <depend>joint_state_publisher_gui</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

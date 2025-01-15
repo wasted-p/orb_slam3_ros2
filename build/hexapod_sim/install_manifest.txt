@@ -1,4 +1,3 @@
-/home/mustafayousif/Code/hexapod_robot_harmonic/install/hexapod_sim/share/hexapod_sim/launch/old.launch.py
 /home/mustafayousif/Code/hexapod_robot_harmonic/install/hexapod_sim/share/hexapod_sim/launch/hexapod_spawn.launch.py
 /home/mustafayousif/Code/hexapod_robot_harmonic/install/hexapod_sim/share/hexapod_sim/worlds/empty_world.sdf
 /home/mustafayousif/Code/hexapod_robot_harmonic/install/hexapod_sim/share/hexapod_sim/worlds/hexapod_world.sdf

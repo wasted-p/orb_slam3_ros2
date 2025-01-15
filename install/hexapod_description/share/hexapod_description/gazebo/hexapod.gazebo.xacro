@@ -1,19 +1,11 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-
   <xacro:macro name="hexapod_gazebo">
-
     <!-- =============== Gazebo =============== -->
-<gazebo>
-  <plugin filename="libgz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-    <parameters>$(find hexapod_description)/config/hexapod_sim.yaml</parameters>
-  </plugin>
-
+    <gazebo>
       <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
         <render_engine>ogre2</render_engine>
       </plugin>
-</gazebo>
-
+    </gazebo>
   </xacro:macro>
-    
 </robot>

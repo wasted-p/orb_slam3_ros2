@@ -1,117 +1,114 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro">  
-
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:macro name="arm" params="parent *joint_origin">
+
     <!-- Joints -->
-		<joint name="arm_base_mount_joint" type="fixed">
-			<xacro:insert_block name="joint_origin"/>
-			<parent link="${parent}"/>
-		  <child link="arm_base"/>
-		</joint>
+    <joint name="arm_base_mount_joint" type="fixed">
+      <xacro:insert_block name="joint_origin"/>
+      <parent link="${parent}"/>
+      <child link="arm_base"/>
+    </joint>
+    <joint name="arm_rotator_joint" type="continuous">
+      <origin xyz="8.8e-05 0.019999 0.02995" rpy="0 0 0"/>
+      <parent link="arm_base"/>
+      <child link="arm_rotator"/>
+      <axis xyz="0.0 -0.0 -1.0"/>
+    </joint>
+    <joint name="arm_abductor_joint" type="revolute">
+      <origin xyz="0.014582 0.00069 0.013923" rpy="0 0 0"/>
+      <parent link="arm_rotator"/>
+      <child link="arm_abductor"/>
+      <axis xyz="-1.0 0.0 -0.0"/>
+      <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+    </joint>
+    <joint name="arm_retractor_joint" type="revolute">
+      <origin xyz="-0.000401 0.0 0.046709" rpy="0 0 0"/>
+      <parent link="arm_abductor"/>
+      <child link="arm_retractor"/>
+      <axis xyz="-0.999993 0.0 -0.003676"/>
+      <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+    </joint>
 
-	<joint name="arm_rotator_joint" type="continuous">
-		<origin xyz="8.8e-05 0.019999 0.02995" rpy="0 0 0"/>
-		<parent link="arm_base"/>
-		<child link="arm_rotator"/>
-		<axis xyz="0.0 -0.0 -1.0"/>
-	</joint>
-	<joint name="arm_abductor_joint" type="revolute">
-		<origin xyz="0.014582 0.00069 0.013923" rpy="0 0 0"/>
-		<parent link="arm_rotator"/>
-		<child link="arm_abductor"/>
-		<axis xyz="-1.0 0.0 -0.0"/>
-		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
-	</joint>
-	<joint name="arm_retractor_joint" type="revolute">
-		<origin xyz="-0.000401 0.0 0.046709" rpy="0 0 0"/>
-		<parent link="arm_abductor"/>
-		<child link="arm_retractor"/>
-		<axis xyz="-0.999993 0.0 -0.003676"/>
-		<limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
-	</joint>
-
-  <!-- Links -->
-	<link name="arm_rotator">
-		<inertial>
-			<origin xyz="-0.00046642883527773724 0.0027188082250819237 0.00576546998065737" rpy="0 0 0"/>
-			<mass value="0.02623546025799875"/>
-			<inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="0.0" iyz="-0.0" ixz="0.0"/>
-		</inertial>
-		<visual>
-			<origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
-			<geometry>
+    <!-- Links -->
+    <link name="arm_rotator">
+      <inertial>
+        <origin xyz="-0.00046642883527773724 0.0027188082250819237 0.00576546998065737" rpy="0 0 0"/>
+        <mass value="0.02623546025799875"/>
+        <inertia ixx="4e-06" iyy="4e-06" izz="5e-06" ixy="0.0" iyz="-0.0" ixz="0.0"/>
+      </inertial>
+      <visual>
+        <origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/rotator.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<material name="dark"/>
-		</visual>
-		<collision>
-			<origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+        <material name="dark"/>
+      </visual>
+      <collision>
+        <origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/rotator.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-		</collision>
-	</link>
-	<link name="arm_abductor">
-		<inertial>
-			<origin xyz="-0.014167725035919117 3.5639852713031765e-07 0.031090662760010462" rpy="0 0 0"/>
-			<mass value="0.016534189067873267"/>
-			<inertia ixx="5e-06" iyy="7e-06" izz="2e-06" ixy="-0.0" iyz="-0.0" ixz="1e-06"/>
-		</inertial>
-		<visual>
-			<origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+      </collision>
+    </link>
+    <link name="arm_abductor">
+      <inertial>
+        <origin xyz="-0.014167725035919117 3.5639852713031765e-07 0.031090662760010462" rpy="0 0 0"/>
+        <mass value="0.016534189067873267"/>
+        <inertia ixx="5e-06" iyy="7e-06" izz="2e-06" ixy="-0.0" iyz="-0.0" ixz="1e-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/abductor.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<material name="dark"/>
-		</visual>
-		<collision>
-			<origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+        <material name="dark"/>
+      </visual>
+      <collision>
+        <origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/abductor.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-		</collision>
-	</link>
-	<link name="arm_retractor">
-		<inertial>
-			<origin xyz="-0.011027322351092845 -5.220911472792085e-05 0.023364114206742087" rpy="0 0 0"/>
-			<mass value="0.015328010788351278"/>
-			<inertia ixx="3e-06" iyy="5e-06" izz="4e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
-		</inertial>
-		<visual>
-			<origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+      </collision>
+    </link>
+    <link name="arm_retractor">
+      <inertial>
+        <origin xyz="-0.011027322351092845 -5.220911472792085e-05 0.023364114206742087" rpy="0 0 0"/>
+        <mass value="0.015328010788351278"/>
+        <inertia ixx="3e-06" iyy="5e-06" izz="4e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
+      </inertial>
+      <visual>
+        <origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/retractor.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<material name="dark"/>
-		</visual>
-		<collision>
-			<origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+        <material name="dark"/>
+      </visual>
+      <collision>
+        <origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/retractor.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-		</collision>
-	</link>
-	<link name="arm_base">
-		<inertial>
-			<origin xyz="0.004115093716825637 0.020000308654227843 0.01035421864114821" rpy="0 0 0"/>
-			<mass value="0.014628769254330782"/>
-			<inertia ixx="2e-06" iyy="3e-06" izz="2e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
-		</inertial>
-		<visual>
-			<origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+      </collision>
+    </link>
+    <link name="arm_base">
+      <inertial>
+        <origin xyz="0.004115093716825637 0.020000308654227843 0.01035421864114821" rpy="0 0 0"/>
+        <mass value="0.014628769254330782"/>
+        <inertia ixx="2e-06" iyy="3e-06" izz="2e-06" ixy="0.0" iyz="0.0" ixz="-0.0"/>
+      </inertial>
+      <visual>
+        <origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/base.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-			<material name="dark"/>
-		</visual>
-		<collision>
-			<origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
-			<geometry>
+        </geometry>
+        <material name="dark"/>
+      </visual>
+      <collision>
+        <origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
+        <geometry>
           <mesh filename="${meshes}/arm/base.stl" scale="0.001 0.001 0.001"/>
-			</geometry>
-		</collision>
-	</link>
-
+        </geometry>
+      </collision>
+    </link>
   </xacro:macro>
 </robot>
-

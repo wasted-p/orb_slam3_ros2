@@ -67,10 +67,6 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/hexapod_description/transmission" TYPE DIRECTORY FILES "/home/mustafayousif/Code/hexapod_robot_harmonic/src/hexapod_description/transmission/")
-endif()
-
-if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/ament_index/resource_index/package_run_dependencies" TYPE FILE FILES "/home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_description/ament_cmake_index/share/ament_index/resource_index/package_run_dependencies/hexapod_description")
 endif()
 

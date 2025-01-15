@@ -1,55 +1,50 @@
 <?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<robot
-	xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="joint" params="name">
     <joint name="${name}">
-				<command_interface name="position">
-					<param name="min">-1</param>
-					<param name="max">1</param>
-				</command_interface>
-				<state_interface name="position"/>
-			</joint>
+      <command_interface name="position">
+        <param name="min">-1</param>
+        <param name="max">1</param>
+      </command_interface>
+      <state_interface name="position"/>
+    </joint>
   </xacro:macro>
 
-	<xacro:macro name="hexapod_ros2_control">
-		<ros2_control name="GazeboSystem" type="system">
-			<hardware>
-				<plugin>gz_ros2_control/GazeboSimSystem</plugin>
-        <!-- <plugin>ros2_control_demo_example_1/RRBotSystemPositionOnlyHardware</plugin> -->
-			</hardware>
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find hexapod_description)/config/hexapod_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+  <xacro:macro name="hexapod_ros2_control">
+    <ros2_control name="GazeboSystem" type="system">
+      <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
 
       <xacro:joint name="arm_rotator_joint"/>
       <xacro:joint name="arm_abductor_joint"/>
       <xacro:joint name="arm_retractor_joint"/>
-
       <xacro:joint name="top_left_rotate_joint"/>
       <xacro:joint name="top_left_abduct_joint"/>
       <xacro:joint name="top_left_retract_joint"/>
-
       <xacro:joint name="mid_left_rotate_joint"/>
       <xacro:joint name="mid_left_abduct_joint"/>
       <xacro:joint name="mid_left_retract_joint"/>
-
       <xacro:joint name="bottom_left_rotate_joint"/>
       <xacro:joint name="bottom_left_abduct_joint"/>
       <xacro:joint name="bottom_left_retract_joint"/>
-
       <xacro:joint name="top_right_rotate_joint"/>
       <xacro:joint name="top_right_abduct_joint"/>
       <xacro:joint name="top_right_retract_joint"/>
-
       <xacro:joint name="mid_right_rotate_joint"/>
       <xacro:joint name="mid_right_abduct_joint"/>
       <xacro:joint name="mid_right_retract_joint"/>
-
       <xacro:joint name="bottom_right_rotate_joint"/>
       <xacro:joint name="bottom_right_abduct_joint"/>
       <xacro:joint name="bottom_right_retract_joint"/>
 
-
-		</ros2_control>
-
-	</xacro:macro>
-
+    </ros2_control>
+  </xacro:macro>
 </robot>

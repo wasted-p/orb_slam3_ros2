@@ -48,8 +48,6 @@ install(DIRECTORY meshes/
 install(DIRECTORY materials/
   DESTINATION share/${PROJECT_NAME}/materials)
 
-install(DIRECTORY transmission/
-  DESTINATION share/${PROJECT_NAME}/transmission)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

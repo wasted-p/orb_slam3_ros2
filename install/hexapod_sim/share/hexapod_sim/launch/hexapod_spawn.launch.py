@@ -16,15 +16,15 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 
 
 def generate_launch_description():
+
  # Declare arguments
-    declared_arguments = []
-    declared_arguments.append(
+    declared_arguments = [
         DeclareLaunchArgument(
             "gui",
             default_value="true",
             description="Start RViz2 automatically with this launch file.",
         )
-    )
+    ]
 
     # Initialize Arguments
     gui = LaunchConfiguration("gui")
@@ -34,7 +34,7 @@ def generate_launch_description():
 
     hexapod_description_path = os.path.join(
         get_package_share_directory('hexapod_description'))
-    
+
     hexapod_sim_path = os.path.join(
         get_package_share_directory('hexapod_sim'))
 
@@ -73,7 +73,7 @@ def generate_launch_description():
         ]
     )
 
-    xacro_file = os.path.join(hexapod_description_path,
+    xacro_file =  os.path.join(hexapod_description_path,
                               'robots',
                               'hexapod.urdf.xacro')
 
@@ -118,13 +118,6 @@ def generate_launch_description():
 
     rviz_config_file = os.path.join(hexapod_description_path, 'config', 'hexapod_config.rviz')
 
-    joint_state_publisher_gui_node = Node(
-       package='joint_state_publisher_gui',
-       executable='joint_state_publisher_gui',
-       name='joint_state_publisher_gui',
-       parameters=[{'use_gui': True}],
-       output='screen'
-   )
 
     rviz_node = Node(
         package="rviz2",
@@ -204,7 +197,6 @@ def generate_launch_description():
         robot_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
-joint_state_publisher_gui_node 
     ]
 
     return LaunchDescription(declared_arguments + nodes)

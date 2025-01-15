@@ -83,6 +83,12 @@ def generate_launch_description():
 
     params = {'robot_description': robot_desc}
     
+    robot_state_pub_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="both",
+        parameters=[params],
+    )
 
     gz_spawn_entity = Node(
         package='ros_gz_sim',
@@ -106,14 +112,8 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-                   '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-                   '/world/hexapod_world/model/hexapod/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-                ],
-        output='screen',
-        remappings=[
-            ('/world/empty/model/rrbot/joint_state', 'joint_states'),
-        ],
+        arguments=['/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+        output='screen'
     )
 
     rviz_config_file = os.path.join(hexapod_description_path, 'config', 'hexapod_config.rviz')
@@ -152,22 +152,6 @@ def generate_launch_description():
         arguments=["forward_position_controller", "--param-file", robot_controllers],
     )
 
-    robot_state_pub_node = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name='robot_state_publisher',
-        output="both",
-        parameters=[params],
-    )
-
-    # Delay rviz start after `joint_state_broadcaster`
-    delay_controller_manager_after_joint_state_publisher = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=robot_state_pub_node,
-            on_exit=[control_node],
-        )
-    )
-
     # Delay rviz start after `joint_state_broadcaster`
     delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
         event_handler=OnProcessExit(
@@ -191,11 +175,12 @@ def generate_launch_description():
         gazebo,
         gz_spawn_entity,
         bridge,
-        robot_state_pub_node,  # Moved up
         control_node,
+        robot_state_pub_node,
         robot_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
+        # joint_state_publisher_gui_node,
     ]
 
     return LaunchDescription(declared_arguments + nodes)

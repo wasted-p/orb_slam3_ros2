@@ -118,6 +118,14 @@ def generate_launch_description():
 
     rviz_config_file = os.path.join(hexapod_description_path, 'config', 'hexapod_config.rviz')
 
+    joint_state_publisher_gui_node = Node(
+       package='joint_state_publisher_gui',
+       executable='joint_state_publisher_gui',
+       name='joint_state_publisher_gui',
+       parameters=[{'use_gui': True}],
+       output='screen'
+   )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -196,6 +204,7 @@ def generate_launch_description():
         robot_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
+joint_state_publisher_gui_node 
     ]
 
     return LaunchDescription(declared_arguments + nodes)

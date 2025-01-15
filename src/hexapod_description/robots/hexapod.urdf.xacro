@@ -24,7 +24,7 @@
 
     <!-- Base -->
   <xacro:base parent="base_footprint">
-		<origin xyz="0 0 0" rpy="0 0 0"/>
+			<origin xyz="0 0 0.8" rpy="0 0 0"/>
   </xacro:base>
 
     <!-- Arm -->

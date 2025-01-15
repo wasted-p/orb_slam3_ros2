@@ -3,6 +3,7 @@ import xacro
 from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 
+from launch.conditions import IfCondition
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.actions import RegisterEventHandler, SetEnvironmentVariable
@@ -11,9 +12,23 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 
 
 def generate_launch_description():
+ # Declare arguments
+    declared_arguments = []
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "gui",
+            default_value="true",
+            description="Start RViz2 automatically with this launch file.",
+        )
+    )
+
+    # Initialize Arguments
+    gui = LaunchConfiguration("gui")
+
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
@@ -50,6 +65,14 @@ def generate_launch_description():
                 ]
              )
 
+    robot_controllers = PathJoinSubstitution(
+        [
+            FindPackageShare("hexapod_description"),
+            "config",
+            "hexapod_sim.yaml",
+        ]
+    )
+
     xacro_file = os.path.join(hexapod_description_path,
                               'robots',
                               'hexapod.urdf.xacro')
@@ -60,11 +83,11 @@ def generate_launch_description():
 
     params = {'robot_description': robot_desc}
     
-    node_robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        output='screen',
-        parameters=[params]
+    robot_state_pub_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="both",
+        parameters=[params],
     )
 
     gz_spawn_entity = Node(
@@ -82,18 +105,16 @@ def generate_launch_description():
                    '-allow_renaming', 'false'],
     )
 
-    load_joint_state_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
-    )
 
 
-    load_forward_position_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'forward_position_controller', ],
-            output='screen',
-    )
+    joint_state_publisher_gui_node = Node(
+       package='joint_state_publisher_gui',
+       executable='joint_state_publisher_gui',
+       name='joint_state_publisher_gui',
+       parameters=[{'use_gui': True}],
+       output='screen'
+   )
+
 
     # Bridge
     bridge = Node(
@@ -105,33 +126,69 @@ def generate_launch_description():
 
     rviz_config_file = os.path.join(hexapod_description_path, 'config', 'hexapod_config.rviz')
 
-    rviz = Node(
+    rviz_node = Node(
         package="rviz2",
         executable="rviz2",
         name="rviz2",
         output="log",
         arguments=["-d", rviz_config_file],
+        condition=IfCondition(gui),
     )
 
-    return LaunchDescription([
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=gz_spawn_entity,
-                on_exit=[load_joint_state_controller],
-            )
-        ),
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-               target_action=load_joint_state_controller,
-               on_exit=[
-                        load_forward_position_controller],
-            )
-        ),
+    control_node = Node(
+        package="controller_manager",
+        executable="ros2_control_node",
+    parameters=[robot_controllers, {'use_sim_time': False}],
+        output="both",
+    )
+
+# [ros2_control_node-4] [WARN] [1736906350.219839447] [controller_manager]: Waiting for data on 'robot_description' topic to finish initialization
+# [gazebo-1] [WARN] [1736906350.746360383] [controller_manager]: No clock received, using time argument instead! Check your node's clock configuration (use_sim_time parameter) 
+# and if a valid clock source is available
+
+
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster"],
+    )
+
+
+    robot_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["forward_position_controller", "--param-file", robot_controllers],
+    )
+
+    # Delay rviz start after `joint_state_broadcaster`
+    delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[rviz_node],
+        )
+    )
+
+    # Delay start of joint_state_broadcaster after `robot_controller`
+    # TODO(anyone): This is a workaround for flaky tests. Remove when fixed.
+    delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=robot_controller_spawner,
+            on_exit=[joint_state_broadcaster_spawner],
+        )
+    )
+
+    nodes = [
         gazebo_resource_path,
         arguments,
         gazebo,
-        node_robot_state_publisher,
         gz_spawn_entity,
         bridge,
-        rviz,
-    ])
+        control_node,
+        robot_state_pub_node,
+        robot_controller_spawner,
+        delay_rviz_after_joint_state_broadcaster_spawner,
+        delay_joint_state_broadcaster_after_robot_controller_spawner,
+        joint_state_publisher_gui_node,
+    ]
+
+    return LaunchDescription(declared_arguments + nodes)

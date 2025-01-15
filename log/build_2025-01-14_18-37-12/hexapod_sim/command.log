@@ -1,4 +1,0 @@
-Invoking command in '/home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim -- -j8 -l8
-Invoked command in '/home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --build /home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim -- -j8 -l8
-Invoking command in '/home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim
-Invoked command in '/home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy /usr/bin/cmake --install /home/mustafayousif/Code/hexapod_robot_harmonic/build/hexapod_sim

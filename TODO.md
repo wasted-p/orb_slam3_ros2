@@ -1,1 +1,2 @@
 - [ ] Organize URDF files
+- [ ] Move ros_gz_params config to yaml

@@ -32,18 +32,18 @@ def generate_launch_description():
     # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
-    hexapod_description_path = os.path.join(
+    pkg_hexapod_description = os.path.join(
         get_package_share_directory('hexapod_description'))
 
-    hexapod_sim_path = os.path.join(
+    pkg_hexapod_sim = os.path.join(
         get_package_share_directory('hexapod_sim'))
 
     # Set gazebo sim resource path
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
         value=[
-            os.path.join(hexapod_sim_path, 'worlds'), ':' +
-            str(Path(hexapod_description_path).parent.resolve())
+            os.path.join(pkg_hexapod_sim, 'worlds'), ':' +
+            str(Path(pkg_hexapod_description).parent.resolve())
             ]
         )
 
@@ -69,11 +69,11 @@ def generate_launch_description():
         [
             FindPackageShare("hexapod_description"),
             "config",
-            "hexapod_sim.yaml",
+            "hexapod_controllers.yaml",
         ]
     )
 
-    xacro_file =  os.path.join(hexapod_description_path,
+    xacro_file =  os.path.join(pkg_hexapod_description,
                               'robots',
                               'hexapod.urdf.xacro')
 
@@ -102,21 +102,18 @@ def generate_launch_description():
     )
 
 
-    # Bridge
-    bridge = Node(
-        package='ros_gz_bridge',
-        executable='parameter_bridge',
-        arguments=['/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-                   '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-                   '/world/hexapod_world/model/hexapod/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-                ],
-        output='screen',
-        remappings=[
-            ('/world/empty/model/rrbot/joint_state', 'joint_states'),
-        ],
-    )
+    # # Bridge
+    # bridge = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
+    #                '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+    #                '/world/hexapod_world/model/hexapod/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
+    #             ],
+    #     output='screen',
+    # )
 
-    rviz_config_file = os.path.join(hexapod_description_path, 'config', 'hexapod_config.rviz')
+    rviz_config_file = os.path.join(pkg_hexapod_description, 'rviz', 'hexapod.rviz')
 
 
     rviz_node = Node(
@@ -135,6 +132,27 @@ def generate_launch_description():
         output="both",
     )
 
+    bridge_params = os.path.join(
+        pkg_hexapod_sim,
+        'config',
+        'hexapod_bridge.yaml'
+    )
+
+    ros_gz_bridge_node = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=[
+            '--ros-args',
+            '-p',
+            f'config_file:={bridge_params}',
+        ],
+        output='screen',
+        remappings=[
+            ('/world/hexapod_world/model/hexapod/joint_state', 'joint_states'),
+        ],
+    )
+
+
 # [ros2_control_node-4] [WARN] [1736906350.219839447] [controller_manager]: Waiting for data on 'robot_description' topic to finish initialization
 # [gazebo-1] [WARN] [1736906350.746360383] [controller_manager]: No clock received, using time argument instead! Check your node's clock configuration (use_sim_time parameter) 
 # and if a valid clock source is available
@@ -150,8 +168,11 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["forward_position_controller", "--param-file", robot_controllers],
+        arguments=["joint_trajectory_controller",
+                   # "--param-file", robot_controllers
+                   ],
     )
+
 
     robot_state_pub_node = Node(
         package="robot_state_publisher",
@@ -191,12 +212,24 @@ def generate_launch_description():
         arguments,
         gazebo,
         gz_spawn_entity,
-        bridge,
+        # bridge,
         robot_state_pub_node,  # Moved up
         control_node,
         robot_controller_spawner,
         delay_rviz_after_joint_state_broadcaster_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
+        ros_gz_bridge_node,
+#
+# Node(
+#             package='rqt_gui',
+#             executable='rqt_gui',
+#             name='rqt_joint_trajectory_controller',
+#             arguments=['--force-discover'],
+#             parameters=[{
+#                 'initial_plugin': 'rqt_joint_trajectory_controller/JointTrajectoryController'
+#             }],
+#             output='screen'
+#         )
     ]
 
     return LaunchDescription(declared_arguments + nodes)

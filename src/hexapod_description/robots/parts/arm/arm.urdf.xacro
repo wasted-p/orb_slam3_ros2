@@ -13,6 +13,7 @@
       <parent link="arm_base"/>
       <child link="arm_rotator"/>
       <axis xyz="0.0 -0.0 -1.0"/>
+      <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
     </joint>
     <joint name="arm_abductor_joint" type="revolute">
       <origin xyz="0.014582 0.00069 0.013923" rpy="0 0 0"/>

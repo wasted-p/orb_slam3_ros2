@@ -48,6 +48,9 @@ install(DIRECTORY meshes/
 install(DIRECTORY materials/
   DESTINATION share/${PROJECT_NAME}/materials)
 
+install(DIRECTORY rviz/
+  DESTINATION share/${PROJECT_NAME}/rviz)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

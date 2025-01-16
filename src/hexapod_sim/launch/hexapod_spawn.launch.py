@@ -75,9 +75,12 @@ def generate_launch_description():
 
     xacro_file =  os.path.join(pkg_hexapod_description,
                               'robots',
-                              'hexapod.urdf.xacro')
+                              'hexapod.urdf.xacro'
+                               )
 
-    doc = xacro.process_file(xacro_file)
+    doc = xacro.process_file(xacro_file,
+                             mappings={'use_ros2_control': 'true'}
+                             )
 
     robot_desc = doc.toprettyxml(indent='  ')
 
@@ -147,9 +150,9 @@ def generate_launch_description():
             f'config_file:={bridge_params}',
         ],
         output='screen',
-        remappings=[
-            ('/world/hexapod_world/model/hexapod/joint_state', 'joint_states'),
-        ],
+        # remappings=[
+        #     ('/world/hexapod_world/model/hexapod/joint_state', 'joint_states'),
+        # ],
     )
 
 

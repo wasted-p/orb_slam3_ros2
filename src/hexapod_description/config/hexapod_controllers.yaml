@@ -13,6 +13,25 @@ joint_trajectory_controller:
       - arm_rotator_joint
       - arm_abductor_joint
       - arm_retractor_joint
+      - top_left_rotate_joint
+      - top_left_abduct_joint
+      - top_left_retract_joint
+      - mid_left_rotate_joint
+      - mid_left_abduct_joint
+      - mid_left_retract_joint
+      - bottom_left_rotate_joint
+      - bottom_left_abduct_joint
+      - bottom_left_retract_joint
+      - top_right_rotate_joint
+      - top_right_abduct_joint
+      - top_right_retract_joint
+      - mid_right_rotate_joint
+      - mid_right_abduct_joint
+      - mid_right_retract_joint
+      - bottom_right_rotate_joint
+      - bottom_right_abduct_joint
+      - bottom_right_retract_joint
+
     interface_name: position
 
     command_interfaces:

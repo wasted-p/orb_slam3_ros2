@@ -1,0 +1,6 @@
+# Default initial positions for hexapod's ros2_control fake system
+
+initial_positions:
+  arm_abductor_joint: 0
+  arm_retractor_joint: 0
+  arm_rotator_joint: 0

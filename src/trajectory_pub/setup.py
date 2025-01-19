@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_node = trajectory_pub.my_node:main'
+            'control = trajectory_pub.jtc_client:main'
         ],
     },
 )

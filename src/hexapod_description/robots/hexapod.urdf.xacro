@@ -6,7 +6,7 @@
   <xacro:property name="robots" value="${description_package}/robots"/>
   <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"/>
   <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"/>
-  <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/>
+  <!-- <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/> -->
   <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"/>
   <xacro:include filename="${robots}/parts/base/base.urdf.xacro"/>
   <xacro:include filename="${robots}/parts/arm/arm.urdf.xacro"/>
@@ -56,5 +56,5 @@
 
   <!-- =============== Gazebo =============== -->
   <xacro:hexapod_gazebo/>
-  <xacro:hexapod_ros2_control/>
+  <!-- <xacro:hexapod_ros2_control/> -->
 </robot>

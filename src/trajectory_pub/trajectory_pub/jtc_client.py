@@ -11,7 +11,7 @@ from control_msgs.action import FollowJointTrajectory
 TRAJECTORIES = {
     "traj0": [
         {
-            "positions": [0.043128],
+            "positions": [1.043128],
             "velocities": [0],
             "time_from_start": Duration(sec=4, nanosec=0),
         },
@@ -33,11 +33,11 @@ class JTCClient(rclpy.node.Node):
         self.declare_parameter(
             "joints",
             [
-                "arm_rotator_joint"
+                "arm_rotator_joint",
             ],
         )
 
-        controller_name = self.get_parameter("controller_name").value + "/joint_trajectory"
+        controller_name = self.get_parameter("controller_name").value + "/follow_joint_trajectory"
         self.joints = self.get_parameter("joints").value
 
         if self.joints is None or len(self.joints) == 0:

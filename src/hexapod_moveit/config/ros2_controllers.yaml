@@ -7,6 +7,30 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
 
 
+    top_left_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+    mid_left_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+    bottom_left_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+    top_right_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+    mid_right_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
+    bottom_right_leg_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
@@ -16,6 +40,78 @@ arm_controller:
       - arm_rotator_joint
       - arm_abductor_joint
       - arm_retractor_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+top_left_leg_controller:
+  ros__parameters:
+    joints:
+      - top_left_rotate_joint
+      - top_left_abduct_joint
+      - top_left_retract_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+mid_left_leg_controller:
+  ros__parameters:
+    joints:
+      - mid_left_rotate_joint
+      - mid_left_abduct_joint
+      - mid_left_retract_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+bottom_left_leg_controller:
+  ros__parameters:
+    joints:
+      - bottom_left_rotate_joint
+      - bottom_left_abduct_joint
+      - bottom_left_retract_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+top_right_leg_controller:
+  ros__parameters:
+    joints:
+      - top_right_rotate_joint
+      - top_right_abduct_joint
+      - top_right_retract_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+mid_right_leg_controller:
+  ros__parameters:
+    joints:
+      - mid_right_rotate_joint
+      - mid_right_abduct_joint
+      - mid_right_retract_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    allow_nonzero_velocity_at_trajectory_end: true
+bottom_right_leg_controller:
+  ros__parameters:
+    joints:
+      - bottom_right_rotate_joint
+      - bottom_right_abduct_joint
+      - bottom_right_retract_joint
     command_interfaces:
       - position
     state_interfaces:

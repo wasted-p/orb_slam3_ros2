@@ -35,6 +35,10 @@ def generate_launch_description():
     pkg_hexapod_description = os.path.join(
         get_package_share_directory('hexapod_description'))
 
+    pkg_hexapod_moveit = os.path.join(
+        get_package_share_directory('hexapod_moveit'))
+
+
     pkg_hexapod_sim = os.path.join(
         get_package_share_directory('hexapod_sim'))
 
@@ -94,7 +98,7 @@ def generate_launch_description():
         arguments=[
                    '-x', '0.0',
                    '-y', '0.0',
-                   '-z', '0.07',
+                   '-z', '0.0',
                    '-R', '0.0',
                    '-P', '0.0',
                    '-Y', '0.0',
@@ -171,7 +175,15 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_trajectory_controller",
+        arguments=["legs_joint_trajectory_controller",
+                   # "--param-file", robot_controllers
+                   ],
+    )
+
+    robot_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["arm_joint_group_position_controller",
                    # "--param-file", robot_controllers
                    ],
     )

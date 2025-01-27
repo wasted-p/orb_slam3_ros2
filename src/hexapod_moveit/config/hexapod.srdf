@@ -14,11 +14,76 @@
         <joint name="arm_abductor_joint"/>
         <joint name="arm_retractor_joint"/>
     </group>
+    <group name="top_left_leg">
+        <joint name="top_left_rotate_joint"/>
+        <joint name="top_left_abduct_joint"/>
+        <joint name="top_left_retract_joint"/>
+    </group>
+    <group name="mid_left_leg">
+        <joint name="mid_left_rotate_joint"/>
+        <joint name="mid_left_abduct_joint"/>
+        <joint name="mid_left_retract_joint"/>
+    </group>
+    <group name="bottom_left_leg">
+        <joint name="bottom_left_rotate_joint"/>
+        <joint name="bottom_left_abduct_joint"/>
+        <joint name="bottom_left_retract_joint"/>
+    </group>
+    <group name="top_right_leg">
+        <joint name="top_right_rotate_joint"/>
+        <joint name="top_right_abduct_joint"/>
+        <joint name="top_right_retract_joint"/>
+    </group>
+    <group name="mid_right_leg">
+        <joint name="mid_right_rotate_joint"/>
+        <joint name="mid_right_abduct_joint"/>
+        <joint name="mid_right_retract_joint"/>
+    </group>
+    <group name="bottom_right_leg">
+        <joint name="bottom_right_rotate_joint"/>
+        <joint name="bottom_right_abduct_joint"/>
+        <joint name="bottom_right_retract_joint"/>
+    </group>
     <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+    <group_state name="standby" group="arm">
+        <joint name="arm_abductor_joint" value="0"/>
+        <joint name="arm_retractor_joint" value="0"/>
+        <joint name="arm_rotator_joint" value="0"/>
+    </group_state>
     <group_state name="ready" group="arm">
         <joint name="arm_abductor_joint" value="0"/>
         <joint name="arm_retractor_joint" value="1.5707"/>
         <joint name="arm_rotator_joint" value="1.5"/>
+    </group_state>
+    <group_state name="standby" group="top_left_leg">
+        <joint name="top_left_abduct_joint" value="-1.5"/>
+        <joint name="top_left_retract_joint" value="-1.5"/>
+        <joint name="top_left_rotate_joint" value="0"/>
+    </group_state>
+    <group_state name="standby" group="mid_left_leg">
+        <joint name="mid_left_abduct_joint" value="-1.5069"/>
+        <joint name="mid_left_retract_joint" value="-1.5"/>
+        <joint name="mid_left_rotate_joint" value="0"/>
+    </group_state>
+    <group_state name="standby" group="bottom_left_leg">
+        <joint name="bottom_left_abduct_joint" value="-1.5"/>
+        <joint name="bottom_left_retract_joint" value="-1.5"/>
+        <joint name="bottom_left_rotate_joint" value="0"/>
+    </group_state>
+    <group_state name="standby" group="top_right_leg">
+        <joint name="top_right_abduct_joint" value="-1.5"/>
+        <joint name="top_right_retract_joint" value="-1.5"/>
+        <joint name="top_right_rotate_joint" value="0"/>
+    </group_state>
+    <group_state name="standby" group="mid_right_leg">
+        <joint name="mid_right_abduct_joint" value="-1.5"/>
+        <joint name="mid_right_retract_joint" value="-1.5"/>
+        <joint name="mid_right_rotate_joint" value="0"/>
+    </group_state>
+    <group_state name="standby" group="bottom_right_leg">
+        <joint name="bottom_right_abduct_joint" value="-1.5"/>
+        <joint name="bottom_right_retract_joint" value="-1.5"/>
+        <joint name="bottom_right_rotate_joint" value="0"/>
     </group_state>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
     <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_footprint"/>
@@ -36,9 +101,9 @@
     <disable_collisions link1="arm_abductor" link2="camera_link" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="mid_left_cox" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="mid_left_femur" reason="Never"/>
-    <disable_collisions link1="arm_abductor" link2="mid_left_tibia" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="mid_right_cox" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="mid_right_femur" reason="Never"/>
+    <disable_collisions link1="arm_abductor" link2="mid_right_tibia" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="top_left_femur" reason="Never"/>
     <disable_collisions link1="arm_abductor" link2="top_left_tibia" reason="Never"/>
@@ -80,9 +145,9 @@
     <disable_collisions link1="arm_retractor" link2="mid_left_femur" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="mid_right_cox" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="mid_right_femur" reason="Never"/>
+    <disable_collisions link1="arm_retractor" link2="mid_right_tibia" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="top_left_femur" reason="Never"/>
-    <disable_collisions link1="arm_retractor" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="top_right_cox" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="arm_retractor" link2="top_right_tibia" reason="Never"/>
@@ -117,9 +182,9 @@
     <disable_collisions link1="base_link" link2="top_right_cox" reason="Adjacent"/>
     <disable_collisions link1="base_link" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="bottom_left_femur" reason="Adjacent"/>
-    <disable_collisions link1="bottom_left_cox" link2="bottom_left_tibia" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="bottom_right_cox" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="bottom_right_femur" reason="Never"/>
+    <disable_collisions link1="bottom_left_cox" link2="bottom_right_tibia" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="camera_link" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="mid_right_cox" reason="Never"/>
     <disable_collisions link1="bottom_left_cox" link2="mid_right_femur" reason="Never"/>
@@ -138,6 +203,7 @@
     <disable_collisions link1="bottom_left_femur" link2="mid_right_tibia" reason="Never"/>
     <disable_collisions link1="bottom_left_femur" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="bottom_left_femur" link2="top_left_femur" reason="Never"/>
+    <disable_collisions link1="bottom_left_femur" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="bottom_left_femur" link2="top_right_cox" reason="Never"/>
     <disable_collisions link1="bottom_left_femur" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="bottom_left_femur" link2="top_right_tibia" reason="Never"/>
@@ -152,7 +218,6 @@
     <disable_collisions link1="bottom_left_tibia" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="bottom_left_tibia" link2="top_right_tibia" reason="Never"/>
     <disable_collisions link1="bottom_right_cox" link2="bottom_right_femur" reason="Adjacent"/>
-    <disable_collisions link1="bottom_right_cox" link2="bottom_right_tibia" reason="Never"/>
     <disable_collisions link1="bottom_right_cox" link2="camera_link" reason="Never"/>
     <disable_collisions link1="bottom_right_cox" link2="mid_left_cox" reason="Never"/>
     <disable_collisions link1="bottom_right_cox" link2="mid_left_femur" reason="Never"/>
@@ -182,17 +247,15 @@
     <disable_collisions link1="bottom_right_tibia" link2="top_left_femur" reason="Never"/>
     <disable_collisions link1="bottom_right_tibia" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="bottom_right_tibia" link2="top_right_cox" reason="Never"/>
+    <disable_collisions link1="bottom_right_tibia" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="camera_link" link2="mid_left_cox" reason="Never"/>
-    <disable_collisions link1="camera_link" link2="mid_left_femur" reason="Never"/>
     <disable_collisions link1="camera_link" link2="mid_right_cox" reason="Never"/>
     <disable_collisions link1="camera_link" link2="mid_right_femur" reason="Never"/>
     <disable_collisions link1="camera_link" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="camera_link" link2="top_left_femur" reason="Never"/>
     <disable_collisions link1="camera_link" link2="top_right_cox" reason="Never"/>
     <disable_collisions link1="camera_link" link2="top_right_femur" reason="Never"/>
-    <disable_collisions link1="camera_link" link2="top_right_tibia" reason="Never"/>
     <disable_collisions link1="mid_left_cox" link2="mid_left_femur" reason="Adjacent"/>
-    <disable_collisions link1="mid_left_cox" link2="mid_left_tibia" reason="Never"/>
     <disable_collisions link1="mid_left_cox" link2="mid_right_cox" reason="Never"/>
     <disable_collisions link1="mid_left_cox" link2="mid_right_femur" reason="Never"/>
     <disable_collisions link1="mid_left_cox" link2="mid_right_tibia" reason="Never"/>
@@ -213,7 +276,6 @@
     <disable_collisions link1="mid_left_tibia" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="mid_left_tibia" link2="top_right_tibia" reason="Never"/>
     <disable_collisions link1="mid_right_cox" link2="mid_right_femur" reason="Adjacent"/>
-    <disable_collisions link1="mid_right_cox" link2="mid_right_tibia" reason="Never"/>
     <disable_collisions link1="mid_right_cox" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="mid_right_cox" link2="top_left_femur" reason="Never"/>
     <disable_collisions link1="mid_right_cox" link2="top_left_tibia" reason="Never"/>
@@ -223,14 +285,14 @@
     <disable_collisions link1="mid_right_femur" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="mid_right_tibia" link2="top_left_cox" reason="Never"/>
     <disable_collisions link1="mid_right_tibia" link2="top_left_femur" reason="Never"/>
+    <disable_collisions link1="mid_right_tibia" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="top_left_cox" link2="top_left_femur" reason="Adjacent"/>
-    <disable_collisions link1="top_left_cox" link2="top_left_tibia" reason="Never"/>
     <disable_collisions link1="top_left_cox" link2="top_right_cox" reason="Never"/>
     <disable_collisions link1="top_left_cox" link2="top_right_femur" reason="Never"/>
     <disable_collisions link1="top_left_cox" link2="top_right_tibia" reason="Never"/>
     <disable_collisions link1="top_left_femur" link2="top_left_tibia" reason="Adjacent"/>
     <disable_collisions link1="top_left_femur" link2="top_right_cox" reason="Never"/>
+    <disable_collisions link1="top_left_tibia" link2="top_right_cox" reason="Never"/>
     <disable_collisions link1="top_right_cox" link2="top_right_femur" reason="Adjacent"/>
-    <disable_collisions link1="top_right_cox" link2="top_right_tibia" reason="Never"/>
     <disable_collisions link1="top_right_femur" link2="top_right_tibia" reason="Adjacent"/>
 </robot>

@@ -1,19 +1,25 @@
 <?xml version="1.0"?>
 <!-- Basic differential drive mobile base -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hexapod">
+
   <xacro:property name="M_PI" value="3.14159274"/>
   <xacro:property name="description_package" value="$(find hexapod_description)"/>
   <xacro:property name="robots" value="${description_package}/robots"/>
   <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"/>
   <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"/>
-  <!-- <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/> -->
+  <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/>
   <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"/>
   <xacro:include filename="${robots}/parts/base/base.urdf.xacro"/>
   <xacro:include filename="${robots}/parts/arm/arm.urdf.xacro"/>
   <xacro:include filename="${robots}/parts/leg/leg.urdf.xacro"/>
   <xacro:include filename="${robots}/parts/camera/camera.urdf.xacro"/>
 
+  <!-- ================== ARGS ===================== -->
+
+  <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
   <!-- =============== Link & Joint =============== -->
+
   <!-- Base -->
   <link name="base_footprint"/>
   <!--link name="base_footprint"/ -->
@@ -56,5 +62,5 @@
 
   <!-- =============== Gazebo =============== -->
   <xacro:hexapod_gazebo/>
-  <!-- <xacro:hexapod_ros2_control/> -->
+  <xacro:hexapod_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
 </robot>

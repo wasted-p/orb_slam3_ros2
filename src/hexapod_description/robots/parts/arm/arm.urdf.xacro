@@ -27,6 +27,7 @@
       <parent link="arm_abductor"/>
       <child link="arm_retractor"/>
       <axis xyz="-0.999993 0.0 -0.003676"/>
+      p
       <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
     </joint>
 

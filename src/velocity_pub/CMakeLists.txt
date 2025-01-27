@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(hexapod_description)
+project(velocity_pub)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,43 +17,28 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(xacro REQUIRED)
-find_package(robot_state_publisher REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-#xacro_add_files(
-#  robots/head_in.urdf.xacro
-#    INSTALL DESTINATION robots
-#)
+install(
+    DIRECTORY
+      scripts
+      launch
+    DESTINATION
+      share/${PROJECT_NAME}/
+  )
 
-# add_custom_target(urdf ALL COMMAND "ros2" "launch" ${PROJECT_NAME} "wamv_description.launch.py")
-
-install(DIRECTORY robots/
-  DESTINATION share/${PROJECT_NAME}/robots)
-
-install(DIRECTORY gazebo/
-  DESTINATION share/${PROJECT_NAME}/gazebo)
-
-install(DIRECTORY ros2_control/
-  DESTINATION share/${PROJECT_NAME}/ros2_control)
-
-install(DIRECTORY config/
-  DESTINATION share/${PROJECT_NAME}/config)
-
-install(DIRECTORY meshes/
-  DESTINATION share/${PROJECT_NAME}/meshes)
-
-install(DIRECTORY materials/
-  DESTINATION share/${PROJECT_NAME}/materials)
-
-install(DIRECTORY rviz/
-  DESTINATION share/${PROJECT_NAME}/rviz)
-
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch)
-
+install(
+    PROGRAMS
+    scripts/robot_control.py
+    scripts/jtc_client.py
+    scripts/old.control.py
+    launch/four_ws_control.launch.py
+    DESTINATION lib/${PROJECT_NAME}
+  )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

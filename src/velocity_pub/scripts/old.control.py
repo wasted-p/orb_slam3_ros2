@@ -101,8 +101,9 @@ from std_msgs.msg import Float64MultiArray
 #         self.pos[:] = 0
 #         self.vel[:] = 0
 
-rotation = 0.5
+rotation = 0
 arm_joint_positions = Float64MultiArray()
+arm_joint_positions.data = [0,0,0]
 
 class Joy_subscriber(Node):
 
@@ -118,54 +119,75 @@ class Joy_subscriber(Node):
     def listener_callback(self, data):
         global rotation, arm_joint_positions
 
-        mvmt_x = data.axes[0] # Correlates to left joystick
+        mvmt_x = -data.axes[0] # Correlates to left joystick
         mvmt_y = data.axes[1] # Correlates to left joystick
 
-        rtn_x = data.axes[2] # Correlates to right joystick
+        rtn_x = -data.axes[2] # Correlates to right joystick
         rtn_y = data.axes[3] # Correlates to right joystick
 
         step_x = data.axes[4] # Correlates to buttons (y axis)
         step_y = data.axes[5] # Correlates to right (x axis)
 
-        arm_joint_positions.data = [mvmt_x, 0, 0]
+        arm_joint_positions.data = [rtn_x, rtn_y, 0]
+        rotation = mvmt_y
 
 
 class Commander(Node):
     def __init__(self):
         super().__init__('commander')
 
-        self.publisher = self.create_publisher(JointTrajectory, '/joint_trajectory_controller/joint_trajectory', 10)
+        self.publisher = self.create_publisher(JointTrajectory, '/legs_joint_trajectory_controller/joint_trajectory', 10)
         self.arm_publisher = self.create_publisher(Float64MultiArray, '/arm_joint_group_position_controller/commands', 10)
 
         timer_period = 0.1
         self.timer = self.create_timer(timer_period, self.publish_trajectory)
 
-        self.joint_names = ['arm_rotator_joint']
+        self.joint_names = [
+            "top_left_rotate_joint",
+            "top_left_abduct_joint",
+            "top_left_retract_joint",
+            "mid_left_rotate_joint",
+            "mid_left_abduct_joint",
+            "mid_left_retract_joint",
+            "bottom_left_rotate_joint",
+            "bottom_left_abduct_joint",
+            "bottom_left_retract_joint",
+            "top_right_rotate_joint",
+            "top_right_abduct_joint",
+            "top_right_retract_joint",
+            "mid_right_rotate_joint",
+            "mid_right_abduct_joint",
+            "mid_right_retract_joint",
+            "bottom_right_rotate_joint",
+            "bottom_right_abduct_joint",
+            "bottom_right_retract_joint",
+        ]
 
         self.counter = 0
 
     def publish_trajectory(self):
-        global arm_joint_positions
+        global arm_joint_positions, rotation
         trajectory_msg = JointTrajectory()
-        trajectory_msg.joint_names = self.joint_names
+        trajectory_msg.joint_names = ["top_left_abduct_joint", "bottom_left_abduct_joint", "mid_right_abduct_joint"]
 
         point = JointTrajectoryPoint()
 
         point.positions = [
-            rotation
+            rotation, rotation, rotation
         ]
 
-        point.velocities = [0.0]
+        point.velocities = [0.0, 0.0, 0.0]
         point.time_from_start.sec = 1
 
         trajectory_msg.points.append(point)
-
         self.publisher.publish(trajectory_msg)
 
         # publishing joint positions for arm
-        for idx in range(0,2):
-            arm_joint_positions.data[idx+1] = arm_joint_positions.data[idx+1] * math.pi * 0.5
-        self.get_logger().info(f'Published Joint Group Positions {arm_joint_positions.data}')
+        arm_joint_positions.data[0] = arm_joint_positions.data[0] * math.pi * 0.5
+        arm_joint_positions.data[1] = arm_joint_positions.data[1] * math.pi * 0.5
+        # arm_joint_positions.data[2] = arm_joint_positions.data[2] * math.pi * 0.5
+
+        # self.get_logger().info(f'Published Joint Group Positions {arm_joint_positions.data}')
         self.arm_publisher.publish(arm_joint_positions)
 
         self.counter += 1

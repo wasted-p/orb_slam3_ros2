@@ -175,18 +175,13 @@ def generate_launch_description():
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["legs_joint_trajectory_controller",
-                   # "--param-file", robot_controllers
-                   ],
+        arguments=[
+            "legs_joint_trajectory_controller",
+            "arm_joint_group_position_controller",
+            "--param-file", robot_controllers],
+        output="screen"
     )
 
-    robot_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["arm_joint_group_position_controller",
-                   # "--param-file", robot_controllers
-                   ],
-    )
 
 
     robot_state_pub_node = Node(

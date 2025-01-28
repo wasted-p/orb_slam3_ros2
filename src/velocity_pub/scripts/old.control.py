@@ -139,7 +139,7 @@ class Commander(Node):
         self.publisher = self.create_publisher(JointTrajectory, '/legs_joint_trajectory_controller/joint_trajectory', 10)
         self.arm_publisher = self.create_publisher(Float64MultiArray, '/arm_joint_group_position_controller/commands', 10)
 
-        timer_period = 0.1
+        timer_period = 1
         self.timer = self.create_timer(timer_period, self.publish_trajectory)
 
         self.joint_names = [
@@ -168,18 +168,46 @@ class Commander(Node):
     def publish_trajectory(self):
         global arm_joint_positions, rotation
         trajectory_msg = JointTrajectory()
-        trajectory_msg.joint_names = ["top_left_abduct_joint", "bottom_left_abduct_joint", "mid_right_abduct_joint"]
+        trajectory_msg.joint_names = [
+            "top_left_rotate_joint",
+            "top_left_abduct_joint",
+            "top_left_retract_joint",
 
-        point = JointTrajectoryPoint()
+            "bottom_left_rotate_joint",
+            "bottom_left_abduct_joint",
+            "bottom_left_retract_joint",
 
-        point.positions = [
-            rotation, rotation, rotation
+            "mid_right_rotate_joint",
+            "mid_right_abduct_joint",
+            "mid_right_retract_joint",
+
+        ]
+        points = [
+            {
+                "name":"lift_legs",
+                "positions" : [0.0,-0.4,0.0,
+                               0.0,-0.4,0.0,
+                               0.0,-0.4,0.0],
+                "duration" :0.5,
+            },
+
+            {
+                "name":"lift_legs",
+                "positions" : [0.4,-0.4,0.3,
+                               -0.4,-0.4,-0.5,
+                               -0.3,-0.4,0],
+                "duration" :1,
+            }
         ]
 
-        point.velocities = [0.0, 0.0, 0.0]
-        point.time_from_start.sec = 1
+        t = 0
+        for point in points:
+            p = JointTrajectoryPoint()
+            p.positions = point["positions"]
+            t += point["duration"]
+            p.time_from_start.sec = point["duration"]
+            trajectory_msg.points.append(p)
 
-        trajectory_msg.points.append(point)
         self.publisher.publish(trajectory_msg)
 
         # publishing joint positions for arm

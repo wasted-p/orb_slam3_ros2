@@ -35,8 +35,6 @@ def generate_launch_description():
     pkg_hexapod_description = os.path.join(
         get_package_share_directory('hexapod_description'))
 
-    pkg_hexapod_moveit = os.path.join(
-        get_package_share_directory('hexapod_moveit'))
 
 
     pkg_hexapod_sim = os.path.join(

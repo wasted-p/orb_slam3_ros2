@@ -1,0 +1,5 @@
+<library path="hexapod_rviz_plugins">
+  <class type="hexapod_rviz_plugins::JointStateManager" base_class_type="rviz_common::Display">
+    <description></description>
+  </class>
+</library>

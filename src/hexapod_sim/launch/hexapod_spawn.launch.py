@@ -15,121 +15,87 @@ from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 
 
-def generate_launch_description():
 
- # Declare arguments
+def generate_launch_description():
+    # Declare launch arguments
     declared_arguments = [
         DeclareLaunchArgument(
-            "gui",
+            "gui",  # Argument to control if RViz starts automatically
             default_value="true",
             description="Start RViz2 automatically with this launch file.",
-        )
+        ),
     ]
 
-    # Initialize Arguments
+    # Initialize arguments and configurations
     gui = LaunchConfiguration("gui")
-
-    # Launch Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
-    pkg_hexapod_description = os.path.join(
-        get_package_share_directory('hexapod_description'))
+    # Define paths to package directories
+    pkg_hexapod_description = os.path.join(get_package_share_directory('hexapod_description'))
+    pkg_hexapod_sim = os.path.join(get_package_share_directory('hexapod_sim'))
 
-
-
-    pkg_hexapod_sim = os.path.join(
-        get_package_share_directory('hexapod_sim'))
-
-    # Set gazebo sim resource path
+    # Set Gazebo simulation resource path
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
         value=[
-            os.path.join(pkg_hexapod_sim, 'worlds'), ':' +
-            str(Path(pkg_hexapod_description).parent.resolve())
-            ]
-        )
-
-    arguments = LaunchDescription([
-                DeclareLaunchArgument('world', default_value='hexapod_world',
-                          description='Gz sim World'),
-           ]
-    )
-
-    gazebo = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
-                launch_arguments=[
-                    ('gz_args', [LaunchConfiguration('world'),
-                                 '.sdf',
-                                 ' -v 4',
-                                 ' -r']
-                    )
-                ]
-             )
-
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("hexapod_description"),
-            "config",
-            "hexapod_controllers.yaml",
+            os.path.join(pkg_hexapod_sim, 'worlds'),
+            ':' + str(Path(pkg_hexapod_description).parent.resolve())
         ]
     )
 
-    xacro_file =  os.path.join(pkg_hexapod_description,
-                              'robots',
-                              'hexapod.urdf.xacro'
-                               )
+    # World argument to specify the Gazebo world file
+    arguments = LaunchDescription([
+        DeclareLaunchArgument('world', default_value='hexapod_world', description='Gazebo world'),
+    ])
 
-    doc = xacro.process_file(xacro_file,
-                             mappings={'use_ros2_control': 'true'}
-                             )
+    # Include Gazebo simulation launch description
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
+        launch_arguments=[
+            ('gz_args', [LaunchConfiguration('world'), '.sdf', ' -v 4', ' -r'])
+        ]
+    )
 
+    # Load robot description and controller configurations from files
+    robot_controllers = PathJoinSubstitution([
+        FindPackageShare("hexapod_description"),
+        "config",
+        "hexapod_controllers.yaml",
+    ])
+
+    # Process the XACRO file to get robot URDF description
+    xacro_file = os.path.join(pkg_hexapod_description, 'robots', 'hexapod.urdf.xacro')
+    doc = xacro.process_file(xacro_file, mappings={'use_ros2_control': 'true'})
     robot_desc = doc.toprettyxml(indent='  ')
 
+    # Set the robot description as a parameter
     params = {'robot_description': robot_desc}
-    
 
+    # Gazebo spawn entity to load the robot in simulation
     gz_spawn_entity = Node(
         package='ros_gz_sim',
         executable='create',
         output='screen',
         arguments=[
-                   '-x', '0.0',
-                   '-y', '0.0',
-                   '-z', '0.0',
-                   '-R', '0.0',
-                   '-P', '0.0',
-                   '-Y', '0.0',
-                   '-name', 'hexapod',
-                   '-allow_renaming', 'false',
-                   '-topic', 'robot_description',
-                   '-allow_renaming', 'true'],
+            '-x', '0.0', '-y', '0.0', '-z', '0.0', '-R', '0.0', '-P', '0.0', '-Y', '0.0',
+            '-name', 'hexapod', '-topic', 'robot_description', '-allow_renaming', 'true'
+        ],
     )
 
-
-    # # Bridge
-    # bridge = Node(
-    #     package='ros_gz_bridge',
-    #     executable='parameter_bridge',
-    #     arguments=['/scan@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan',
-    #                '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-    #                '/world/hexapod_world/model/hexapod/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-    #             ],
-    #     output='screen',
-    # )
-
+    # RViz configuration file for visualization
     rviz_config_file = os.path.join(pkg_hexapod_description, 'rviz', 'hexapod.rviz')
 
-
+    # RViz node configuration
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
         name="rviz2",
-        output="log",
+        output="screen",
         arguments=["-d", rviz_config_file],
         condition=IfCondition(gui),
     )
 
+    # Control node (ros2_control) for managing controllers
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -137,51 +103,37 @@ def generate_launch_description():
         output="both",
     )
 
-    bridge_params = os.path.join(
-        pkg_hexapod_sim,
-        'config',
-        'hexapod_bridge.yaml'
-    )
+    # ROS-Gazebo bridge parameters file
+    bridge_params = os.path.join(pkg_hexapod_sim, 'config', 'hexapod_bridge.yaml')
 
+    # ROS-Gazebo bridge node to bridge communication between ROS and Gazebo
     ros_gz_bridge_node = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=[
-            '--ros-args',
-            '-p',
-            f'config_file:={bridge_params}',
-        ],
-        output='screen',
-        # remappings=[
-        #     ('/world/hexapod_world/model/hexapod/joint_state', 'joint_states'),
-        # ],
+        arguments=['--ros-args', '-p', f'config_file:={bridge_params}'],
+        output='screen'
     )
 
-
-# [ros2_control_node-4] [WARN] [1736906350.219839447] [controller_manager]: Waiting for data on 'robot_description' topic to finish initialization
-# [gazebo-1] [WARN] [1736906350.746360383] [controller_manager]: No clock received, using time argument instead! Check your node's clock configuration (use_sim_time parameter) 
-# and if a valid clock source is available
-
-
+    # Joint state broadcaster spawner node to broadcast joint states
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster"],
     )
 
-
+    # Robot controller spawner node to spawn controllers for robot
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
             "legs_joint_trajectory_controller",
             "arm_joint_group_position_controller",
-            "--param-file", robot_controllers],
+            "--param-file", robot_controllers
+        ],
         output="screen"
     )
 
-
-
+    # Robot state publisher node to publish the robot state
     robot_state_pub_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -190,54 +142,35 @@ def generate_launch_description():
         parameters=[params],
     )
 
-    # Delay rviz start after `joint_state_broadcaster`
-    delay_controller_manager_after_joint_state_publisher = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=robot_state_pub_node,
-            on_exit=[control_node],
-        )
+    # Event handlers to delay node start orders
+    # Delay the start of control_node until robot_state_pub_node has exited
+    delay_control_node_after_robot_state_publisher = RegisterEventHandler(
+        event_handler=OnProcessExit(target_action=robot_state_pub_node, on_exit=[control_node])
     )
 
-    # Delay rviz start after `joint_state_broadcaster`
+    # Delay RViz start after joint_state_broadcaster has started
     delay_rviz_after_joint_state_broadcaster_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=joint_state_broadcaster_spawner,
-            on_exit=[rviz_node],
-        )
+        event_handler=OnProcessExit(target_action=joint_state_broadcaster_spawner, on_exit=[rviz_node])
     )
 
-    # Delay start of joint_state_broadcaster after `robot_controller`
-    # TODO(anyone): This is a workaround for flaky tests. Remove when fixed.
+    # Delay joint_state_broadcaster start after robot_controller_spawner has started
     delay_joint_state_broadcaster_after_robot_controller_spawner = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=robot_controller_spawner,
-            on_exit=[joint_state_broadcaster_spawner],
-        )
+        event_handler=OnProcessExit(target_action=robot_controller_spawner, on_exit=[joint_state_broadcaster_spawner])
     )
 
+    # List of all nodes to launch
     nodes = [
-        gazebo_resource_path,
-        arguments,
-        gazebo,
-        gz_spawn_entity,
-        # bridge,
-        robot_state_pub_node,  # Moved up
-        control_node,
-        robot_controller_spawner,
-        delay_rviz_after_joint_state_broadcaster_spawner,
-        delay_joint_state_broadcaster_after_robot_controller_spawner,
-        ros_gz_bridge_node,
-#
-# Node(
-#             package='rqt_gui',
-#             executable='rqt_gui',
-#             name='rqt_joint_trajectory_controller',
-#             arguments=['--force-discover'],
-#             parameters=[{
-#                 'initial_plugin': 'rqt_joint_trajectory_controller/JointTrajectoryController'
-#             }],
-#             output='screen'
-#         )
+        gazebo_resource_path,         # Set simulation resource path
+        arguments,                    # Launch arguments
+        gazebo,                       # Gazebo simulation
+        gz_spawn_entity,              # Spawn the robot in Gazebo
+        robot_state_pub_node,         # Robot state publisher
+        delay_control_node_after_robot_state_publisher,  # Delay control node
+        robot_controller_spawner,     # Spawn robot controllers
+        delay_rviz_after_joint_state_broadcaster_spawner,  # Delay RViz start
+        delay_joint_state_broadcaster_after_robot_controller_spawner,  # Delay joint state broadcaster
+        ros_gz_bridge_node            # ROS-Gazebo bridge node
     ]
 
+    # Return launch description with the nodes and declared arguments
     return LaunchDescription(declared_arguments + nodes)

@@ -188,7 +188,7 @@ class Commander(Node):
                 "positions" : [0.0,-0.4,0.0,
                                0.0,-0.4,0.0,
                                0.0,-0.4,0.0],
-                "duration" :0.5,
+                "duration" :1,
             },
 
             {
@@ -196,7 +196,7 @@ class Commander(Node):
                 "positions" : [0.4,-0.4,0.3,
                                -0.4,-0.4,-0.5,
                                -0.3,-0.4,0],
-                "duration" :1,
+                "duration" :2,
             }
         ]
 

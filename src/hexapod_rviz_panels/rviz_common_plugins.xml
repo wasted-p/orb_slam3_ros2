@@ -1,0 +1,5 @@
+<library path="hexapod_rviz_panels">
+  <class type="hexapod_rviz_panels::JointManagerPanel" base_class_type="rviz_common::Panel">
+    <description>A very basic panel for a tutorial</description>
+  </class>
+</library>

@@ -15,7 +15,7 @@ def generate_launch_description():
     robot_description_config = xacro.process_file(xacro_file)
     robot_urdf = robot_description_config.toxml()
 
-    # rviz_config_file = os.path.join(share_dir, 'config', 'display.rviz')
+    rviz_config_file = os.path.join(share_dir, 'rviz', 'hexapod-pose-planning.rviz')
 
     gui_arg = DeclareLaunchArgument(
         name='gui',
@@ -47,12 +47,13 @@ def generate_launch_description():
         name='joint_state_publisher_gui'
     )
 
+    # RViz node configuration
     rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        # arguments=['-d', rviz_config_file],
-        output='screen'
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        arguments=["-d", rviz_config_file],
     )
 
     return LaunchDescription([

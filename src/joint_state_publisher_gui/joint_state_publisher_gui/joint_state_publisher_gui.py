@@ -118,6 +118,20 @@ class Slider(QWidget):
         self.row_layout.setParent(None)
 
 
+import sqlite3
+def init_db(db_name='my_database.db'):
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        value INTEGER
+    )
+    ''')
+    connection.commit()
+    connection.close()
+
 class JointStatePublisherGui(QMainWindow):
     sliderUpdateTrigger = Signal()
     initialize = Signal()
@@ -128,6 +142,10 @@ class JointStatePublisherGui(QMainWindow):
         self.joint_map = {}
 
         self.setWindowTitle(title)
+
+        # Button for randomizing the sliders
+        self.save_waypoint_button = QPushButton('Save Waypoint', self)
+        self.save_waypoint_button.clicked.connect(self.saveWaypointEvent)
 
         # Button for randomizing the sliders
         self.rand_button = QPushButton('Randomize', self)
@@ -153,6 +171,7 @@ class JointStatePublisherGui(QMainWindow):
         self.main_layout = QVBoxLayout()
 
         # Add buttons and scroll area to main layout
+        self.main_layout.addWidget(self.save_waypoint_button)
         self.main_layout.addWidget(self.rand_button)
         self.main_layout.addWidget(self.ctr_button)
         self.main_layout.addWidget(self.scroll_area)
@@ -244,6 +263,27 @@ class JointStatePublisherGui(QMainWindow):
             joint = joint_info['joint']
             joint_info['slider'].setValue(self.valueToSlider(joint['zero'], joint))
 
+    def saveWaypointEvent(self, event):
+        self.jsp.get_logger().info("Saving Waypoint to Database")
+
+        db_name = 'my_database.db'
+        joint_states = [
+            {
+                "name":'top_left_abduct',
+                "value":10
+            }
+        ]
+
+        connection = sqlite3.connect(db_name)
+        cursor = connection.cursor()
+        for joint_state in joint_states:
+            cursor.execute('''
+            INSERT INTO data (name, value) VALUES (?,?)
+            ''', (joint_state["name"], joint_state["value"]))
+
+        connection.commit()
+        connection.close()
+
     def randomizeEvent(self, event):
         self.jsp.get_logger().info("Randomizing")
         for name, joint_info in self.joint_map.items():
@@ -268,6 +308,7 @@ class JointStatePublisherGui(QMainWindow):
 
 def main():
     # Initialize rclpy with the command-line arguments
+    init_db()
     rclpy.init()
 
     # Strip off the ROS 2-specific command-line arguments

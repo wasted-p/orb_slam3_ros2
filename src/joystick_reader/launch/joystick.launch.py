@@ -10,5 +10,5 @@ def generate_launch_description():
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
         Node(package = "joy",executable = "joy_node"),
-        Node(package='velocity_pub', executable='old.control.py', output='screen'),
+        Node(package='joystick_reader', executable='joystick_reader', output='screen'),
     ])

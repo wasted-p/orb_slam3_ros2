@@ -10,96 +10,6 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
 from std_msgs.msg import Float64MultiArray
 
-# class Commander(Node):
-#
-#     def __init__(self):
-#         super().__init__('commander')
-#         timer_period = 0.02
-#         self.wheel_seperation = 0.122
-#         self.wheel_base = 0.156
-#         self.wheel_radius = 0.026
-#         self.wheel_steering_y_offset = 0.03
-#         self.steering_track = self.wheel_seperation - 2*self.wheel_steering_y_offset
-#
-#         self.pos = np.array([0,0,0,0], float)
-#         self.vel = np.array([0,0,0,0], float) #left_front, right_front, left_rear, right_rear
-#
-#         self.pub_pos = self.create_publisher(Float64MultiArray, '/forward_position_controller/commands', 10)
-#         self.pub_vel = self.create_publisher(Float64MultiArray, '/forward_velocity_controller/commands', 10)
-#         self.timer = self.create_timer(timer_period, self.timer_callback)
-#
-#     def timer_callback(self):
-#         global vel_msg, mode_selection
-#
-#         # opposite phase
-#         if(mode_selection == 1):
-#
-#             vel_steerring_offset = vel_msg.angular.z * self.wheel_steering_y_offset
-#             sign = np.sign(vel_msg.linear.x)
-#
-#             self.vel[0] = sign*math.hypot(vel_msg.linear.x - vel_msg.angular.z*self.steering_track/2, vel_msg.angular.z*self.wheel_base/2) - vel_steerring_offset
-#             self.vel[1] = sign*math.hypot(vel_msg.linear.x + vel_msg.angular.z*self.steering_track/2, vel_msg.angular.z*self.wheel_base/2) + vel_steerring_offset
-#             self.vel[2] = sign*math.hypot(vel_msg.linear.x - vel_msg.angular.z*self.steering_track/2, vel_msg.angular.z*self.wheel_base/2) - vel_steerring_offset
-#             self.vel[3] = sign*math.hypot(vel_msg.linear.x + vel_msg.angular.z*self.steering_track/2, vel_msg.angular.z*self.wheel_base/2) + vel_steerring_offset
-#
-#             a0 = 2*vel_msg.linear.x + vel_msg.angular.z*self.steering_track
-#             a1 = 2*vel_msg.linear.x - vel_msg.angular.z*self.steering_track
-#
-#             if a0 != 0:
-#                 self.pos[0] = math.atan(vel_msg.angular.z*self.wheel_base/(a0))
-#             else:
-#                 self.pos[0] = 0
-#
-#             if a1 != 0:
-#                 self.pos[1] = math.atan(vel_msg.angular.z*self.wheel_base/(a1))
-#             else:
-#                 self.pos[1] = 0
-#
-#             self.pos[2] = -self.pos[0]
-#             self.pos[3] = -self.pos[1]
-#
-#         # in-phase
-#         elif(mode_selection == 2):
-#
-#             V = math.hypot(vel_msg.linear.x, vel_msg.linear.y)
-#             sign = np.sign(vel_msg.linear.x)
-#
-#             if(vel_msg.linear.x != 0):
-#                 ang = vel_msg.linear.y / vel_msg.linear.x
-#             else:
-#                 ang = 0
-#
-#             self.pos[0] = math.atan(ang)
-#             self.pos[1] = math.atan(ang)
-#             self.pos[2] = self.pos[0]
-#             self.pos[3] = self.pos[1]
-#
-#             self.vel[:] = sign*V
-#
-#         # pivot turn
-#         elif(mode_selection == 3):
-#
-#             self.pos[0] = -math.atan(self.wheel_base/self.steering_track)
-#             self.pos[1] = math.atan(self.wheel_base/self.steering_track)
-#             self.pos[2] = math.atan(self.wheel_base/self.steering_track)
-#             self.pos[3] = -math.atan(self.wheel_base/self.steering_track)
-#
-#             self.vel[0] = -vel_msg.angular.z
-#             self.vel[1] = vel_msg.angular.z
-#             self.vel[2] = self.vel[0]
-#             self.vel[3] = self.vel[1]
-#
-#         else:
-#
-#             self.pos[:] = 0
-#             self.vel[:] = 0
-#
-#         pos_array = Float64MultiArray(data=self.pos) 
-#         vel_array = Float64MultiArray(data=self.vel) 
-#         self.pub_pos.publish(pos_array)
-#         self.pub_vel.publish(vel_array)
-#         self.pos[:] = 0
-#         self.vel[:] = 0
 
 rotation = 0
 arm_joint_positions = Float64MultiArray()
@@ -109,6 +19,7 @@ class Joy_subscriber(Node):
 
     def __init__(self):
         super().__init__('joy_subscriber')
+
         self.subscription = self.create_subscription(
             Joy,
             'joy',
@@ -215,22 +126,11 @@ class Commander(Node):
         arm_joint_positions.data[1] = arm_joint_positions.data[1] * math.pi * 0.5
         # arm_joint_positions.data[2] = arm_joint_positions.data[2] * math.pi * 0.5
 
-        # self.get_logger().info(f'Published Joint Group Positions {arm_joint_positions.data}')
+        self.get_logger().info(f'Published Joint Group Positions {arm_joint_positions.data}')
         self.arm_publisher.publish(arm_joint_positions)
 
         self.counter += 1
 
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = JointTrajectoryPublisher()
-#     rclpy.spin(node)
-#     node.destroy_node()
-#     rclpy.shutdown()
-#
-#
-# if __name__ == '__main__':
-#     main()
-#
 
 if __name__ == '__main__':
     rclpy.init(args=None)

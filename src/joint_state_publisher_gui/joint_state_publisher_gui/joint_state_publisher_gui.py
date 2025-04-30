@@ -123,12 +123,11 @@ def init_db(db_name='my_database.db'):
     connection = sqlite3.connect(db_name)
     cursor = connection.cursor()
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        value INTEGER
-    )
-    ''')
+                   CREATE TABLE IF NOT EXISTS data (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   joint_state REAL,
+                   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                   ''')
     connection.commit()
     connection.close()
 
@@ -236,68 +235,6 @@ class JointStatePublisherGui(QMainWindow):
 
         self.sliderUpdateTrigger.emit()
 
-    def sliderUpdateCb(self):
-        self.sliderUpdateTrigger.emit()
-
-    def initializeCb(self):
-        self.initialize.emit()
-
-    def onSliderValueChangedOne(self, name):
-        # A slider value was changed, but we need to change the joint_info metadata.
-        joint_info = self.joint_map[name]
-        slidervalue = joint_info['slider'].value()
-        joint = joint_info['joint']
-        joint['position'] = self.sliderToValue(slidervalue, joint)
-        joint_info['display'].setText("%.3f" % joint['position'])
-
-    @pyqtSlot()
-    def updateSliders(self):
-        for name, joint_info in self.joint_map.items():
-            joint = joint_info['joint']
-            slidervalue = self.valueToSlider(joint['position'], joint)
-            joint_info['slider'].setValue(slidervalue)
-
-    def centerEvent(self, event):
-        self.jsp.get_logger().info("Centering")
-        for name, joint_info in self.joint_map.items():
-            joint = joint_info['joint']
-            joint_info['slider'].setValue(self.valueToSlider(joint['zero'], joint))
-
-    def saveWaypointEvent(self, event):
-        self.jsp.get_logger().info("Saving Waypoint to Database")
-
-        db_name = 'my_database.db'
-        joint_states = [
-            {
-                "name":'top_left_abduct',
-                "value":10
-            }
-        ]
-
-        connection = sqlite3.connect(db_name)
-        cursor = connection.cursor()
-        for joint_state in joint_states:
-            cursor.execute('''
-            INSERT INTO data (name, value) VALUES (?,?)
-            ''', (joint_state["name"], joint_state["value"]))
-
-        connection.commit()
-        connection.close()
-
-    def randomizeEvent(self, event):
-        self.jsp.get_logger().info("Randomizing")
-        for name, joint_info in self.joint_map.items():
-            joint = joint_info['joint']
-            joint_info['slider'].setValue(
-                self.valueToSlider(random.uniform(joint['min'], joint['max']), joint))
-
-    def valueToSlider(self, value, joint):
-        return int((value - joint['min']) * float(RANGE) / (joint['max'] - joint['min']))
-
-    def sliderToValue(self, slider, joint):
-        pctvalue = slider / float(RANGE)
-        return joint['min'] + (joint['max']-joint['min']) * pctvalue
-
     def closeEvent(self, event):
         self.running = False
 
@@ -308,7 +245,6 @@ class JointStatePublisherGui(QMainWindow):
 
 def main():
     # Initialize rclpy with the command-line arguments
-    init_db()
     rclpy.init()
 
     # Strip off the ROS 2-specific command-line arguments

@@ -22,7 +22,7 @@ find_package(std_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(pluginlib REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Core Sql)
 
 # QT related setup
 set(CMAKE_AUTOMOC ON)
@@ -38,6 +38,18 @@ include_directories(
 add_library(${PROJECT_NAME} SHARED
   src/hexapod_control_rviz_panel.cpp
   include/hexapod_control/hexapod_control_rviz_panel.hpp  # <-- Add this line
+
+  src/poses_tab.cpp
+  include/hexapod_control/poses_tab.hpp  # <-- Add this line
+
+  src/commands_tab.cpp
+  include/hexapod_control/commands_tab.hpp  # <-- Add this line
+
+  src/warehouse_tab.cpp
+  include/hexapod_control/warehouse_tab.hpp  # <-- Add this line
+
+  src/node_manager.cpp
+  include/hexapod_control/node_manager.hpp  # <-- Add this line
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -57,6 +69,7 @@ ament_target_dependencies(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   Qt5::Widgets
+  Qt5::Sql
 )
 
 # Export plugin description file

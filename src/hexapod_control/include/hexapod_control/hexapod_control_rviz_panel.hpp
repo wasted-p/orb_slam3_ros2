@@ -6,13 +6,39 @@
 #include <rviz_common/panel.hpp>
 #include <std_msgs/msg/string.hpp>
 
+#include <QCheckBox>
 #include <QComboBox>
+#include <QDebug>
+#include <QDoubleSpinBox>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPushButton>
+#include <QSpinBox>
+#include <QSqlQuery>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlError>
+
+#include "hexapod_control/commands_tab.hpp"
+#include "hexapod_control/node_manager.hpp"
+#include "hexapod_control/poses_tab.hpp"
+#include "hexapod_control/warehouse_tab.hpp"
+#include <QComboBox>
+#include <QFileDialog>
+#include <QObject>
+#include <QPushButton>
+#include <QtGlobal>
+#include <QtSql/qsqldatabase.h>
+#include <cstdio>
+#include <memory>
+#include <string>
+
+#include <pluginlib/class_list_macros.hpp>
+#include <std_msgs/msg/string.hpp>
 
 namespace hexapod_control_rviz_plugin {
 
@@ -35,10 +61,9 @@ public:
   // Override from rviz_common::Panel
   void load(const rviz_common::Config &config) override;
 
+  void createWarehouse(const char *dbName);
+
 protected Q_SLOTS:
-  // Button click handlers
-  void onButton1Clicked();
-  void onButton2Clicked();
 
   // Periodic update callback
   void updatePanel();
@@ -46,6 +71,8 @@ protected Q_SLOTS:
 private:
   // ROS node
   rclcpp::Node::SharedPtr node_;
+
+  mutable QSqlDatabase db;
 
   // ROS Publishers
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_command_;
@@ -55,24 +82,17 @@ private:
 
   // Qt UI elements
   QVBoxLayout *main_layout_;
-  QHBoxLayout *buttons_layout_;
-  QLabel *status_label_;
-  QPushButton *button1_;
-  QPushButton *button2_;
-  QLineEdit *text_input_;
-  QComboBox *option_combo_;
-
-  // Update timer
-  QTimer *update_timer_;
-
-  // Track status messages
-  std::string last_status_msg_;
+  // New UI Elements for MoveIt2 Panel
+  QTabWidget *main_tab_widget_;
+  // MotionPlanning Tab
+  PosesTab *poses_tab;
+  WarehouseTab *warehouse_tab;
+  CommandsTab *commands_tab;
 
   // Helper methods
   void setupUi();
   void setupROS();
   void subscribeToTopics();
-  void publishCommand(const std::string &command);
 
   // Callback for status messages
   void statusCallback(const std_msgs::msg::String::SharedPtr msg);

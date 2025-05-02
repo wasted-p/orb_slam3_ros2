@@ -10,8 +10,11 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtGlobal>
+#include <qabstractitemmodel.h>
+#include <qtablewidget.h>
 #include <qwidget.h>
 #include <rclcpp/node.hpp>
+#include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <QDebug>
@@ -27,7 +30,7 @@ public:
   explicit PosesTab(QWidget *parent = nullptr);
 
 private slots:
-  void onCreateButtonClicked();
+  void onAddButtonClicked();
   void onDeleteButtonClicked();
   void onSaveButtonClicked();
   void onMoveUpButtonClicked();
@@ -35,7 +38,7 @@ private slots:
 
 private:
   QTableWidget *table_;
-  QPushButton *create_button_;
+  QPushButton *add_button_;
   QPushButton *delete_button_;
   QPushButton *save_button_;
   QPushButton *move_up_button_;
@@ -51,9 +54,12 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
       sub_joint_states_;
 
+  // ROS Subscribers
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pub_joint_states_;
+
   void setupTable();
-  void addRow(float id = 0.0f, const QString &name = "Pose",
-              float index = 0.0f);
+  void addRow(QMap<QString, QVariant> newPose);
+  void onPoseSelected(QTableWidgetItem *current, QTableWidgetItem *previous);
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
 };
 

@@ -42,20 +42,13 @@ void HexapodControlRvizPanel::setupUi() {
 
 void HexapodControlRvizPanel::setupROS() {
   node_ = NodeManager::getNode();
-  pub_command_ =
-      node_->create_publisher<std_msgs::msg::String>("panel_commands", 10);
   subscribeToTopics();
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor->add_node(node_);
   std::thread([executor]() { executor->spin(); }).detach();
 }
 
-void HexapodControlRvizPanel::subscribeToTopics() {
-  // sub_status_ = node_->create_subscription<std_msgs::msg::String>(
-  //     "status_updates", 10,
-  //     std::bind(&HexapodControlRvizPanel::statusCallback, this,
-  //               std::placeholders::_1));
-}
+void HexapodControlRvizPanel::subscribeToTopics() {}
 
 void HexapodControlRvizPanel::updatePanel() {
   // Placeholder for panel updates

@@ -1,15 +1,23 @@
 #include "hexapod_control/poses_tab.hpp"
 #include "hexapod_control/warehouse.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include <qabstractitemmodel.h>
 #include <qchar.h>
 #include <qglobal.h>
+#include <qicon.h>
+#include <qlist.h>
 #include <qmap.h>
 #include <qsqlquery.h>
+#include <qtableview.h>
+#include <qtablewidget.h>
 #include <qvariant.h>
+#include <string>
+#include <vector>
 
 PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   // Initialize UI components
   table_ = new QTableWidget(this);
-  create_button_ = new QPushButton("Create", this);
+  add_button_ = new QPushButton("Add", this);
   delete_button_ = new QPushButton("Delete", this);
   save_button_ = new QPushButton("Save", this);
   move_up_button_ = new QPushButton("Move Up", this);
@@ -18,7 +26,7 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   // Setup layout
   QVBoxLayout *layout = new QVBoxLayout(this);
   QHBoxLayout *button_layout = new QHBoxLayout;
-  button_layout->addWidget(create_button_);
+  button_layout->addWidget(add_button_);
   button_layout->addWidget(delete_button_);
   button_layout->addWidget(save_button_);
   button_layout->addWidget(move_up_button_);
@@ -33,12 +41,14 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
       "joint_states", 10,
       std::bind(&PosesTab::jointStateCallback, this, std::placeholders::_1));
 
+  pub_joint_states_ =
+      node_->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
   // Setup table
   setupTable();
 
   // Connect signals
-  connect(create_button_, &QPushButton::clicked, this,
-          &PosesTab::onCreateButtonClicked);
+  connect(add_button_, &QPushButton::clicked, this,
+          &PosesTab::onAddButtonClicked);
   connect(delete_button_, &QPushButton::clicked, this,
           &PosesTab::onDeleteButtonClicked);
   connect(save_button_, &QPushButton::clicked, this,
@@ -47,48 +57,117 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
           &PosesTab::onMoveUpButtonClicked);
   connect(move_down_button_, &QPushButton::clicked, this,
           &PosesTab::onMoveDownButtonClicked);
+  connect(table_, &QTableWidget::currentItemChanged, this,
+          &PosesTab::onPoseSelected);
 }
 
+void PosesTab::onPoseSelected(QTableWidgetItem *current,
+                              QTableWidgetItem *previous) {
+  const int rowIdx = current->row();
+
+  qDebug() << "Row" << rowIdx << "was clicked";
+
+  auto msg = sensor_msgs::msg::JointState();
+  msg.header.stamp = node_->get_clock()->now();
+  for (int column = 0; column < table_->columnCount() - 1; column++) {
+    std::string joint_name =
+        table_->horizontalHeaderItem(column)->text().toStdString();
+    QTableWidgetItem *item = table_->item(rowIdx, column + 1);
+    msg.name.push_back(joint_name);
+    msg.position.push_back(item->text().toDouble());
+    msg.velocity.push_back(0);
+    msg.effort.push_back(0);
+  }
+
+  pub_joint_states_->publish(msg);
+};
 void PosesTab::setupTable() {
-  table_->setColumnCount(3);
-  table_->setHorizontalHeaderLabels({"ID", "Name", "Index"});
+  table_->setColumnCount(22);
+
+  // TODO: Put this in a global variable
+  table_->setHorizontalHeaderLabels({
+      "name",
+      "arm_rotator_joint",
+      "arm_abductor_joint",
+      "arm_retractor_joint",
+      "top_left_rotate_joint",
+      "top_left_abduct_joint",
+      "top_left_retract_joint",
+      "mid_left_rotate_joint",
+      "mid_left_abduct_joint",
+      "mid_left_retract_joint",
+      "bottom_left_rotate_joint",
+      "bottom_left_abduct_joint",
+      "bottom_left_retract_joint",
+      "top_right_rotate_joint",
+      "top_right_abduct_joint",
+      "top_right_retract_joint",
+      "mid_right_rotate_joint",
+      "mid_right_abduct_joint",
+      "mid_right_retract_joint",
+      "bottom_right_rotate_joint",
+      "bottom_right_abduct_joint",
+      "bottom_right_retract_joint",
+  });
   table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
   // Enable editing
-  table_->setEditTriggers(QAbstractItemView::DoubleClicked |
-                          QAbstractItemView::EditKeyPressed);
+  table_->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table_->setSelectionMode(QAbstractItemView::SingleSelection);
+  table_->setEditTriggers(QAbstractItemView::NoEditTriggers); // Make read-only
+  table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
-void PosesTab::addRow(float id, const QString &name, float index) {
+void PosesTab::addRow(QMap<QString, QVariant> newPose) {
   int row = table_->rowCount();
   table_->insertRow(row);
 
-  // ID (editable, float)
-  QTableWidgetItem *id_item = new QTableWidgetItem(QString::number(id));
-  id_item->setData(Qt::EditRole, id); // Store as float
-  table_->setItem(row, 0, id_item);
+  // Iterate through all columns in the table
+  for (int col = 0; col < table_->columnCount(); ++col) {
+    // Get the header text for this column
+    QString headerText = table_->horizontalHeaderItem(col)->text();
 
-  // Name (non-editable, string)
-  QTableWidgetItem *name_item = new QTableWidgetItem(name);
-  table_->setItem(row, 1, name_item);
+    // Check if this key exists in our pose map
+    if (newPose.contains(headerText)) {
+      QVariant value = newPose[headerText];
+      QTableWidgetItem *item = nullptr;
 
-  // Index (editable, float)
-  QTableWidgetItem *index_item = new QTableWidgetItem(QString::number(index));
-  index_item->setData(Qt::EditRole, index); // Store as float
-  table_->setItem(row, 2, index_item);
+      // Handle different data types appropriately
+      if (value.type() == QVariant::String) {
+        item = new QTableWidgetItem(value.toString());
+      } else if (value.type() == QVariant::Double) {
+        // Format doubles to 4 decimal places
+        item = new QTableWidgetItem(QString::number(value.toDouble(), 'f', 4));
+      } else if (value.type() == QVariant::Int ||
+                 value.type() == QVariant::LongLong) {
+        // Handle integer types
+        item = new QTableWidgetItem(QString::number(value.toLongLong()));
+      } else if (value.type() == QVariant::Bool) {
+        // Handle boolean values
+        item = new QTableWidgetItem(value.toBool() ? "True" : "False");
+      } else {
+        // Default fallback for other types
+        item = new QTableWidgetItem(value.toString());
+      }
+
+      // Set the item in the table
+      table_->setItem(row, col, item);
+
+      // Store original value as item data for sorting or other operations
+      item->setData(Qt::UserRole, value);
+    } else {
+      // If the key doesn't exist in our map, add an empty cell
+      table_->setItem(row, col, new QTableWidgetItem(""));
+    }
+  }
+
+  // Automatically adjust row height if needed
+  table_->resizeRowToContents(row);
 }
 
-void PosesTab::onCreateButtonClicked() {
+void PosesTab::onAddButtonClicked() {
   // Add a new row with default values
   const int index = table_->rowCount() + 1.0f;
-  addRow(index, QString("Pose%1").arg(table_->rowCount() + 1), 0.0f);
-
-  auto &conn = WarehouseConnection::getInstance("warehouse.db");
-
-  if (last_joint_msg_ == nullptr) {
-    qDebug() << "No joint state message received yet!";
-    return;
-  }
 
   QMap<QString, QVariant> newPose;
   newPose["name"] = "Pose1";
@@ -97,8 +176,12 @@ void PosesTab::onCreateButtonClicked() {
         (i < last_joint_msg_->position.size() ? last_joint_msg_->position[i]
                                               : 0.0);
   }
+  addRow(newPose);
 
-  conn.insert("pose", newPose);
+  if (last_joint_msg_ == nullptr) {
+    qDebug() << "No joint state message received yet!";
+    return;
+  }
 }
 
 void PosesTab::onDeleteButtonClicked() {
@@ -167,6 +250,7 @@ void PosesTab::onMoveDownButtonClicked() {
       }
     }
   }
+
   // Update selection
   table_->clearSelection();
   for (const auto &range : ranges) {

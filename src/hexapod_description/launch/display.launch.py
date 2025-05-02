@@ -15,7 +15,7 @@ def generate_launch_description():
     robot_description_config = xacro.process_file(xacro_file)
     robot_urdf = robot_description_config.toxml()
 
-    rviz_config_file = os.path.join(share_dir, 'rviz', 'hexapod-pose-planning.rviz')
+    rviz_config_file = os.path.join(share_dir, 'rviz', 'hexapod.rviz')
 
     gui_arg = DeclareLaunchArgument(
         name='gui',

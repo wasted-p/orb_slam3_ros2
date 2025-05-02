@@ -50,6 +50,9 @@ add_library(${PROJECT_NAME} SHARED
 
   src/node_manager.cpp
   include/hexapod_control/node_manager.hpp  # <-- Add this line
+
+  src/warehouse.cpp
+  include/hexapod_control/warehouse.hpp  # <-- Add this line
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

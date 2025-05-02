@@ -1,10 +1,13 @@
 #include "hexapod_control/warehouse_tab.hpp"
+#include "hexapod_control/warehouse.hpp"
 #include <QDebug>
 #include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QSqlDatabase>
 #include <qfiledialog.h>
+#include <qglobal.h>
+#include <qlist.h>
 #include <qmessagebox.h>
 
 WarehouseTab::WarehouseTab(QWidget *parent) : QWidget(parent) {
@@ -17,30 +20,30 @@ WarehouseTab::WarehouseTab(QWidget *parent) : QWidget(parent) {
 
   // Database file path input
   QLabel *db_path_label = new QLabel("Database File Path:");
-  QLineEdit *db_path_input = new QLineEdit;
-  db_path_input->setPlaceholderText(
+  QLineEdit *db_path_input_ = new QLineEdit;
+  db_path_input_->setPlaceholderText(
       "Enter or select SQLite database file path");
   layout->addWidget(db_path_label);
-  layout->addWidget(db_path_input);
+  layout->addWidget(db_path_input_);
 
   // Browse button for selecting database file
-  QPushButton *browse_button = new QPushButton("Browse...");
-  layout->addWidget(browse_button);
+  QPushButton *browse_button_ = new QPushButton("Browse...");
+  layout->addWidget(browse_button_);
 
   // Connect and Disconnect buttons
-  QPushButton *create_button = new QPushButton("Create");
-  QPushButton *connect_button = new QPushButton("Connect");
-  QPushButton *disconnect_button = new QPushButton("Disconnect");
-  disconnect_button->setEnabled(false); // Initially disabled until connected
+  create_button_ = new QPushButton("Create");
+  connect_button_ = new QPushButton("Connect");
+  disconnect_button_ = new QPushButton("Disconnect");
+  disconnect_button_->setEnabled(false); // Initially disabled until connected
   QHBoxLayout *button_layout = new QHBoxLayout;
-  button_layout->addWidget(connect_button);
-  button_layout->addWidget(create_button);
-  button_layout->addWidget(disconnect_button);
+  button_layout->addWidget(connect_button_);
+  button_layout->addWidget(create_button_);
+  button_layout->addWidget(disconnect_button_);
   layout->addLayout(button_layout);
 
   // Status label for connection feedback
-  status_label = new QLabel("Status: Not Connected");
-  layout->addWidget(status_label);
+  status_label_ = new QLabel("Status: Not Connected");
+  layout->addWidget(status_label_);
 
   // Spacer to push content to the top
   layout->addStretch();
@@ -48,7 +51,7 @@ WarehouseTab::WarehouseTab(QWidget *parent) : QWidget(parent) {
   // Setup layout
   // QVBoxLayout *layout = new QVBoxLayout(this);
   // QHBoxLayout *button_layout = new QHBoxLayout;
-  // button_layout->addWidget(create_button_);
+  // button_layout->addWidget(create_button__);
   // button_layout->addWidget(delete_button_);
   // button_layout->addWidget(save_button_);
   // button_layout->addWidget(move_up_button_);
@@ -60,50 +63,59 @@ WarehouseTab::WarehouseTab(QWidget *parent) : QWidget(parent) {
   // Setup table
 
   // Connect signals
-  // connect(create_button_, &QPushButton::clicked, this,
-  //         &WarehouseTab::onCreateButtonClicked);
-  // connect(delete_button_, &QPushButton::clicked, this,
-  //         &WarehouseTab::onDeleteButtonClicked);
-  // connect(save_button_, &QPushButton::clicked, this,
-  //         &WarehouseTab::onSaveButtonClicked);
-  // connect(move_up_button_, &QPushButton::clicked, this,
-  //         &WarehouseTab::onMoveUpButtonClicked);
-  // connect(move_down_button_, &QPushButton::clicked, this,
-  //         &WarehouseTab::onMoveDownButtonClicked);
-  //
-  // // Add a sample row
-  // addRow(1.0f, "Pose1", 0.0f);
+  connect(create_button_, &QPushButton::clicked, this,
+          &WarehouseTab::onCreateButtonClicked);
+
+  connect(connect_button_, &QPushButton::clicked, this,
+          &WarehouseTab::onConnectButtonClicked);
+
+  connect(disconnect_button_, &QPushButton::clicked, this,
+          &WarehouseTab::onDisconnectButtonClicked);
+
+  connect(browse_button_, &QPushButton::clicked, this,
+          &WarehouseTab::onBrowseButtonClicked);
 }
 
 void WarehouseTab::onCreateButtonClicked() {
   // Specify the database path (replace with your desired path)
-  QString dbPath = "/home/theycallmemuzz/Code/hexapod-ros/warehouse.db";
+  QString dbPath =
+      "/home/theycallmemuzz/Code/hexapod-ros/src/hexapod_control/warehouse.db";
 
-  // Create and configure the SQLite database
-  QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "hexapod_connection");
-  db.setDatabaseName(dbPath);
+  auto &conn = WarehouseConnection::getInstance("warehouse.db");
 
-  // Open the database (this creates the file if it doesn't exist)
-  if (!db.open()) {
-    qDebug() << "Failed to create/open database:" << db.lastError().text();
-    return;
-  }
+  QStringList queries = {"CREATE TABLE cycle ("
+                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                         "name TEXT"
+                         ") ",
+                         "CREATE TABLE pose ("
+                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                         "cycle_id INTEGER, "
+                         "name TEXT, "
+                         "arm_rotator_joint REAL,"
+                         "arm_abductor_joint REAL,"
+                         "arm_retractor_joint REAL,"
+                         "top_left_rotate_joint REAL,"
+                         "top_left_abduct_joint REAL,"
+                         "top_left_retract_joint REAL,"
+                         "mid_left_rotate_joint REAL,"
+                         "mid_left_abduct_joint REAL,"
+                         "mid_left_retract_joint REAL,"
+                         "bottom_left_rotate_joint REAL,"
+                         "bottom_left_abduct_joint REAL,"
+                         "bottom_left_retract_joint REAL,"
+                         "top_right_rotate_joint REAL,"
+                         "top_right_abduct_joint REAL,"
+                         "top_right_retract_joint REAL,"
+                         "mid_right_rotate_joint REAL,"
+                         "mid_right_abduct_joint REAL,"
+                         "mid_right_retract_joint REAL,"
+                         "bottom_right_rotate_joint REAL,"
+                         "bottom_right_abduct_joint REAL,"
+                         "bottom_right_retract_joint REAL,"
+                         "FOREIGN KEY(cycle_id) REFERENCES cycle(id)"
+                         ") "};
 
-  qDebug() << "Database created/opened successfully at" << dbPath;
-
-  // Optional: Create a sample table (e.g., for hexapod data)
-  QSqlQuery query(db);
-
-  bool success = query.exec("CREATE TABLE IF NOT EXISTS hexapod_data ("
-                            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                            " data TEXT) ");
-
-  if (!success) {
-    qDebug() << "Failed to create table:" << query.lastError().text();
-  } else {
-    qDebug() << "Table created successfully";
-  }
+  conn.initializeTables(queries);
 
   // Close the database (optional, depending on your needs)
   db.close();
@@ -114,12 +126,12 @@ void WarehouseTab::onBrowseButtonClicked() {
       this, "Select SQLite Database File", "",
       "SQLite Database (*.db *.sqlite *.sqlite3);;All Files (*)");
   if (!file_path.isEmpty()) {
-    db_path_input->setText(file_path);
+    db_path_input_->setText(file_path);
   }
 }
 
 void WarehouseTab::onConnectButtonClicked() {
-  QString db_path = db_path_input->text();
+  QString db_path = db_path_input_->text();
   if (db_path.isEmpty()) {
     QMessageBox::warning(this, "Error", "Please provide a database file path.");
     return;
@@ -128,13 +140,13 @@ void WarehouseTab::onConnectButtonClicked() {
   db.setDatabaseName(db_path);
 
   if (db.open()) {
-    status_label->setText("Status: Connected");
-    connect_button->setEnabled(false);
-    disconnect_button->setEnabled(true);
-    db_path_input->setEnabled(false); // Disable input while connected
-    browse_button->setEnabled(false); // Disable browse while connected
+    status_label_->setText("Status: Connected");
+    connect_button_->setEnabled(false);
+    disconnect_button_->setEnabled(true);
+    db_path_input_->setEnabled(false); // Disable input while connected
+    browse_button_->setEnabled(false); // Disable browse while connected
   } else {
-    status_label->setText("Status: Connection Failed");
+    status_label_->setText("Status: Connection Failed");
     QMessageBox::critical(this, "Error",
                           "Failed to connect to database: " +
                               db.lastError().text());
@@ -143,9 +155,9 @@ void WarehouseTab::onConnectButtonClicked() {
 
 void WarehouseTab::onDisconnectButtonClicked() {
   // db.close();
-  status_label->setText("Status: Not Connected");
-  connect_button->setEnabled(true);
-  disconnect_button->setEnabled(false);
-  db_path_input->setEnabled(true);
-  browse_button->setEnabled(true);
+  status_label_->setText("Status: Not Connected");
+  connect_button_->setEnabled(true);
+  disconnect_button_->setEnabled(false);
+  db_path_input_->setEnabled(true);
+  browse_button_->setEnabled(true);
 }

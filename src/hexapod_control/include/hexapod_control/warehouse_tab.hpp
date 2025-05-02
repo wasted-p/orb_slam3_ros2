@@ -9,9 +9,17 @@
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 
+#include <QDebug>
+#include <QFileDialog>
+#include <QHeaderView>
 #include <QItemDelegate>
-#include <qlabel.h>
-#include <qpushbutton.h>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QtGlobal>
 
 class WarehouseTab : public QWidget {
   Q_OBJECT
@@ -28,11 +36,12 @@ private slots:
   void onDisconnectButtonClicked();
 
 private:
-  QLabel *status_label;
-  QPushButton *connect_button;
-  QPushButton *disconnect_button;
-  QPushButton *db_path_input;
-  QPushButton *browse_button;
+  QLabel *status_label_;
+  QPushButton *connect_button_;
+  QPushButton *create_button_;
+  QPushButton *disconnect_button_;
+  QLineEdit *db_path_input_;
+  QPushButton *browse_button_;
 
   mutable QSqlDatabase db;
 };

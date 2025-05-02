@@ -1,15 +1,19 @@
 #ifndef POSES_TAB_H
 #define POSES_TAB_H
 
+#include "hexapod_control/node_manager.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include <QPushButton>
+#include <QSqlDatabase>
+#include <QSqlError>
 #include <QTableWidget>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QtGlobal>
 #include <qwidget.h>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "hexapod_control/node_manager.hpp"
 #include <QDebug>
 #include <QHeaderView>
 #include <QItemDelegate>
@@ -36,6 +40,9 @@ private:
   QPushButton *save_button_;
   QPushButton *move_up_button_;
   QPushButton *move_down_button_;
+
+  sensor_msgs::msg::JointState::SharedPtr last_joint_msg_ =
+      std::make_shared<sensor_msgs::msg::JointState>();
 
   // ROS node
   rclcpp::Node::SharedPtr node_;

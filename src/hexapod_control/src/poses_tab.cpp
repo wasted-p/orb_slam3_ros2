@@ -1,4 +1,10 @@
 #include "hexapod_control/poses_tab.hpp"
+#include "hexapod_control/warehouse.hpp"
+#include <qchar.h>
+#include <qglobal.h>
+#include <qmap.h>
+#include <qsqlquery.h>
+#include <qvariant.h>
 
 PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   // Initialize UI components
@@ -24,7 +30,7 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   node_ = NodeManager::getNode();
 
   sub_joint_states_ = node_->create_subscription<sensor_msgs::msg::JointState>(
-      "status_updates", 10,
+      "joint_states", 10,
       std::bind(&PosesTab::jointStateCallback, this, std::placeholders::_1));
 
   // Setup table
@@ -41,9 +47,6 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
           &PosesTab::onMoveUpButtonClicked);
   connect(move_down_button_, &QPushButton::clicked, this,
           &PosesTab::onMoveDownButtonClicked);
-
-  // Add a sample row
-  addRow(1.0f, "Pose1", 0.0f);
 }
 
 void PosesTab::setupTable() {
@@ -67,7 +70,6 @@ void PosesTab::addRow(float id, const QString &name, float index) {
 
   // Name (non-editable, string)
   QTableWidgetItem *name_item = new QTableWidgetItem(name);
-  name_item->setFlags(name_item->flags() & ~Qt::ItemIsEditable);
   table_->setItem(row, 1, name_item);
 
   // Index (editable, float)
@@ -78,8 +80,25 @@ void PosesTab::addRow(float id, const QString &name, float index) {
 
 void PosesTab::onCreateButtonClicked() {
   // Add a new row with default values
-  addRow(table_->rowCount() + 1.0f,
-         QString("Pose%1").arg(table_->rowCount() + 1), 0.0f);
+  const int index = table_->rowCount() + 1.0f;
+  addRow(index, QString("Pose%1").arg(table_->rowCount() + 1), 0.0f);
+
+  auto &conn = WarehouseConnection::getInstance("warehouse.db");
+
+  if (last_joint_msg_ == nullptr) {
+    qDebug() << "No joint state message received yet!";
+    return;
+  }
+
+  QMap<QString, QVariant> newPose;
+  newPose["name"] = "Pose1";
+  for (size_t i = 0; i < last_joint_msg_->name.size(); ++i) {
+    newPose[last_joint_msg_->name[i].c_str()] =
+        (i < last_joint_msg_->position.size() ? last_joint_msg_->position[i]
+                                              : 0.0);
+  }
+
+  conn.insert("pose", newPose);
 }
 
 void PosesTab::onDeleteButtonClicked() {
@@ -166,6 +185,7 @@ void PosesTab::jointStateCallback(
   if (!msg->name.empty() && !msg->position.empty()) {
     std::string joint_info =
         "Joint: " + msg->name[0] + " Pos: " + std::to_string(msg->position[0]);
-    // status_m = joint_info;
+
+    last_joint_msg_ = msg;
   }
 }

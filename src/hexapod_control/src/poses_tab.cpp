@@ -350,7 +350,6 @@ void PosesTab::jointStateCallback(
     const sensor_msgs::msg::JointState::SharedPtr msg) {
   if (!msg->name.empty() && !msg->position.empty()) {
     last_joint_msg_ = msg;
-    qDebug() << "Received joint state with" << msg->name.size() << "joints";
   }
 }
 

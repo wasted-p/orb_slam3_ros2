@@ -17,17 +17,6 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 
 
 def generate_launch_description():
-    # Declare launch arguments
-    declared_arguments = [
-        DeclareLaunchArgument(
-            "gui",  # Argument to control if RViz starts automatically
-            default_value="true",
-            description="Start RViz2 automatically with this launch file.",
-        ),
-    ]
-
-    # Initialize arguments and configurations
-    gui = LaunchConfiguration("gui")
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
     # Define paths to package directories
@@ -92,7 +81,6 @@ def generate_launch_description():
         name="rviz2",
         output="screen",
         arguments=["-d", rviz_config_file],
-        condition=IfCondition(gui),
     )
 
     # Control node (ros2_control) for managing controllers

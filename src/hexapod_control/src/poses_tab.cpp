@@ -1,5 +1,6 @@
 #include "hexapod_control/poses_tab.hpp"
 #include "hexapod_control/node_manager.hpp"
+#include "hexapod_control/warehouse.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <QAbstractItemModel>
 #include <QDoubleSpinBox>
@@ -279,17 +280,64 @@ void PosesTab::onDeleteButtonClicked() {
 }
 
 void PosesTab::onSaveButtonClicked() {
-  qDebug() << "Saving poses for cycle:" << cycle_combo_->currentText();
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+
+  // Get current cycle
+  QString currentCycle = cycle_combo_->currentText();
+
+  // Insert or update cycle
+  QMap<QString, QVariant> cycleValues;
+  cycleValues["name"] = currentCycle;
+  if (!db.insert("cycle", cycleValues)) {
+    qDebug() << "Failed to save cycle" << currentCycle;
+    return;
+  }
+
+  // Get the cycle ID
+  QSqlQuery query = db.executeQuery(
+      QString("SELECT id FROM cycle WHERE name = '%1'").arg(currentCycle));
+  if (!query.next()) {
+    qDebug() << "Failed to retrieve cycle ID for" << currentCycle;
+    return;
+  }
+  int cycleId = query.value(0).toInt();
+
+  // Clear existing poses for this cycle
+  if (!db.remove("pose", QString("cycle_id = %1").arg(cycleId))) {
+    qDebug() << "Failed to clear existing poses for cycle" << currentCycle;
+    return;
+  }
+
+  // Insert poses
+  QStringList jointNames;
+  for (int col = 1; col < table_->columnCount(); ++col) {
+    jointNames << table_->horizontalHeaderItem(col)->text();
+  }
+
   for (int row = 0; row < table_->rowCount(); ++row) {
-    QString name = table_->item(row, 0)->text();
-    qDebug() << "Pose:" << name;
+    QMap<QString, QVariant> poseValues;
+    QString poseName = table_->item(row, 0)->text();
+    poseValues["cycle_id"] = cycleId;
+    poseValues["name"] = poseName;
+
+    // Add joint values
     for (int col = 1; col < table_->columnCount(); ++col) {
-      if (QTableWidgetItem *item = table_->item(row, col)) {
-        QString joint = table_->horizontalHeaderItem(col)->text();
-        qDebug() << "  " << joint << ":" << item->text();
-      }
+      QString joint = jointNames[col - 1];
+      QTableWidgetItem *item = table_->item(row, col);
+      double value =
+          item && !item->text().isEmpty() ? item->text().toDouble() : 0.0;
+      poseValues[joint] = value;
+    }
+
+    if (!db.insert("pose", poseValues)) {
+      qDebug() << "Failed to save pose" << poseName << "for cycle"
+               << currentCycle;
+      return;
     }
   }
+
+  qDebug() << "Successfully saved cycle" << currentCycle << "with"
+           << table_->rowCount() << "poses";
 }
 
 void PosesTab::onMoveUpButtonClicked() {

@@ -18,7 +18,6 @@ void HexapodControlRvizPanel::onInitialize() {
 void HexapodControlRvizPanel::setupUi() {
   PosesTab *poses_tab = new PosesTab;
   CommandsTab *commands_tab = new CommandsTab;
-  WarehouseTab *warehouse_tab = new WarehouseTab;
 
   // Main layout
   main_layout_ = new QVBoxLayout;
@@ -32,8 +31,6 @@ void HexapodControlRvizPanel::setupUi() {
 
   // Placeholder for other MotionPlanning sub-tabs
   main_tab_widget_->addTab(poses_tab, "Poses");
-
-  main_tab_widget_->addTab(warehouse_tab, "Warehouse");
 
   main_tab_widget_->addTab(new QWidget, "Cycles");
 

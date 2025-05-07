@@ -1,0 +1,10 @@
+<library path="joystick_control">
+  <class
+    name="joystick_control/JoystickRvizPanel"
+    type="joystick_rviz_panel::JoystickRvizPanel"
+    base_class_type="rviz_common::Panel">
+    <description>
+      An RViz2 panel providing custom controls for robot interaction.
+    </description>
+  </class>
+</library>

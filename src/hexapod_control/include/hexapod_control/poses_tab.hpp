@@ -20,6 +20,19 @@
 #include <QWidget>
 #include <cmath>
 
+#include "hexapod_control/node_manager.hpp"
+#include "hexapod_control/warehouse.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include <QAbstractItemModel>
+#include <QDoubleSpinBox>
+#include <QHeaderView>
+#include <QList>
+#include <QMap>
+#include <QScrollBar>
+#include <QString>
+#include <QVariant>
+#include <string>
+
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "hexapod_control/warehouse.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -49,6 +62,11 @@ public:
                     const QModelIndex &index) const override;
 };
 
+struct JointMapping {
+  QString displayName;
+  QString actualName;
+};
+
 class PosesTab : public QWidget {
   Q_OBJECT
 
@@ -68,10 +86,12 @@ private slots:
   void onPlayButtonClicked();
 
 private:
+  // Struct to map display names to actual joint names
+
   void setupTable();
   void addRow(QMap<QString, QVariant> newPose);
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
-  void publishRowJointStates(int row);
+  void publishRowJointStates(int column);
   void publishInitialJointState();
   void updateTableForCycle(const QString &cycleName);
   void sendJointTrajectory();
@@ -110,6 +130,9 @@ private:
 
   // Flag to track if trajectory is executing
   bool is_trajectory_executing_ = false;
+
+  // Static joint mappings
+  static const QList<JointMapping> jointMappings_;
 };
 
 #endif // POSES_TAB_HPP

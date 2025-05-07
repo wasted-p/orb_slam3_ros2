@@ -29,7 +29,7 @@ void JoystickWidget::paintEvent(QPaintEvent *) {
   // Draw left stick (inner circle, axes 0, 1)
   float left_x = -axes_values_[0] * 20; // Invert X-axis
   float left_y = axes_values_[1] * 20;
-  painter.setBrush(Qt::blue);
+  painter.setBrush(Qt::darkGray);
   painter.drawEllipse(QPointF(60 + left_x, 50 - left_y), 10, 10);
 
   // Draw right joystick (outer circle)
@@ -39,7 +39,7 @@ void JoystickWidget::paintEvent(QPaintEvent *) {
   // Draw right stick (inner circle, axes 2, 3)
   float right_x = -axes_values_[3] * 20; // Invert X-axis, horizontal movement
   float right_y = axes_values_[4] * 20;  // Y-axis, vertical movement
-  painter.setBrush(Qt::blue);
+  painter.setBrush(Qt::darkGray);
   painter.drawEllipse(QPointF(140 + right_x, 50 - right_y), 10, 10);
 }
 
@@ -219,6 +219,7 @@ void JoystickRvizPanel::joyCallback(
     last_status_msg_ = "Joystick input received from subscription";
     joystick_widget_->update(); // Trigger repaint
 
+#if VERBOSITY_LEVEL == 4
     // Print joystick message
     std::stringstream ss;
     ss << "Joy message: axes=[";
@@ -235,6 +236,7 @@ void JoystickRvizPanel::joyCallback(
     }
     ss << "]";
     RCLCPP_INFO(node_->get_logger(), "%s", ss.str().c_str());
+#endif
   }
 }
 

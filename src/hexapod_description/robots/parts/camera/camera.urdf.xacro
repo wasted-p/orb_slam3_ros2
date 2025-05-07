@@ -25,7 +25,7 @@
         <geometry>
           <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="red"/>
+        <material name="dark"/>
       </visual>
       <collision>
         <origin xyz="0.041999 0.020484 -0.080935" rpy="0 0 0"/>
@@ -43,7 +43,7 @@
         <update_rate>60</update_rate>
         <topic>depth_camera/depth/image_raw</topic>
         <frame_id>camera_depth_frame</frame_id>
-        <camera name="sipeed Max A10">
+        <camera name="Sipeed MaixSense A10">
           <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
           <horizontal_fov>1.02974</horizontal_fov>
           <image>

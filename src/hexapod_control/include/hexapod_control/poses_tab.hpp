@@ -20,9 +20,12 @@
 #include <QWidget>
 #include <cmath>
 
+#include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "hexapod_control/warehouse.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "trajectory_msgs/msg/joint_trajectory.hpp"
+#include <rclcpp_action/rclcpp_action.hpp>
 
 // Dialog for entering new cycle name
 class NewCycleDialog : public QDialog {
@@ -62,6 +65,7 @@ private slots:
   void onCellChanged(int row, int column);
   void onCycleChanged(int index);
   void onAddCycleClicked();
+  void onPlayButtonClicked();
 
 private:
   void setupTable();
@@ -70,6 +74,10 @@ private:
   void publishRowJointStates(int row);
   void publishInitialJointState();
   void updateTableForCycle(const QString &cycleName);
+  void sendJointTrajectory();
+  void handleTrajectoryResult(
+      const rclcpp_action::ClientGoalHandle<
+          control_msgs::action::FollowJointTrajectory>::WrappedResult &result);
 
   QTableWidget *table_;
   QPushButton *add_button_;
@@ -79,12 +87,17 @@ private:
   QPushButton *move_down_button_;
   QComboBox *cycle_combo_;
   QPushButton *add_cycle_button_;
+  QPushButton *play_button_;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
       sub_joint_states_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pub_joint_states_;
   sensor_msgs::msg::JointState::SharedPtr last_joint_msg_;
+
+  // Action client for joint trajectory
+  rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
+      trajectory_action_client_;
 
   // Constants for joint angle limits
   const double MIN_ANGLE = -M_PI / 2;
@@ -94,6 +107,9 @@ private:
 
   // Cycle storage: map of cycle name to list of poses
   QMap<QString, QList<QMap<QString, QVariant>>> cycles_;
+
+  // Flag to track if trajectory is executing
+  bool is_trajectory_executing_ = false;
 };
 
 #endif // POSES_TAB_HPP

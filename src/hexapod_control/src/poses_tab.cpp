@@ -78,6 +78,7 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   move_down_button_ = new QPushButton("Move Down", this);
   cycle_combo_ = new QComboBox(this);
   add_cycle_button_ = new QPushButton("+", this);
+  play_button_ = new QPushButton("Play", this);
   angleDelegate_ = new JointAngleDelegate(this);
 
   // Setup layout
@@ -85,6 +86,7 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *cycle_layout = new QHBoxLayout;
   cycle_layout->addWidget(cycle_combo_);
   cycle_layout->addWidget(add_cycle_button_);
+  cycle_layout->addWidget(play_button_);
   QHBoxLayout *button_layout = new QHBoxLayout;
   button_layout->addWidget(add_button_);
   button_layout->addWidget(delete_button_);
@@ -103,6 +105,11 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
       std::bind(&PosesTab::jointStateCallback, this, std::placeholders::_1));
   pub_joint_states_ = node_->create_publisher<sensor_msgs::msg::JointState>(
       "/joint_states", rclcpp::QoS(10).reliable());
+
+  // Initialize trajectory action client
+  trajectory_action_client_ =
+      rclcpp_action::create_client<control_msgs::action::FollowJointTrajectory>(
+          node_, "/legs_joint_trajectory_controller/follow_joint_trajectory");
 
   // Setup table
   setupTable();
@@ -137,6 +144,8 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
           this, &PosesTab::onCycleChanged);
   connect(add_cycle_button_, &QPushButton::clicked, this,
           &PosesTab::onAddCycleClicked);
+  connect(play_button_, &QPushButton::clicked, this,
+          &PosesTab::onPlayButtonClicked);
   connect(table_, &QTableWidget::currentItemChanged, this,
           &PosesTab::onPoseSelected);
   connect(table_, &QTableWidget::cellChanged, this, &PosesTab::onCellChanged);
@@ -393,7 +402,7 @@ void PosesTab::publishRowJointStates(int row) {
     msg.name.push_back(joint.toStdString());
     msg.position.push_back(value);
     msg.velocity.push_back(0.0);
-    msg.effort.push_back(0.0);
+    // msg.effort.push_back(0.0);
   }
 
   pub_joint_states_->publish(msg);
@@ -409,7 +418,7 @@ void PosesTab::publishInitialJointState() {
     msg.name.push_back(joint.toStdString());
     msg.position.push_back(0.0);
     msg.velocity.push_back(0.0);
-    msg.effort.push_back(0.0);
+    // msg.effort.push_back(0.0);
   }
 
   pub_joint_states_->publish(msg);
@@ -442,5 +451,101 @@ void PosesTab::updateTableForCycle(const QString &cycleName) {
   const auto &poses = cycles_[cycleName];
   for (const auto &pose : poses) {
     addRow(pose);
+  }
+}
+
+void PosesTab::onPlayButtonClicked() {
+  if (is_trajectory_executing_) {
+    return;
+  }
+
+  // Set button to loading state
+  is_trajectory_executing_ = true;
+  play_button_->setText("Executing...");
+  play_button_->setEnabled(false);
+
+  sendJointTrajectory();
+}
+
+void PosesTab::sendJointTrajectory() {
+  if (!trajectory_action_client_->wait_for_action_server(
+          std::chrono::seconds(5))) {
+    qDebug() << "Trajectory action server not available";
+    is_trajectory_executing_ = false;
+    play_button_->setText("Play");
+    play_button_->setEnabled(true);
+    return;
+  }
+
+  auto goal_msg = control_msgs::action::FollowJointTrajectory::Goal();
+  auto &trajectory = goal_msg.trajectory;
+
+  // Get current cycle
+  QString currentCycle = cycle_combo_->currentText();
+  const auto &poses = cycles_[currentCycle];
+
+  // Set joint names (excluding arm joints)
+  for (int col = 4; col < table_->columnCount();
+       ++col) { // Start from top_left_rotate_joint
+    QString joint = table_->horizontalHeaderItem(col)->text();
+    trajectory.joint_names.push_back(joint.toStdString());
+  }
+
+  // Create trajectory points from poses
+  double time_from_start = 0.0;
+  const double duration_per_pose = 2.0; // 2 seconds per pose
+
+  for (int row = 0; row < table_->rowCount(); ++row) {
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+
+    // Add positions for leg joints only
+    for (int col = 4; col < table_->columnCount(); ++col) {
+      QTableWidgetItem *item = table_->item(row, col);
+      double value =
+          item && !item->text().isEmpty() ? item->text().toDouble() : 0.0;
+      value = std::clamp(value, MIN_ANGLE, MAX_ANGLE);
+      point.positions.push_back(value);
+    }
+
+    point.velocities.resize(point.positions.size(), 0.0);
+    point.accelerations.resize(point.positions.size(), 0.0);
+    // point.effort.resize(point.positions.size(), 0.0);
+    point.time_from_start = rclcpp::Duration::from_seconds(time_from_start);
+
+    trajectory.points.push_back(point);
+    time_from_start += duration_per_pose;
+  }
+
+  // Send the goal
+  auto send_goal_options = rclcpp_action::Client<
+      control_msgs::action::FollowJointTrajectory>::SendGoalOptions();
+  send_goal_options.result_callback =
+      std::bind(&PosesTab::handleTrajectoryResult, this, std::placeholders::_1);
+
+  trajectory_action_client_->async_send_goal(goal_msg, send_goal_options);
+  qDebug() << "Sent joint trajectory goal with" << trajectory.points.size()
+           << "points";
+}
+
+void PosesTab::handleTrajectoryResult(
+    const rclcpp_action::ClientGoalHandle<
+        control_msgs::action::FollowJointTrajectory>::WrappedResult &result) {
+  is_trajectory_executing_ = false;
+  play_button_->setText("Play");
+  play_button_->setEnabled(true);
+
+  switch (result.code) {
+  case rclcpp_action::ResultCode::SUCCEEDED:
+    qDebug() << "Trajectory execution succeeded";
+    break;
+  case rclcpp_action::ResultCode::ABORTED:
+    qDebug() << "Trajectory execution aborted";
+    break;
+  case rclcpp_action::ResultCode::CANCELED:
+    qDebug() << "Trajectory execution canceled";
+    break;
+  default:
+    qDebug() << "Trajectory execution failed with unknown result code";
+    break;
   }
 }

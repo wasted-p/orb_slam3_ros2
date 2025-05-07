@@ -17,6 +17,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
@@ -65,6 +66,7 @@ ament_target_dependencies(${PROJECT_NAME}
   std_msgs
   trajectory_msgs
   sensor_msgs
+  control_msgs
   rviz_common
   rviz_rendering
   pluginlib

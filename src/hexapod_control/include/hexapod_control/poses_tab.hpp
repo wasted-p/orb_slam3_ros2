@@ -55,6 +55,9 @@ public:
 private slots:
   void onValueChanged(double value);
 
+signals:
+  void commitData(QWidget *editor) const; // Added 'const' to fix error
+
 private:
   PosesTab *posesTab_;
   mutable QDoubleSpinBox *currentEditor_;

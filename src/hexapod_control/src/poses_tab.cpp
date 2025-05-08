@@ -357,7 +357,8 @@ void PosesTab::onAddButtonClicked() {
   WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
   if (!db.insert("pose", newPose)) {
 
-    qDebug() << "Failed to insert pose" << newPose["name"].toString();
+    RCLCPP_DEBUG(node_->get_logger(), "Failed to insert pose %s",
+                 newPose["name"].toString().toStdString().c_str());
     return;
   }
 
@@ -560,7 +561,8 @@ void PosesTab::publishRowJointStates(int col) {
   }
 
   pub_joint_states_->publish(msg);
-  qDebug() << "Published complete joint state for column" << col;
+  RCLCPP_DEBUG(node_->get_logger(),
+               "Published complete joint state for column %d", col);
 }
 
 void PosesTab::publishInitialJointState() {
@@ -574,7 +576,8 @@ void PosesTab::publishInitialJointState() {
   }
 
   pub_joint_states_->publish(msg);
-  qDebug() << "Published initial joint state with all zeros";
+  RCLCPP_DEBUG(node_->get_logger(),
+               "Published initial joint state with all zeros");
 }
 
 void PosesTab::onCycleChanged(int index) {
@@ -592,7 +595,8 @@ void PosesTab::onAddCycleClicked() {
       QMap<QString, QVariant> cycleValues;
       cycleValues["name"] = cycleName;
       if (!db.insert("cycle", cycleValues)) {
-        qDebug() << "Failed to insert cycle" << cycleName;
+        RCLCPP_DEBUG(node_->get_logger(), "Failed to insert cycle %s",
+                     cycleName.toStdString().c_str());
         return;
       }
 
@@ -613,7 +617,7 @@ void PosesTab::onAddCycleClicked() {
 void PosesTab::onDeleteCycleClicked() {
   QString currentCycle = cycle_combo_->currentText();
   if (cycle_combo_->count() <= 1) {
-    qDebug() << "Cannot delete the last cycle";
+    RCLCPP_DEBUG(node_->get_logger(), "Cannot delete the last cycle");
     return;
   }
 
@@ -650,8 +654,9 @@ void PosesTab::onRenameCycleClicked() {
       values["name"] = newCycleName;
       int cycleId = cycleIds_[currentCycle];
       if (!db.update("cycle", values, QString("id = %1").arg(cycleId))) {
-        qDebug() << "Failed to rename cycle" << currentCycle << "to"
-                 << newCycleName;
+        RCLCPP_DEBUG(node_->get_logger(), "Failed to rename cycle %s to %s",
+                     currentCycle.toStdString().c_str(),
+                     newCycleName.toStdString().c_str());
         return;
       }
 
@@ -696,8 +701,8 @@ void PosesTab::updateTableForCycle(const QString &cycleName) {
     addRow(pose, cycles_[cycleName].size() - 1);
   }
 
-  qDebug() << "Loaded" << cycles_[cycleName].size() << "poses for cycle"
-           << cycleName;
+  RCLCPP_DEBUG(node_->get_logger(), "Loaded %d poses for cycle %s",
+               cycles_[cycleName].size(), cycleName.toStdString().c_str());
 }
 
 void PosesTab::onPlayButtonClicked() {
@@ -716,7 +721,7 @@ void PosesTab::onPlayButtonClicked() {
 void PosesTab::sendJointTrajectory() {
   if (!trajectory_action_client_->wait_for_action_server(
           std::chrono::seconds(5))) {
-    qDebug() << "Trajectory action server not available";
+    RCLCPP_DEBUG(node_->get_logger(), "Trajectory action server not available");
     is_trajectory_executing_ = false;
     play_button_->setText("Play");
     play_button_->setEnabled(true);
@@ -774,8 +779,9 @@ void PosesTab::sendJointTrajectory() {
       std::bind(&PosesTab::handleTrajectoryResult, this, std::placeholders::_1);
 
   trajectory_action_client_->async_send_goal(goal_msg, send_goal_options);
-  qDebug() << "Sent joint trajectory goal with" << trajectory.points.size()
-           << "points";
+  RCLCPP_DEBUG(node_->get_logger(),
+               "Sent joint trajectory goal with %zu points",
+               trajectory.points.size());
 }
 
 void PosesTab::handleTrajectoryResult(
@@ -787,16 +793,17 @@ void PosesTab::handleTrajectoryResult(
 
   switch (result.code) {
   case rclcpp_action::ResultCode::SUCCEEDED:
-    qDebug() << "Trajectory execution succeeded";
+    RCLCPP_DEBUG(node_->get_logger(), "Trajectory execution succeeded");
     break;
   case rclcpp_action::ResultCode::ABORTED:
-    qDebug() << "Trajectory execution aborted";
+    RCLCPP_DEBUG(node_->get_logger(), "Trajectory execution aborted");
     break;
   case rclcpp_action::ResultCode::CANCELED:
-    qDebug() << "Trajectory execution canceled";
+    RCLCPP_DEBUG(node_->get_logger(), "Trajectory execution canceled");
     break;
   default:
-    qDebug() << "Trajectory execution failed with unknown result code";
+    RCLCPP_DEBUG(node_->get_logger(),
+                 "Trajectory execution failed with unknown result code");
     break;
   }
 }

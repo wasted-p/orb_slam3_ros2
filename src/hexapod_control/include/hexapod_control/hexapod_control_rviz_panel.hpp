@@ -23,6 +23,7 @@
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlError>
 
+#include "hexapod_control/arm_control_tab.hpp"
 #include "hexapod_control/commands_tab.hpp"
 #include "hexapod_control/node_manager.hpp"
 #include "hexapod_control/poses_tab.hpp"
@@ -86,7 +87,7 @@ private:
   QTabWidget *main_tab_widget_;
   // MotionPlanning Tab
   PosesTab *poses_tab;
-  WarehouseTab *warehouse_tab;
+  ArmControlTab *arm_control_tab;
   CommandsTab *commands_tab;
 
   // Helper methods

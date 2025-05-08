@@ -18,6 +18,7 @@ void HexapodControlRvizPanel::onInitialize() {
 void HexapodControlRvizPanel::setupUi() {
   PosesTab *poses_tab = new PosesTab;
   CommandsTab *commands_tab = new CommandsTab;
+  ArmControlTab *arm_control_tab = new ArmControlTab;
 
   // Main layout
   main_layout_ = new QVBoxLayout;
@@ -30,9 +31,9 @@ void HexapodControlRvizPanel::setupUi() {
   main_tab_widget_->addTab(commands_tab, "Commands");
 
   // Placeholder for other MotionPlanning sub-tabs
-  main_tab_widget_->addTab(poses_tab, "Poses");
+  main_tab_widget_->addTab(poses_tab, "Base");
 
-  main_tab_widget_->addTab(new QWidget, "Cycles");
+  main_tab_widget_->addTab(arm_control_tab, "Arm");
 
   // Add the tab to the main tab widget
 }

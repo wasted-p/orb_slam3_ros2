@@ -27,7 +27,7 @@ def generate_launch_description():
     robot_desc = doc.toprettyxml(indent='  ')
 
     # Set the robot description as a parameter
-    params = {'robot_description': robot_desc}
+    params = {'robot_description': robot_desc, 'use_sim_time': use_sim_time}
 
     # Gazebo spawn entity to load the robot in simulation
     gz_spawn_entity = Node(
@@ -38,6 +38,7 @@ def generate_launch_description():
             '-x', '0.0', '-y', '0.0', '-z', '0.0', '-R', '0.0', '-P', '0.0', '-Y', '0.0',
             '-name', 'hexapod', '-topic', 'robot_description', '-allow_renaming', 'true'
         ],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # RViz configuration file for visualization
@@ -50,13 +51,14 @@ def generate_launch_description():
         name="rviz2",
         output="screen",
         arguments=["-d", rviz_config_file],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # Control node (ros2_control) for managing controllers
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_controllers, {'use_sim_time': False}],
+        parameters=[robot_controllers, {'use_sim_time': use_sim_time}],
         output="both",
     )
 
@@ -65,6 +67,7 @@ def generate_launch_description():
         package="controller_manager",
         executable="spawner",
         arguments=["joint_state_broadcaster"],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # Robot controller spawner node to spawn controllers for robot
@@ -76,7 +79,8 @@ def generate_launch_description():
             "arm_joint_group_position_controller",
             "--param-file", robot_controllers
         ],
-        output="screen"
+        output="screen",
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     # Robot state publisher node to publish the robot state

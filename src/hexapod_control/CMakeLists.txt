@@ -35,25 +35,17 @@ include_directories(
   ${Qt5Widgets_INCLUDE_DIRS}
 )
 
-# Build the plugin library
+file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES CONFIGURE_DEPENDS
+  "src/*.cpp"
+)
+
+file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS CONFIGURE_DEPENDS
+  "include/${PROJECT_NAME}/*.hpp"
+)
+
 add_library(${PROJECT_NAME} SHARED
-  src/hexapod_control_rviz_panel.cpp
-  include/hexapod_control/hexapod_control_rviz_panel.hpp  # <-- Add this line
-
-  src/poses_tab.cpp
-  include/hexapod_control/poses_tab.hpp  # <-- Add this line
-
-  src/commands_tab.cpp
-  include/hexapod_control/commands_tab.hpp  # <-- Add this line
-
-  src/warehouse_tab.cpp
-  include/hexapod_control/warehouse_tab.hpp  # <-- Add this line
-
-  src/node_manager.cpp
-  include/hexapod_control/node_manager.hpp  # <-- Add this line
-
-  src/warehouse.cpp
-  include/hexapod_control/warehouse.hpp  # <-- Add this line
+  ${${PROJECT_NAME}_SOURCES}
+  ${${PROJECT_NAME}_HEADERS}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

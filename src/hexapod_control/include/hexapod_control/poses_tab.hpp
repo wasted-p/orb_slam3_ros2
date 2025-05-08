@@ -20,19 +20,6 @@
 #include <QWidget>
 #include <cmath>
 
-#include "hexapod_control/node_manager.hpp"
-#include "hexapod_control/warehouse.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
-#include <QAbstractItemModel>
-#include <QDoubleSpinBox>
-#include <QHeaderView>
-#include <QList>
-#include <QMap>
-#include <QScrollBar>
-#include <QString>
-#include <QVariant>
-#include <string>
-
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "hexapod_control/warehouse.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -51,20 +38,27 @@ private:
   QLineEdit *nameEdit_;
 };
 
+// Forward declaration
+class PosesTab;
+
 // Custom delegate for joint angle validation using QDoubleSpinBox
 class JointAngleDelegate : public QItemDelegate {
+  Q_OBJECT
 public:
-  JointAngleDelegate(QObject *parent = nullptr);
+  JointAngleDelegate(PosesTab *posesTab, QObject *parent = nullptr);
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
                         const QModelIndex &index) const override;
   void setEditorData(QWidget *editor, const QModelIndex &index) const override;
   void setModelData(QWidget *editor, QAbstractItemModel *model,
                     const QModelIndex &index) const override;
-};
 
-struct JointMapping {
-  QString displayName;
-  QString actualName;
+private slots:
+  void onValueChanged(double value);
+
+private:
+  PosesTab *posesTab_;
+  mutable QDoubleSpinBox *currentEditor_;
+  mutable QModelIndex currentIndex_;
 };
 
 class PosesTab : public QWidget {
@@ -72,41 +66,48 @@ class PosesTab : public QWidget {
 
 public:
   explicit PosesTab(QWidget *parent = nullptr);
+  void publishRowJointStates(int column);
 
 private slots:
   void onAddButtonClicked();
   void onDeleteButtonClicked();
-  void onSaveButtonClicked();
   void onMoveUpButtonClicked();
   void onMoveDownButtonClicked();
   void onPoseSelected(QTableWidgetItem *current, QTableWidgetItem *previous);
   void onCellChanged(int row, int column);
   void onCycleChanged(int index);
   void onAddCycleClicked();
+  void onDeleteCycleClicked();
+  void onRenameCycleClicked();
   void onPlayButtonClicked();
 
 private:
   // Struct to map display names to actual joint names
+  struct JointMapping {
+    QString displayName;
+    QString actualName;
+  };
 
   void setupTable();
-  void addRow(QMap<QString, QVariant> newPose);
+  void addRow(QMap<QString, QVariant> newPose, int index = -1);
   void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
-  void publishRowJointStates(int column);
   void publishInitialJointState();
   void updateTableForCycle(const QString &cycleName);
   void sendJointTrajectory();
   void handleTrajectoryResult(
       const rclcpp_action::ClientGoalHandle<
           control_msgs::action::FollowJointTrajectory>::WrappedResult &result);
+  void updatePoseIndices(const QString &cycleName);
 
   QTableWidget *table_;
   QPushButton *add_button_;
   QPushButton *delete_button_;
-  QPushButton *save_button_;
   QPushButton *move_up_button_;
   QPushButton *move_down_button_;
   QComboBox *cycle_combo_;
   QPushButton *add_cycle_button_;
+  QPushButton *delete_cycle_button_;
+  QPushButton *rename_cycle_button_;
   QPushButton *play_button_;
 
   rclcpp::Node::SharedPtr node_;
@@ -125,13 +126,15 @@ private:
 
   JointAngleDelegate *angleDelegate_;
 
-  // Cycle storage: map of cycle name to list of poses
+  // Cycle storage: map of cycle name to list of poses (each pose includes 'id')
   QMap<QString, QList<QMap<QString, QVariant>>> cycles_;
+  // Map of cycle name to cycle ID
+  QMap<QString, int> cycleIds_;
 
   // Flag to track if trajectory is executing
   bool is_trajectory_executing_ = false;
 
-  // Static joint mappings
+  // Static joint mappings (only leg joints)
   static const QList<JointMapping> jointMappings_;
 };
 

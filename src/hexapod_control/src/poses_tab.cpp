@@ -1,6 +1,7 @@
 #include "hexapod_control/poses_tab.hpp"
+#include "hexapod_control/node_manager.hpp"
 
-// NewCycleDialog Implementation (unchanged)
+// NewCycleDialog Implementation
 NewCycleDialog::NewCycleDialog(QWidget *parent) : QDialog(parent) {
   setWindowTitle("New Cycle");
   QVBoxLayout *layout = new QVBoxLayout(this);
@@ -23,9 +24,9 @@ QString NewCycleDialog::getCycleName() const {
   return nameEdit_->text().trimmed();
 }
 
-// JointAngleDelegate Implementation (unchanged)
-JointAngleDelegate::JointAngleDelegate(QObject *parent)
-    : QItemDelegate(parent) {}
+// JointAngleDelegate Implementation
+JointAngleDelegate::JointAngleDelegate(PosesTab *posesTab, QObject *parent)
+    : QItemDelegate(parent), posesTab_(posesTab), currentEditor_(nullptr) {}
 
 QWidget *JointAngleDelegate::createEditor(QWidget *parent,
                                           const QStyleOptionViewItem &option,
@@ -33,10 +34,19 @@ QWidget *JointAngleDelegate::createEditor(QWidget *parent,
   QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
   editor->setRange(-M_PI / 2, M_PI / 2);
   editor->setDecimals(4);
-  editor->setSingleStep(0.01);
+  editor->setSingleStep(0.05);
   editor->setAlignment(Qt::AlignRight);
   editor->setFocusPolicy(Qt::WheelFocus);
   editor->setFrame(false);
+
+  // Store editor and index for use in onValueChanged
+  currentEditor_ = editor;
+  currentIndex_ = index;
+
+  // Connect valueChanged signal
+  connect(editor, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &JointAngleDelegate::onValueChanged);
+
   return editor;
 }
 
@@ -57,30 +67,42 @@ void JointAngleDelegate::setModelData(QWidget *editor,
   model->setData(index, QString::number(value, 'f', 4), Qt::EditRole);
 }
 
+void JointAngleDelegate::onValueChanged(double value) {
+  if (!currentEditor_ || !posesTab_)
+    return;
+
+  // Update table model immediately
+  emit commitData(currentEditor_);
+  // Publish joint states
+  posesTab_->publishRowJointStates(currentIndex_.column());
+}
+
 // PosesTab Implementation
 PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   // Initialize UI components
   table_ = new QTableWidget(this);
   add_button_ = new QPushButton("Add", this);
   delete_button_ = new QPushButton("Delete", this);
-  save_button_ = new QPushButton("Save", this);
   move_up_button_ = new QPushButton("Move Up", this);
   move_down_button_ = new QPushButton("Move Down", this);
   cycle_combo_ = new QComboBox(this);
   add_cycle_button_ = new QPushButton("+", this);
+  delete_cycle_button_ = new QPushButton("−", this);
+  rename_cycle_button_ = new QPushButton("Rename", this);
   play_button_ = new QPushButton("Play", this);
-  angleDelegate_ = new JointAngleDelegate(this);
+  angleDelegate_ = new JointAngleDelegate(this, this);
 
   // Setup layout
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QHBoxLayout *cycle_layout = new QHBoxLayout;
   cycle_layout->addWidget(cycle_combo_);
   cycle_layout->addWidget(add_cycle_button_);
+  cycle_layout->addWidget(delete_cycle_button_);
+  cycle_layout->addWidget(rename_cycle_button_);
   cycle_layout->addWidget(play_button_);
   QHBoxLayout *button_layout = new QHBoxLayout;
   button_layout->addWidget(add_button_);
   button_layout->addWidget(delete_button_);
-  button_layout->addWidget(save_button_);
   button_layout->addWidget(move_up_button_);
   button_layout->addWidget(move_down_button_);
   main_layout->addLayout(cycle_layout);
@@ -104,13 +126,21 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   // Setup table
   setupTable();
 
-  // Load cycles from database
+  // Initialize database and ensure pose table has pose_index column
   WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
-  QSqlQuery query = db.executeQuery("SELECT name FROM cycle");
+  QStringList createTableQueries;
+  createTableQueries
+      << "ALTER TABLE pose ADD COLUMN pose_index INTEGER DEFAULT 0";
+  db.initializeTables(createTableQueries); // Idempotent if column exists
+
+  // Load cycles from database
+  QSqlQuery query = db.executeQuery("SELECT id, name FROM cycle");
   QStringList cycleNames;
   while (query.next()) {
-    QString cycleName = query.value(0).toString();
+    QString cycleName = query.value("name").toString();
+    int cycleId = query.value("id").toInt();
     cycleNames << cycleName;
+    cycleIds_[cycleName] = cycleId;
     cycles_[cycleName] = QList<QMap<QString, QVariant>>();
   }
 
@@ -118,10 +148,24 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   if (cycleNames.isEmpty()) {
     cycleNames << "base";
     cycles_["base"] = QList<QMap<QString, QVariant>>();
+    QMap<QString, QVariant> cycleValues;
+    cycleValues["name"] = "base";
+    db.insert("cycle", cycleValues);
+    QSqlQuery idQuery = db.executeQuery("SELECT last_insert_rowid()");
+    if (idQuery.next()) {
+      cycleIds_["base"] = idQuery.value(0).toInt();
+    }
     QMap<QString, QVariant> initialPose;
     initialPose["name"] = "InitialPose";
+    initialPose["cycle_id"] = cycleIds_["base"];
+    initialPose["pose_index"] = 0;
     for (const auto &mapping : jointMappings_) {
       initialPose[mapping.actualName] = 0.0;
+    }
+    db.insert("pose", initialPose);
+    QSqlQuery poseIdQuery = db.executeQuery("SELECT last_insert_rowid()");
+    if (poseIdQuery.next()) {
+      initialPose["id"] = poseIdQuery.value(0).toInt();
     }
     cycles_["base"].append(initialPose);
   }
@@ -138,8 +182,6 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
           &PosesTab::onAddButtonClicked);
   connect(delete_button_, &QPushButton::clicked, this,
           &PosesTab::onDeleteButtonClicked);
-  connect(save_button_, &QPushButton::clicked, this,
-          &PosesTab::onSaveButtonClicked);
   connect(move_up_button_, &QPushButton::clicked, this,
           &PosesTab::onMoveUpButtonClicked);
   connect(move_down_button_, &QPushButton::clicked, this,
@@ -148,6 +190,10 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
           this, &PosesTab::onCycleChanged);
   connect(add_cycle_button_, &QPushButton::clicked, this,
           &PosesTab::onAddCycleClicked);
+  connect(delete_cycle_button_, &QPushButton::clicked, this,
+          &PosesTab::onDeleteCycleClicked);
+  connect(rename_cycle_button_, &QPushButton::clicked, this,
+          &PosesTab::onRenameCycleClicked);
   connect(play_button_, &QPushButton::clicked, this,
           &PosesTab::onPlayButtonClicked);
   connect(table_, &QTableWidget::currentItemChanged, this,
@@ -158,11 +204,8 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
   publishInitialJointState();
 }
 
-// Define joint mappings
-const QList<JointMapping> PosesTab::jointMappings_ = {
-    {"Arm Rotator", "arm_rotator_joint"},
-    {"Arm Abductor", "arm_abductor_joint"},
-    {"Arm Retractor", "arm_retractor_joint"},
+// Define joint mappings (only leg joints)
+const QList<PosesTab::JointMapping> PosesTab::jointMappings_ = {
     {"Base Left Top Rotator", "top_left_rotate_joint"},
     {"Base Left Top Abductor", "top_left_abduct_joint"},
     {"Base Left Top Retractor", "top_left_retract_joint"},
@@ -183,12 +226,6 @@ const QList<JointMapping> PosesTab::jointMappings_ = {
     {"Base Right Bottom Retractor", "bottom_right_retract_joint"},
 };
 
-// Multilevel header structure
-struct HeaderLevel {
-  QString name;
-  int span;
-};
-
 void PosesTab::setupTable() {
   // Set row count to number of joints + 1 for name
   table_->setRowCount(jointMappings_.size() + 1);
@@ -202,7 +239,7 @@ void PosesTab::setupTable() {
   }
   table_->setVerticalHeaderLabels(verticalHeaders);
 
-  // Setup multilevel horizontal header
+  // Setup horizontal header
   QHeaderView *header = table_->horizontalHeader();
   header->setSectionsMovable(false);
   header->setSectionResizeMode(QHeaderView::Fixed);
@@ -234,14 +271,17 @@ void PosesTab::setupTable() {
   }
 }
 
-void PosesTab::addRow(QMap<QString, QVariant> newPose) {
-  int col = table_->columnCount();
-  table_->insertColumn(col);
+void PosesTab::addRow(QMap<QString, QVariant> newPose, int index) {
+  int col = (index == -1) ? table_->columnCount() : index;
+  if (index != -1) {
+    table_->insertColumn(col);
+  } else {
+    table_->setColumnCount(table_->columnCount() + 1);
+  }
 
-  // Set pose name
+  // Set pose name (editable)
   QTableWidgetItem *nameItem = new QTableWidgetItem;
   nameItem->setText(newPose["name"].toString());
-  nameItem->setFlags(nameItem->flags() & ~Qt::ItemIsEditable);
   table_->setItem(0, col, nameItem);
 
   // Set joint values
@@ -271,7 +311,11 @@ void PosesTab::addRow(QMap<QString, QVariant> newPose) {
 
   // Store the pose in the current cycle
   QString currentCycle = cycle_combo_->currentText();
-  cycles_[currentCycle].append(newPose);
+  if (index != -1 && index < cycles_[currentCycle].size()) {
+    cycles_[currentCycle].insert(index, newPose);
+  } else {
+    cycles_[currentCycle].append(newPose);
+  }
 
   // Automatically select the new column
   table_->clearSelection();
@@ -282,23 +326,45 @@ void PosesTab::addRow(QMap<QString, QVariant> newPose) {
 void PosesTab::onAddButtonClicked() {
   QMap<QString, QVariant> newPose;
   newPose["name"] = QString("Pose%1").arg(table_->columnCount() + 1);
+  newPose["cycle_id"] = cycleIds_[cycle_combo_->currentText()];
+  newPose["pose_index"] = cycles_[cycle_combo_->currentText()].size();
 
   if (last_joint_msg_ && !last_joint_msg_->name.empty()) {
     for (size_t i = 0; i < last_joint_msg_->name.size(); ++i) {
       QString joint = QString::fromStdString(last_joint_msg_->name[i]);
-      double pos = (i < last_joint_msg_->position.size())
-                       ? last_joint_msg_->position[i]
-                       : 0.0;
-      pos = std::clamp(pos, MIN_ANGLE, MAX_ANGLE);
-      newPose[joint] = pos;
+      // Only include leg joints
+      for (const auto &mapping : jointMappings_) {
+        if (mapping.actualName == joint) {
+          double pos = (i < last_joint_msg_->position.size())
+                           ? last_joint_msg_->position[i]
+                           : 0.0;
+          pos = std::clamp(pos, MIN_ANGLE, MAX_ANGLE);
+          newPose[joint] = pos;
+          break;
+        }
+      }
     }
   }
 
-  // Ensure all joints have values
+  // Ensure all leg joints have values
   for (const auto &mapping : jointMappings_) {
     if (!newPose.contains(mapping.actualName)) {
       newPose[mapping.actualName] = 0.0;
     }
+  }
+
+  // Insert into database
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+  if (!db.insert("pose", newPose)) {
+
+    qDebug() << "Failed to insert pose" << newPose["name"].toString();
+    return;
+  }
+
+  // Fetch pose ID
+  QSqlQuery idQuery = db.executeQuery("SELECT last_insert_rowid()");
+  if (idQuery.next()) {
+    newPose["id"] = idQuery.value(0).toInt();
   }
 
   addRow(newPose);
@@ -307,83 +373,29 @@ void PosesTab::onAddButtonClicked() {
 
 void PosesTab::onDeleteButtonClicked() {
   QString currentCycle = cycle_combo_->currentText();
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
   QList<QTableWidgetSelectionRange> ranges = table_->selectedRanges();
+
   for (auto it = ranges.rbegin(); it != ranges.rend(); ++it) {
     for (int col = it->rightColumn(); col >= it->leftColumn(); --col) {
-      table_->removeColumn(col);
       if (col < cycles_[currentCycle].size()) {
+        int poseId = cycles_[currentCycle][col]["id"].toInt();
+        db.remove("pose", QString("id = %1").arg(poseId));
         cycles_[currentCycle].removeAt(col);
+        table_->removeColumn(col);
       }
     }
   }
-}
 
-void PosesTab::onSaveButtonClicked() {
-  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
-
-  // Get current cycle
-  QString currentCycle = cycle_combo_->currentText();
-
-  // Insert or update cycle
-  QMap<QString, QVariant> cycleValues;
-  cycleValues["name"] = currentCycle;
-  if (!db.insert("cycle", cycleValues)) {
-    qDebug() << "Failed to save cycle" << currentCycle;
-    return;
-  }
-
-  // Get the cycle ID
-  QSqlQuery query = db.executeQuery(
-      QString("SELECT id FROM cycle WHERE name = '%1'").arg(currentCycle));
-  if (!query.next()) {
-    qDebug() << "Failed to retrieve cycle ID for" << currentCycle;
-    return;
-  }
-  int cycleId = query.value(0).toInt();
-
-  // Clear existing poses for this cycle
-  if (!db.remove("pose", QString("cycle_id = %1").arg(cycleId))) {
-    qDebug() << "Failed to clear existing poses for cycle" << currentCycle;
-    return;
-  }
-
-  // Insert poses
-  for (int col = 0; col < table_->columnCount(); ++col) {
-    QMap<QString, QVariant> poseValues;
-    QString poseName = table_->item(0, col)->text();
-    poseValues["cycle_id"] = cycleId;
-    poseValues["name"] = poseName;
-
-    // Add joint values
-    for (int row = 1; row < table_->rowCount(); ++row) {
-      QString displayName = table_->verticalHeaderItem(row)->text();
-      QString actualName;
-      for (const auto &mapping : jointMappings_) {
-        if (mapping.displayName == displayName) {
-          actualName = mapping.actualName;
-          break;
-        }
-      }
-      QTableWidgetItem *item = table_->item(row, col);
-      double value =
-          item && !item->text().isEmpty() ? item->text().toDouble() : 0.0;
-      poseValues[actualName] = value;
-    }
-
-    if (!db.insert("pose", poseValues)) {
-      qDebug() << "Failed to save pose" << poseName << "for cycle"
-               << currentCycle;
-      return;
-    }
-  }
-
-  qDebug() << "Successfully saved cycle" << currentCycle << "with"
-           << table_->columnCount() << "poses";
+  // Update pose indices
+  updatePoseIndices(currentCycle);
 }
 
 void PosesTab::onMoveUpButtonClicked() {
   QString currentCycle = cycle_combo_->currentText();
   QList<QTableWidgetSelectionRange> ranges = table_->selectedRanges();
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+
   for (const auto &range : ranges) {
     if (range.leftColumn() > 0) {
       for (int col = range.leftColumn(); col <= range.rightColumn(); ++col) {
@@ -397,6 +409,9 @@ void PosesTab::onMoveUpButtonClicked() {
       }
     }
   }
+
+  // Update pose indices
+  updatePoseIndices(currentCycle);
 
   table_->clearSelection();
   for (const auto &range : ranges) {
@@ -412,6 +427,8 @@ void PosesTab::onMoveUpButtonClicked() {
 void PosesTab::onMoveDownButtonClicked() {
   QString currentCycle = cycle_combo_->currentText();
   QList<QTableWidgetSelectionRange> ranges = table_->selectedRanges();
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+
   for (auto it = ranges.rbegin(); it != ranges.rend(); ++it) {
     for (int col = it->rightColumn(); col >= it->leftColumn(); --col) {
       if (col < table_->columnCount() - 1) {
@@ -426,6 +443,9 @@ void PosesTab::onMoveDownButtonClicked() {
     }
   }
 
+  // Update pose indices
+  updatePoseIndices(currentCycle);
+
   table_->clearSelection();
   for (const auto &range : ranges) {
     if (range.rightColumn() < table_->columnCount() - 1) {
@@ -434,6 +454,18 @@ void PosesTab::onMoveDownButtonClicked() {
                                    range.bottomRow(), range.rightColumn() + 1),
                                true);
     }
+  }
+}
+
+void PosesTab::updatePoseIndices(const QString &cycleName) {
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+  for (int i = 0; i < cycles_[cycleName].size(); ++i) {
+    QMap<QString, QVariant> &pose = cycles_[cycleName][i];
+    int poseId = pose["id"].toInt();
+    pose["pose_index"] = i;
+    QMap<QString, QVariant> values;
+    values["pose_index"] = i;
+    db.update("pose", values, QString("id = %1").arg(poseId));
   }
 }
 
@@ -452,24 +484,39 @@ void PosesTab::jointStateCallback(
 }
 
 void PosesTab::onCellChanged(int row, int column) {
-  if (row == 0)
-    return;
-
   QTableWidgetItem *item = table_->item(row, column);
   if (!item)
     return;
 
-  bool ok;
-  double value = item->text().toDouble(&ok);
-  if (!ok)
+  QString currentCycle = cycle_combo_->currentText();
+  if (column >= cycles_[currentCycle].size())
     return;
 
-  value = std::clamp(value, MIN_ANGLE, MAX_ANGLE);
-  item->setText(QString::number(value, 'f', 4));
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+  int poseId = cycles_[currentCycle][column]["id"].toInt();
 
-  // Update the pose in the current cycle
-  QString currentCycle = cycle_combo_->currentText();
-  if (column < cycles_[currentCycle].size()) {
+  if (row == 0) {
+    // Handle pose name change
+    QString newName = item->text().trimmed();
+    if (!newName.isEmpty()) {
+      cycles_[currentCycle][column]["name"] = newName;
+      QMap<QString, QVariant> values;
+      values["name"] = newName;
+      db.update("pose", values, QString("id = %1").arg(poseId));
+    } else {
+      // Revert to original name if empty
+      item->setText(cycles_[currentCycle][column]["name"].toString());
+    }
+  } else {
+    // Handle joint angle change
+    bool ok;
+    double value = item->text().toDouble(&ok);
+    if (!ok)
+      return;
+
+    value = std::clamp(value, MIN_ANGLE, MAX_ANGLE);
+    item->setText(QString::number(value, 'f', 4));
+
     QString displayName = table_->verticalHeaderItem(row)->text();
     QString actualName;
     for (const auto &mapping : jointMappings_) {
@@ -479,9 +526,14 @@ void PosesTab::onCellChanged(int row, int column) {
       }
     }
     cycles_[currentCycle][column][actualName] = value;
-  }
 
-  publishRowJointStates(column);
+    // Update database
+    QMap<QString, QVariant> values;
+    values[actualName] = value;
+    db.update("pose", values, QString("id = %1").arg(poseId));
+
+    // Joint state publishing is handled by JointAngleDelegate::onValueChanged
+  }
 }
 
 void PosesTab::publishRowJointStates(int col) {
@@ -535,10 +587,82 @@ void PosesTab::onAddCycleClicked() {
   if (dialog.exec() == QDialog::Accepted) {
     QString cycleName = dialog.getCycleName();
     if (!cycleName.isEmpty() && !cycles_.contains(cycleName)) {
+      WarehouseConnection &db =
+          WarehouseConnection::getInstance("warehouse.db");
+      QMap<QString, QVariant> cycleValues;
+      cycleValues["name"] = cycleName;
+      if (!db.insert("cycle", cycleValues)) {
+        qDebug() << "Failed to insert cycle" << cycleName;
+        return;
+      }
+
+      // Fetch cycle ID
+      QSqlQuery idQuery = db.executeQuery("SELECT last_insert_rowid()");
+      if (idQuery.next()) {
+        cycleIds_[cycleName] = idQuery.value(0).toInt();
+      }
+
       cycles_[cycleName] = QList<QMap<QString, QVariant>>();
       cycle_combo_->addItem(cycleName);
       cycle_combo_->setCurrentText(cycleName);
       updateTableForCycle(cycleName);
+    }
+  }
+}
+
+void PosesTab::onDeleteCycleClicked() {
+  QString currentCycle = cycle_combo_->currentText();
+  if (cycle_combo_->count() <= 1) {
+    qDebug() << "Cannot delete the last cycle";
+    return;
+  }
+
+  WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
+  int cycleId = cycleIds_[currentCycle];
+
+  // Delete poses and cycle from database
+  db.remove("pose", QString("cycle_id = %1").arg(cycleId));
+  db.remove("cycle", QString("id = %1").arg(cycleId));
+
+  // Remove from memory
+  cycles_.remove(currentCycle);
+  cycleIds_.remove(currentCycle);
+
+  // Update UI
+  int currentIndex = cycle_combo_->currentIndex();
+  cycle_combo_->removeItem(currentIndex);
+  if (cycle_combo_->count() > 0) {
+    updateTableForCycle(cycle_combo_->currentText());
+  }
+}
+
+void PosesTab::onRenameCycleClicked() {
+  QString currentCycle = cycle_combo_->currentText();
+  NewCycleDialog dialog(this);
+  dialog.setWindowTitle("Rename Cycle");
+  if (dialog.exec() == QDialog::Accepted) {
+    QString newCycleName = dialog.getCycleName();
+    if (!newCycleName.isEmpty() && !cycles_.contains(newCycleName) &&
+        newCycleName != currentCycle) {
+      WarehouseConnection &db =
+          WarehouseConnection::getInstance("warehouse.db");
+      QMap<QString, QVariant> values;
+      values["name"] = newCycleName;
+      int cycleId = cycleIds_[currentCycle];
+      if (!db.update("cycle", values, QString("id = %1").arg(cycleId))) {
+        qDebug() << "Failed to rename cycle" << currentCycle << "to"
+                 << newCycleName;
+        return;
+      }
+
+      // Update memory
+      cycles_[newCycleName] = cycles_.take(currentCycle);
+      cycleIds_[newCycleName] = cycleIds_.take(currentCycle);
+
+      // Update UI
+      int currentIndex = cycle_combo_->currentIndex();
+      cycle_combo_->setItemText(currentIndex, newCycleName);
+      cycle_combo_->setCurrentText(newCycleName);
     }
   }
 }
@@ -550,28 +674,26 @@ void PosesTab::updateTableForCycle(const QString &cycleName) {
 
   // Get cycle ID
   WarehouseConnection &db = WarehouseConnection::getInstance("warehouse.db");
-  QSqlQuery cycleQuery = db.executeQuery(
-      QString("SELECT id FROM cycle WHERE name = '%1'").arg(cycleName));
-  if (!cycleQuery.next()) {
-    qDebug() << "Cycle" << cycleName << "not found in database";
-    return;
-  }
-  int cycleId = cycleQuery.value(0).toInt();
+  int cycleId = cycleIds_[cycleName];
 
-  // Fetch poses for the cycle
+  // Fetch poses for the cycle, sorted by pose_index
   QSqlQuery poseQuery = db.executeQuery(
-      QString("SELECT * FROM pose WHERE cycle_id = %1").arg(cycleId));
+      QString("SELECT * FROM pose WHERE cycle_id = %1 ORDER BY pose_index")
+          .arg(cycleId));
   while (poseQuery.next()) {
     QMap<QString, QVariant> pose;
+    pose["id"] = poseQuery.value("id").toInt();
     pose["name"] = poseQuery.value("name").toString();
+    pose["cycle_id"] = cycleId;
+    pose["pose_index"] = poseQuery.value("pose_index").toInt();
 
-    // Add joint values
+    // Add leg joint values
     for (const auto &mapping : jointMappings_) {
       pose[mapping.actualName] = poseQuery.value(mapping.actualName).toDouble();
     }
 
     cycles_[cycleName].append(pose);
-    addRow(pose);
+    addRow(pose, cycles_[cycleName].size() - 1);
   }
 
   qDebug() << "Loaded" << cycles_[cycleName].size() << "poses for cycle"
@@ -608,11 +730,9 @@ void PosesTab::sendJointTrajectory() {
   QString currentCycle = cycle_combo_->currentText();
   const auto &poses = cycles_[currentCycle];
 
-  // Set joint names (excluding arm joints)
+  // Set joint names (all are leg joints)
   for (const auto &mapping : jointMappings_) {
-    if (!mapping.actualName.startsWith("arm_")) {
-      trajectory.joint_names.push_back(mapping.actualName.toStdString());
-    }
+    trajectory.joint_names.push_back(mapping.actualName.toStdString());
   }
 
   // Create trajectory points from poses
@@ -622,13 +742,12 @@ void PosesTab::sendJointTrajectory() {
   for (int col = 0; col < table_->columnCount(); ++col) {
     trajectory_msgs::msg::JointTrajectoryPoint point;
 
-    // Add positions for leg joints only
+    // Add positions for leg joints
     for (int row = 1; row < table_->rowCount(); ++row) {
       QString displayName = table_->verticalHeaderItem(row)->text();
       QString actualName;
       for (const auto &mapping : jointMappings_) {
-        if (mapping.displayName == displayName &&
-            !mapping.actualName.startsWith("arm_")) {
+        if (mapping.displayName == displayName) {
           actualName = mapping.actualName;
           QTableWidgetItem *item = table_->item(row, col);
           double value =

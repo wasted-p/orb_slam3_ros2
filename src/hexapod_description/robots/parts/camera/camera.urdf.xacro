@@ -10,29 +10,40 @@
     <joint name="camera_case_mount" type="fixed">
       <xacro:insert_block name="joint_origin"/>
       <parent link="${parent}"/>
+      <child link="camera_case_cover"/>
+    </joint>
+
+    <!-- Joints -->
+    <joint name="camera_mount" type="fixed">
+      <xacro:insert_block name="joint_origin"/>
+      <parent link="${parent}"/>
       <child link="camera_link"/>
     </joint>
 
+
     <!-- Links -->
-    <link name="camera_link">
+    <link name="camera_case_cover">
       <inertial>
         <origin xyz="0.07257325961305607 0.023187735063927437 0.09454807900867684" rpy="0 0 0"/>
         <mass value="0.00672643608404174"/>
         <inertia ixx="1e-06" iyy="2e-06" izz="3e-06" ixy="0.0" iyz="0.0" ixz="0.0"/>
       </inertial>
-      <visual>
-        <origin xyz="-0.18 0.0 0.0285" rpy="0 ${1/2*M_PI} 0"/>
-        <geometry>
-          <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
-        </geometry>
-        <material name="dark"/>
-      </visual>
+    <visual>
+        <origin xyz="-0.185 -0.0275 0.0" rpy="${1/2*M_PI} 0 ${1/2*M_PI}"/>
+      <geometry>
+        <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="dark"/>
+    </visual>
       <collision>
         <origin xyz="0.041999 0.020484 -0.080935" rpy="0 0 0"/>
         <geometry>
           <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
+    </link>
+    <!-- Links -->
+    <link name="camera_link">
     </link>
 
     <!-- Gazebo -->

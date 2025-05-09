@@ -33,7 +33,7 @@
   </xacro:arm>
   <!-- Camera -->
   <xacro:camera parent="arm_retractor">
-    <origin xyz="-0.0125 0.0 0.05" rpy="0 ${-1/2*M_PI} 0"/>
+    <origin xyz="-0.0125 0.0 0.055" rpy="0 ${-1/2*M_PI} ${-1/2*M_PI}"/>
   </xacro:camera>
   <!-- Leg -->
   <xacro:leg parent="base_link" prefix="top_left">

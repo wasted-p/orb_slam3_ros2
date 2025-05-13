@@ -3,8 +3,10 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hexapod">
 
   <xacro:property name="description_package" value="$(find hexapod_description)"/>
+  <xacro:property name="HEXAPOD_HEIGHT" value="0.085"/>
   <xacro:property name="robots" value="${description_package}/robots"/>
   <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"/>
+
   <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"/>
   <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/>
   <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"/>
@@ -25,7 +27,7 @@
   <!--link name="base_footprint"/ -->
   <!-- Base -->
   <xacro:base parent="base_footprint">
-    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+    <origin xyz="0 0 ${HEXAPOD_HEIGHT}" rpy="0 0 0"/>
   </xacro:base>
   <!-- Arm -->
   <xacro:arm parent="base_link">

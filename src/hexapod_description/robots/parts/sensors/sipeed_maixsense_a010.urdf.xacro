@@ -69,7 +69,7 @@
   <sensor name="depth_camera_link" type="depth_camera">
     <always_on>true</always_on>
     <visualize>true</visualize>
-    <update_rate>10</update_rate> <!-- Max FPS according to spec -->
+    <update_rate>100</update_rate> <!-- Max FPS according to spec -->
     <topic>depth_camera/depth/image_raw</topic>
     <gz_frame_id>depth_camera_optical_frame</gz_frame_id>
 

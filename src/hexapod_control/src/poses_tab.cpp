@@ -206,9 +206,9 @@ PosesTab::PosesTab(QWidget *parent) : QWidget(parent) {
 
 // Define joint mappings (only leg joints)
 const QList<PosesTab::JointMapping> PosesTab::jointMappings_ = {
-    {"Base Left Top Rotator", "top_left_rotate_joint"},
-    {"Base Left Top Abductor", "top_left_abduct_joint"},
-    {"Base Left Top Retractor", "top_left_retract_joint"},
+    {"LTA", "top_left_rotate_joint"},
+    {"LTB", "top_left_abduct_joint"},
+    {"LTC", "top_left_retract_joint"},
     {"Base Left Mid Rotator", "mid_left_abduct_joint"},
     {"Base Left Mid Abductor", "mid_left_rotate_joint"},
     {"Base Left Mid Retractor", "mid_left_retract_joint"},

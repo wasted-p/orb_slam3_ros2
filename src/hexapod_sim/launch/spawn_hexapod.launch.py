@@ -7,7 +7,6 @@ from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.actions import Node as RosNode
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
@@ -39,15 +38,6 @@ def generate_launch_description():
             '-x', '0.0', '-y', '0.0', '-z', '0.0', '-R', '0.0', '-P', '0.0', '-Y', '0.0',
             '-name', 'hexapod', '-topic', 'robot_description', '-allow_renaming', 'true'
         ],
-        parameters=[{'use_sim_time': use_sim_time}],
-    )
-
-    static_tf_pub = RosNode(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='camera_tf_bridge',
-        arguments=['0', '0', '0', '0', '0', '0',
-                'depth_camera_link', 'hexapod/arm_retractor/depth_camera_link'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
@@ -99,7 +89,7 @@ def generate_launch_description():
         executable="robot_state_publisher",
         name='robot_state_publisher',
         output="both",
-        parameters=[params],
+        parameters = [{'publish_frequency':50.0,'robot_description': robot_desc, 'use_sim_time': use_sim_time}]
     )
 
     # Event handlers to delay node start orders
@@ -124,10 +114,27 @@ def generate_launch_description():
         )
     )
 
+    point_cloud_node = Node(
+        package='depth_image_proc',
+        executable='point_cloud_xyz_node',
+        name='point_cloud_xyz',
+        remappings=[
+            ('image_rect', '/depth_camera/depth/image_raw'),
+            ('camera_info', '/depth_camera/depth/camera_info'),
+            ('points', '/depth_camera/points')
+        ],
+        parameters=[{'use_sim_time': use_sim_time,
+        'queue_size': 10,                      # Increase queue for better sync buffering
+        'approximate_sync': True,              # Allow approximate timestamps
+                     }],
+        output='screen',
+    )
+
     # Return launch description with hexapod-specific nodes
     return LaunchDescription([
         gz_spawn_entity,
         robot_state_pub_node,
+        point_cloud_node,
         delay_control_node_after_robot_state_publisher,
         robot_controller_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,

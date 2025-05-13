@@ -46,41 +46,42 @@
     <!-- Links -->
     <link name="depth_camera_link">
     <visual>
+
         <origin xyz="0.0 0.0025 0.0" rpy="0 0 0"/>
       <geometry>
+
         <box size="0.01 0.04 0.03"/>
       </geometry>
     </visual>
     </link>
 
     <!-- Gazebo -->
-<gazebo reference="depth_camera_link">
-  <sensor name="depth_camera_link" type="depth_camera">
-    <always_on>true</always_on>
-    <visualize>true</visualize>
-    <update_rate>10</update_rate> <!-- Max FPS according to spec -->
-    <topic>depth_camera/depth/image_raw</topic>
-    <gz_frame_id>depth_camera_link</gz_frame_id>
-
-    <camera name="Sipeed_MaixSense_A010">
-      <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
-      <horizontal_fov>1.0472</horizontal_fov> <!-- Approx. 60 degrees in radians -->
-      <image>
-        <width>100</width>    <!-- As specified: 100x100 depth resolution -->
-        <height>100</height>
-        <format>R_FLOAT32</format> <!-- Float32 is good for depth -->
-      </image>
-      <clip>
-        <near>0.05</near> <!-- Minimum range is 5cm -->
-        <far>3.0</far>    <!-- Max range is 3m -->
-      </clip>
-      <noise>
-        <type>gaussian</type>
-        <mean>0.0</mean>
-        <stddev>0.01</stddev> <!-- Adjusted to simulate real sensor noise -->
-      </noise>
-    </camera>
-  </sensor>
-</gazebo>
+    <gazebo reference="depth_camera_link">
+      <sensor name="depth_camera_link" type="depth_camera">
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>60</update_rate>
+        <topic>depth_camera/depth/image_raw</topic>
+        <frame_id>hexapod/arm_retractor/depth_camera_link</frame_id>
+        <camera name="Sipeed MaixSense A10">
+          <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
+          <horizontal_fov>1.02974</horizontal_fov>
+          <image>
+            <width>1920</width>
+            <height>1080</height>
+            <format>R_FLOAT32</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </gazebo>
   </xacro:macro>
 </robot>

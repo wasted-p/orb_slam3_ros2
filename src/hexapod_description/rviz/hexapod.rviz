@@ -7,7 +7,7 @@ Panels:
         - /RobotModel1
         - /TF1
       Splitter Ratio: 0.5
-    Tree Height: 247
+    Tree Height: 369
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -34,12 +34,6 @@ Panels:
         - /Global Options1
         - /TF1
         - /TF1/Tree1
-        - /TF1/Tree1/base_footprint1
-        - /TF1/Tree1/base_footprint1/base_link1
-        - /TF1/Tree1/base_footprint1/base_link1/arm_base1
-        - /TF1/Tree1/base_footprint1/base_link1/arm_base1/arm_rotator1
-        - /TF1/Tree1/base_footprint1/base_link1/arm_base1/arm_rotator1/arm_abductor1
-        - /TF1/Tree1/base_footprint1/base_link1/arm_base1/arm_rotator1/arm_abductor1/arm_retractor1
       Splitter Ratio: 0.7492957711219788
     Tree Height: 500
   - Class: rviz_common/Transformation
@@ -142,12 +136,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        camera_case_cover:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_link:
+        depth_camera_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -264,9 +253,9 @@ Visualization Manager:
           Value: true
         bottom_right_tibia:
           Value: true
-        camera_case_cover:
+        depth_camera_link:
           Value: true
-        camera_link:
+        hexapod/arm_retractor/depth_camera_link:
           Value: true
         mid_left_cox:
           Value: true
@@ -304,9 +293,7 @@ Visualization Manager:
               arm_rotator:
                 arm_abductor:
                   arm_retractor:
-                    camera_case_cover:
-                      {}
-                    camera_link:
+                    depth_camera_link:
                       {}
             bottom_left_cox:
               bottom_left_femur:
@@ -332,7 +319,42 @@ Visualization Manager:
               top_right_femur:
                 top_right_tibia:
                   {}
+          hexapod/arm_retractor/depth_camera_link:
+            {}
       Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /depth_camera/points
+      Use Fixed Frame: true
+      Use rainbow: true
       Value: true
   Enabled: true
   Global Options:
@@ -395,10 +417,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5203982591629028
+      Pitch: 0.790398120880127
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.6903942823410034
+      Yaw: 0.9853942394256592
     Saved: ~
 Window Geometry:
   Displays:

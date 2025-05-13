@@ -7,6 +7,7 @@ from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch_ros.actions import Node as RosNode
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
@@ -38,6 +39,15 @@ def generate_launch_description():
             '-x', '0.0', '-y', '0.0', '-z', '0.0', '-R', '0.0', '-P', '0.0', '-Y', '0.0',
             '-name', 'hexapod', '-topic', 'robot_description', '-allow_renaming', 'true'
         ],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    static_tf_pub = RosNode(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_tf_bridge',
+        arguments=['0', '0', '0', '0', '0', '0',
+                'depth_camera_link', 'hexapod/arm_retractor/depth_camera_link'],
         parameters=[{'use_sim_time': use_sim_time}],
     )
 

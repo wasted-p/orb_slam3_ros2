@@ -14,6 +14,7 @@
   <xacro:include filename="${robots}/parts/leg/leg.urdf.xacro"/>
   <xacro:include filename="${robots}/parts/camera/camera.urdf.xacro"/>
 
+
   <!-- ================== ARGS ===================== -->
 
   <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
@@ -25,16 +26,12 @@
   <!--link name="base_footprint"/ -->
   <!-- Base -->
   <xacro:base parent="base_footprint">
-    <origin xyz="0 0 0.8" rpy="0 0 0"/>
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
   </xacro:base>
   <!-- Arm -->
   <xacro:arm parent="base_link">
     <origin xyz="0.025588 -0.019423 0.0449" rpy="0 0 0"/>
   </xacro:arm>
-  <!-- Camera -->
-  <xacro:camera parent="arm_retractor">
-    <origin xyz="-0.0125 0.0 0.055" rpy="0 ${-1/2*M_PI} ${-1/2*M_PI}"/>
-  </xacro:camera>
   <!-- Leg -->
   <xacro:leg parent="base_link" prefix="top_left">
     <origin xyz="0.074451 0.046824 0.0297" rpy="0 0 ${-1/4*M_PI}"/>
@@ -59,6 +56,12 @@
   <xacro:leg parent="base_link" prefix="bottom_right">
     <origin xyz="-0.067095 -0.046741 0.0297" rpy="0 0 ${(1-1/4)*M_PI}"/>
   </xacro:leg>
+
+
+  <!-- ================ Camera =============== -->
+  <xacro:camera parent="arm_retractor">
+    <origin xyz="-0.0125 0.0 0.055" rpy="0 ${-1/2*M_PI} ${-1/2*M_PI}"/>
+  </xacro:camera>
 
   <!-- =============== Gazebo =============== -->
   <xacro:hexapod_gazebo/>

@@ -46,7 +46,8 @@ private:
   // ROS
   rclcpp::Node::SharedPtr node_;
 
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+      marker_array_pub_;
 
   // Status tracking
   std::string last_status_msg_;
@@ -56,6 +57,10 @@ private:
   QLabel *status_label_;
   QTableWidget *gait_table_;
   QTimer *update_timer_;
+
+  QStringList positions = {"top_left",    "mid_left",
+                           "bottom_left", "top_right",
+                           "mid_right",   "bottom_right"}; // Gait Editor Table
 
   // Core setup
   void setupUi();
@@ -67,6 +72,7 @@ private:
 
   // Helpers
   void swapRows(int row1, int row2);
+  void updateTableAndMarkers();
 };
 
 } // namespace hexapod_control_rviz_plugin

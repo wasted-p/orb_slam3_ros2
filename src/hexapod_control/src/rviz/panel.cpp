@@ -14,64 +14,58 @@ namespace hexapod_control_rviz_plugin {
 #include <QRegExpValidator>
 #include <QWidget>
 
-class PointInputWidget : public QWidget {
+class PointInputLineEdit : public QLineEdit {
 public:
-  explicit PointInputWidget(QWidget *parent = nullptr) : QWidget(parent) {
-    input_ = new QLineEdit(this);
-    input_->setPlaceholderText("x,y,z");
+  explicit PointInputLineEdit(QWidget *parent = nullptr) : QLineEdit(parent) {
+    setPlaceholderText("x, y, z");
+    setAlignment(Qt::AlignCenter);
+    setStyleSheet("QLineEdit { border: none; }");
+    setText("0.0, 0.0, 0.0");
 
-    // Regex: allows patterns like -1.2,3,0 or 0,0.0,-5
-    QRegExp rx(R"(^\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\s*,\s*-?\d+\.\d+\s*$)");
-    QValidator *validator = new QRegExpValidator(rx, this);
-    input_->setValidator(validator);
-
-    QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0); // clean fit into table
-    layout->addWidget(input_);
-    setLayout(layout);
-    input_->setText("0.0, 0.0, 0.0");
-    input_->setStyleSheet("QLineEdit { border: none; }");
-    input_->setAlignment(Qt::AlignCenter);
-    QLabel *left_bracket = new QLabel("(", this);
-    QLabel *right_bracket = new QLabel(")", this);
-    left_bracket->setStyleSheet("QLabel { font-weight: bold; }");
-    right_bracket->setStyleSheet("QLabel { font-weight: bold; }");
-    layout->addWidget(left_bracket);
-    layout->addWidget(input_);
-    layout->addWidget(right_bracket);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(2); // Optional: adjust spacing between elements
-
-    setLayout(layout);
+    QRegExp rx(
+        R"(^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$)");
+    setValidator(new QRegExpValidator(rx, this));
   }
 
-  QString text() const { return input_->text(); }
-  void setText(const QString &text) { input_->setText(text); }
-  bool getPoint(double &x, double &y, double &z) const {
-    QStringList parts = input_->text().trimmed().split(',', Qt::SkipEmptyParts);
-    if (parts.size() != 3) {
-      return false;
+  void focusOutEvent(QFocusEvent *event) override {
+    QLineEdit::focusOutEvent(event);
+
+    // Attempt to find QTableWidget parent and emit cellChanged manually
+    QWidget *w = this;
+    while (w && !qobject_cast<QTableWidget *>(w)) {
+      w = w->parentWidget();
     }
+
+    if (auto *table = qobject_cast<QTableWidget *>(w)) {
+      for (int row = 0; row < table->rowCount(); ++row) {
+        for (int col = 0; col < table->columnCount(); ++col) {
+          if (table->cellWidget(row, col) == this) {
+            emit table->cellChanged(row, col);
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  bool getPoint(double &x, double &y, double &z) const {
+    QStringList parts = text().trimmed().split(',', Qt::SkipEmptyParts);
+    if (parts.size() != 3)
+      return false;
 
     bool ok1, ok2, ok3;
     x = parts[0].trimmed().toDouble(&ok1);
     y = parts[1].trimmed().toDouble(&ok2);
     z = parts[2].trimmed().toDouble(&ok3);
-
     return ok1 && ok2 && ok3;
   }
 
-  bool setPoint(double x, double y, double z) {
-    QString formatted = QString("%1, %2, %3")
-                            .arg(x, 0, 'f', 2)
-                            .arg(y, 0, 'f', 2)
-                            .arg(z, 0, 'f', 2);
-    input_->setText(formatted);
-    return true;
+  void setPoint(double x, double y, double z) {
+    setText(QString("%1, %2, %3")
+                .arg(x, 0, 'f', 2)
+                .arg(y, 0, 'f', 2)
+                .arg(z, 0, 'f', 2));
   }
-
-private:
-  QLineEdit *input_;
 };
 
 HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
@@ -82,6 +76,21 @@ HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
   // Create a timer for periodic updates
   update_timer_ = new QTimer(this);
   connect(update_timer_, SIGNAL(timeout()), this, SLOT(updatePanel()));
+
+  // Inside your HexapodControlRvizPanel constructor or setupUI method
+  // Inside your HexapodControlRvizPanel constructor or setupUI method
+  connect(gait_table_, &QTableWidget::cellChanged, this,
+          [this](int row, int column) {
+            // Extract updated value from the table for the specific row and
+            // column
+            // double updated_value = getTableDoubleValue(row, column);
+
+            // Update the marker with the new value
+            // updateMarker(row, column, updated_value);
+
+            // After updating the marker, re-publish all the markers
+            updateTableAndMarkers();
+          });
   update_timer_->start(100); // 10Hz update rate
 }
 
@@ -106,14 +115,8 @@ void HexapodControlRvizPanel::setupUi() {
   status_label_ = new QLabel("Status: Initializing...");
   main_layout_->addWidget(status_label_);
 
-  // Gait Editor Table
   gait_table_ = new QTableWidget(0, 6, this);
-  QStringList headers;
-  for (int i = 0; i < 6; ++i) {
-    headers << QString("Leg %1").arg(i + 1);
-    gait_table_->setColumnWidth(i, 100); // for 3 spin boxes side by side
-  }
-  gait_table_->setHorizontalHeaderLabels(headers);
+  gait_table_->setHorizontalHeaderLabels(positions);
   // gait_table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   main_layout_->addWidget(gait_table_);
 
@@ -166,8 +169,9 @@ void HexapodControlRvizPanel::setupUi() {
 void HexapodControlRvizPanel::setupROS() {
   // Create node with unique name
   node_ = std::make_shared<rclcpp::Node>("my_rviz_panel_node");
-  marker_pub_ = node_->create_publisher<visualization_msgs::msg::Marker>(
-      "visualization_marker", 10);
+  marker_array_pub_ =
+      node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+          "point_marker_array", 10);
 
   // Set up subscriptions
   subscribeToTopics();
@@ -270,8 +274,8 @@ void HexapodControlRvizPanel::onLoadGait() {
   gait_table_->insertRow(row);
 
   for (int leg = 0; leg < 6; ++leg) {
-    PointInputWidget *point_widget = new PointInputWidget();
-    gait_table_->setCellWidget(row, leg, point_widget);
+    PointInputLineEdit *line_edit = new PointInputLineEdit();
+    gait_table_->setCellWidget(row, leg, line_edit);
   }
 
   // gait_table_->setRowCount(0);
@@ -293,14 +297,147 @@ void HexapodControlRvizPanel::onLoadGait() {
   // }
 }
 
+#include <tuple> // for std::tie
+
+// Helper: Convert HSV to RGB
+std::tuple<float, float, float> hsvToRgb(float h, float s, float v) {
+  float r, g, b;
+  int i = int(h * 6);
+  float f = h * 6 - i;
+  float p = v * (1 - s);
+  float q = v * (1 - f * s);
+  float t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+  case 0:
+    r = v;
+    g = t;
+    b = p;
+    break;
+  case 1:
+    r = q;
+    g = v;
+    b = p;
+    break;
+  case 2:
+    r = p;
+    g = v;
+    b = t;
+    break;
+  case 3:
+    r = p;
+    g = q;
+    b = v;
+    break;
+  case 4:
+    r = t;
+    g = p;
+    b = v;
+    break;
+  case 5:
+    r = v;
+    g = p;
+    b = q;
+    break;
+  }
+  return {r, g, b};
+}
+
+void HexapodControlRvizPanel::updateTableAndMarkers() {
+  visualization_msgs::msg::MarkerArray marker_array;
+
+  const int LEG_COUNT = 6;
+  int POSE_COUNT = gait_table_->rowCount();
+  int POINT_COUNT = POSE_COUNT * LEG_COUNT;
+
+  for (int leg = 0; leg < LEG_COUNT; ++leg) {
+    for (int row = 0; row < POSE_COUNT; ++row) {
+      double x, y, z;
+      PointInputLineEdit *widget =
+          (PointInputLineEdit *)gait_table_->cellWidget(row, leg);
+      widget->getPoint(x, y, z);
+
+      // Rainbow color based on row index
+      float hue = static_cast<float>(row) / std::max(1, POSE_COUNT - 1);
+      float r, g, b;
+      std::tie(r, g, b) = hsvToRgb(hue, 1.0, 1.0);
+
+      // std::string positions[] = {"top_left", ""}
+      // Sphere marker for point
+      visualization_msgs::msg::Marker marker;
+      // QString frame_id = positions.at(leg) + "_tibia";
+      QString frame_id = positions.at(leg) + "_foot";
+      marker.header.frame_id = frame_id.toStdString();
+      // marker.header.stamp = rclcpp::Clock().now();
+      marker.ns = "hexapod_points";
+      marker.id = row * LEG_COUNT + leg;
+      marker.type = visualization_msgs::msg::Marker::SPHERE;
+      marker.action = visualization_msgs::msg::Marker::ADD;
+      marker.pose.position.x = x;
+      marker.pose.position.y = y;
+      marker.pose.position.z = z;
+      marker.scale.x = 0.015;
+      marker.scale.y = 0.015;
+      marker.scale.z = 0.015;
+      marker.color.r = r;
+      marker.color.g = g;
+      marker.color.b = b;
+      marker.color.a = 1.0;
+
+      marker_array.markers.push_back(marker);
+
+      // Add arrows from previous row to current, if this is not the first row
+      if (row > 0) {
+        double x_prev, y_prev, z_prev;
+        PointInputLineEdit *prev_widget =
+            (PointInputLineEdit *)gait_table_->cellWidget(row - 1, leg);
+        prev_widget->getPoint(x_prev, y_prev, z_prev);
+
+        visualization_msgs::msg::Marker arrow;
+        arrow.header.frame_id = frame_id.toStdString();
+        // arrow.header.stamp = rclcpp::Clock().now();
+        arrow.ns = "hexapod_arrows";
+        arrow.id =
+            100000 + row * LEG_COUNT + leg; // Unique ID separate from spheres
+        arrow.type = visualization_msgs::msg::Marker::ARROW;
+        arrow.action = visualization_msgs::msg::Marker::ADD;
+
+        geometry_msgs::msg::Point p_start, p_end;
+        p_start.x = x_prev;
+        p_start.y = y_prev;
+        p_start.z = z_prev;
+        p_end.x = x;
+        p_end.y = y;
+        p_end.z = z;
+
+        arrow.points.push_back(p_start);
+        arrow.points.push_back(p_end);
+
+        arrow.scale.x = 0.005; // shaft diameter
+        arrow.scale.y = 0.02;  // head diameter
+        arrow.scale.z = 0.03;  // head length
+
+        arrow.color.r = 0.0;
+        arrow.color.g = 1.0;
+        arrow.color.b = 0.0;
+        arrow.color.a = 1.0;
+
+        marker_array.markers.push_back(arrow);
+      }
+    }
+  }
+
+  marker_array_pub_->publish(marker_array);
+}
 void HexapodControlRvizPanel::onAddRow() {
+  visualization_msgs::msg::MarkerArray marker_array;
   int row = gait_table_->rowCount();
   gait_table_->insertRow(row);
 
   for (int leg = 0; leg < 6; ++leg) {
-    PointInputWidget *point_widget = new PointInputWidget();
+    PointInputLineEdit *point_widget = new PointInputLineEdit();
     gait_table_->setCellWidget(row, leg, point_widget);
   }
+  updateTableAndMarkers();
 }
 
 void HexapodControlRvizPanel::onDeleteRow() {
@@ -336,3 +473,6 @@ void HexapodControlRvizPanel::swapRows(int row1, int row2) {
 // Register the panel as a plugin
 PLUGINLIB_EXPORT_CLASS(hexapod_control_rviz_plugin::HexapodControlRvizPanel,
                        rviz_common::Panel)
+
+// PLUGINLIB_EXPORT_CLASS(hexapod_control_rviz_plugin::HexapodControlRvizPanel,
+//                        rviz_common::Panel)

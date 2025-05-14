@@ -24,6 +24,13 @@
       <axis xyz="1.0 0.00011 0.0"/>
       <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
     </joint>
+
+    <joint name="${prefix}_foot_joint" type="fixed">
+      <origin xyz="0.016 0.0 -0.07" rpy="0 0 0"/>
+      <parent link="${prefix}_tibia"/>
+      <child link="${prefix}_foot"/>
+    </joint>
+
     <link name="${prefix}_cox">
       <inertial>
         <origin xyz="0.0012733261090569089 0.014903434394979126 -0.02034582182041162" rpy="0 0 0"/>
@@ -64,6 +71,16 @@
         </geometry>
       </collision>
     </link>
+    <link name="${prefix}_foot">
+      <visual>
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <geometry>
+          <sphere  radius="0.0080"/>
+        </geometry>
+        <material name="dark"/>
+      </visual>
+    </link>
+
     <link name="${prefix}_femur">
       <inertial>
         <origin xyz="-0.015011654934717145 0.020989624323966824 -0.005728252734904802" rpy="0 0 0"/>

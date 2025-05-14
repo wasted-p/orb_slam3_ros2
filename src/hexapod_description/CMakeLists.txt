@@ -48,8 +48,6 @@ install(DIRECTORY meshes/
 install(DIRECTORY materials/
   DESTINATION share/${PROJECT_NAME}/materials)
 
-install(DIRECTORY rviz/
-  DESTINATION share/${PROJECT_NAME}/rviz)
 
 install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch)

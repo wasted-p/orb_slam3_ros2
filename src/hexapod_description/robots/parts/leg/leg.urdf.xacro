@@ -46,7 +46,8 @@
         <material name="PLA"/>
       </visual>
       <collision>
-        <origin xyz="-0.003612 -0.056729 -0.0306" rpy="0 0 0"/>
+        <origin xyz="${'-0.003612 -0.056729 -0.0306' if side =='left' else '0.0035 -0.055 -0.0306'}" 
+          rpy="${'0.0 0.0 0.0' if side == 'left' else '0.0 0.0 ' + str(pi) }"/>
         <geometry>
           <mesh filename="${meshes}/collision/cox_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
@@ -67,7 +68,8 @@
         <material name="PLA"/>
       </visual>
       <collision>
-        <origin xyz="0.005374 -0.126425 0.009767" rpy="0 0 0"/>
+        <origin xyz="${'0.005374 -0.126425 0.009767' if side == 'left' else '0.0275 -0.125 0.01'}" 
+          rpy="0 0 ${0 if side =='left' else pi}"/>
         <geometry>
           <mesh filename="${meshes}/collision/tibia_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
@@ -99,7 +101,8 @@
         <material name="PLA"/>
       </visual>
       <collision>
-        <origin xyz="-0.024549 -0.086729 -0.008796" rpy="0 0 0"/>
+        <origin xyz="${'-0.024549 -0.086729 -0.008796' if side == 'left' else '-0.0035 -0.085 -0.0085'}" 
+          rpy="0.0 0.0 ${0 if side =='left' else pi}"/>
         <geometry>
           <mesh filename="${meshes}/collision/femur_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>

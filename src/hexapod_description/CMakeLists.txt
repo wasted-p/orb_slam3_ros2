@@ -23,10 +23,10 @@ find_package(robot_state_publisher REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-#xacro_add_files(
-#  robots/head_in.urdf.xacro
-#    INSTALL DESTINATION robots
-#)
+xacro_add_files(
+  robots/hexapod.urdf.xacro
+    INSTALL DESTINATION robots
+)
 
 # add_custom_target(urdf ALL COMMAND "ros2" "launch" ${PROJECT_NAME} "wamv_description.launch.py")
 

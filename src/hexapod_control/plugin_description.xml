@@ -1,6 +1,6 @@
 <library path="hexapod_control">
   <class
-    name="hexapod_control/HexapodControlPanel"
+    name="hexapod_control_plugin/HexapodControlPanel"
     type="hexapod_control_rviz_plugin::HexapodControlRvizPanel"
     base_class_type="rviz_common::Panel">
     <description>
@@ -8,6 +8,3 @@
     </description>
   </class>
 </library>
-
-
-PLUGINLIB_EXPORT_CLASS()

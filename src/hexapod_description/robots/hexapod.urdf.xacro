@@ -34,27 +34,27 @@
     <origin xyz="0.025588 -0.019423 0.0449" rpy="0 0 0"/>
   </xacro:arm>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="top_left">
+  <xacro:leg parent="base_link" position="top" side="left">
     <origin xyz="0.074451 0.046824 0.0297" rpy="0 0 ${-1/4*pi}"/>
   </xacro:leg>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="mid_left">
+  <xacro:leg parent="base_link" position="mid" side="left">
     <origin xyz="0.003612 0.056729 0.0306" rpy="0 0 ${0}"/>
   </xacro:leg>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="bottom_left">
+  <xacro:leg parent="base_link" position="bottom" side="left">
     <origin xyz="-0.067095 0.047401 0.0297" rpy="0 0 ${1/4*pi}"/>
   </xacro:leg>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="top_right">
+  <xacro:leg parent="base_link" position="top" side="right">
     <origin xyz="0.075633 -0.046741 0.0297" rpy="0 0 ${(1+1/4)*pi}"/>
   </xacro:leg>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="mid_right">
+  <xacro:leg parent="base_link" position="mid" side="right">
     <origin xyz="0.003574 -0.054899 0.0306" rpy="0 0 ${1*pi}"/>
   </xacro:leg>
   <!-- Leg -->
-  <xacro:leg parent="base_link" prefix="bottom_right">
+  <xacro:leg parent="base_link" position="bottom" side="right">
     <origin xyz="-0.067095 -0.046741 0.0297" rpy="0 0 ${(1-1/4)*pi}"/>
   </xacro:leg>
 

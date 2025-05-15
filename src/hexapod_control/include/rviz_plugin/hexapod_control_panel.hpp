@@ -13,6 +13,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 // #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -45,7 +47,7 @@ protected Q_SLOTS:
 private:
   // ROS
   rclcpp::Node::SharedPtr node_;
-
+  tf2_ros::Buffer::SharedPtr tf_buffer_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       marker_array_pub_;
 
@@ -57,6 +59,7 @@ private:
   QLabel *status_label_;
   QTableWidget *gait_table_;
   QTimer *update_timer_;
+  // tf2_ros::TransformListener tf_listener_;
 
   QStringList positions = {"top_left",    "mid_left",
                            "bottom_left", "top_right",

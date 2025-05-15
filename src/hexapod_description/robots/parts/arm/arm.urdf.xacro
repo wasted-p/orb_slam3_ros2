@@ -41,14 +41,14 @@
       <visual>
         <origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/rotator.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/rotator.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.025676 -0.000576 -0.07485" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/rotator.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/rotator.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
@@ -61,14 +61,14 @@
       <visual>
         <origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/abductor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/abductor.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.040258 -0.001266 -0.088773" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/abductor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/abductor.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
@@ -81,14 +81,14 @@
       <visual>
         <origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/retractor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/retractor.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.039857 -0.001266 -0.135482" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/retractor.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/retractor.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
@@ -101,14 +101,14 @@
       <visual>
         <origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/base.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/base.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.025588 0.019423 -0.0449" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/arm/base.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/base.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>

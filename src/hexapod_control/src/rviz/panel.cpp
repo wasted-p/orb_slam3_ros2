@@ -169,6 +169,7 @@ void HexapodControlRvizPanel::setupUi() {
 void HexapodControlRvizPanel::setupROS() {
   // Create node with unique name
   node_ = std::make_shared<rclcpp::Node>("my_rviz_panel_node");
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   marker_array_pub_ =
       node_->create_publisher<visualization_msgs::msg::MarkerArray>(
           "point_marker_array", 10);
@@ -366,6 +367,7 @@ void HexapodControlRvizPanel::updateTableAndMarkers() {
       visualization_msgs::msg::Marker marker;
       // QString frame_id = positions.at(leg) + "_tibia";
       QString frame_id = positions.at(leg) + "_foot";
+
       marker.header.frame_id = frame_id.toStdString();
       // marker.header.stamp = rclcpp::Clock().now();
       marker.ns = "hexapod_points";

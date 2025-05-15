@@ -1,132 +1,136 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:macro name="leg" params="parent prefix *joint_origin">
+  <xacro:macro name="leg" params="parent position side *joint_origin">
 
     <!-- Joints -->
-    <joint name="${prefix}_rotate_joint" type="revolute">
+    <joint name="${position}_${side}_rotate_joint" type="revolute">
       <xacro:insert_block name="joint_origin"/>
       <parent link="${parent}"/>
-      <child link="${prefix}_cox"/>
+      <child link="${position}_${side}_cox"/>
       <axis xyz="-0.0 0.0 -1.0"/>
       <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
     </joint>
-    <joint name="${prefix}_abduct_joint" type="revolute">
-      <origin xyz="0.020937 0.03 -0.021804" rpy="0 0 0"/>
+    <joint name="${position}_${side}_abduct_joint" type="revolute">
+      <origin xyz="${'0.020937 0.03 -0.021804' if side == 'left' else '0.00775 0.03 -0.021804'}" rpy="0 0 0"/>
       <axis xyz="-1.0 -0.0 -0.0"/>
       <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
-      <parent link="${prefix}_cox"/>
-      <child link="${prefix}_femur"/>
+      <parent link="${position}_${side}_cox"/>
+      <child link="${position}_${side}_femur"/>
     </joint>
-    <joint name="${prefix}_retract_joint" type="revolute">
+    <joint name="${position}_${side}_retract_joint" type="revolute">
       <origin xyz="-0.029923 0.039696 -0.018563" rpy="0 0 0"/>
-      <parent link="${prefix}_femur"/>
-      <child link="${prefix}_tibia"/>
+      <parent link="${position}_${side}_femur"/>
+      <child link="${position}_${side}_tibia"/>
       <axis xyz="1.0 0.00011 0.0"/>
       <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
     </joint>
 
-    <joint name="${prefix}_foot_joint" type="fixed">
-      <origin xyz="0.016 0.0 -0.07" rpy="0 0 0"/>
-      <parent link="${prefix}_tibia"/>
-      <child link="${prefix}_foot"/>
+    <joint name="${position}_${side}_foot_joint" type="fixed">
+      <origin xyz="0.016 0.0 -0.07"  rpi="${'0 0 ' + str(pi/2) if side == 'left' else '0 0 0'}"/>
+      <parent link="${position}_${side}_tibia"/>
+      <child link="${position}_${side}_foot"/>
     </joint>
 
-    <link name="${prefix}_cox">
+    <link name="${position}_${side}_cox">
       <inertial>
         <origin xyz="0.0012733261090569089 0.014903434394979126 -0.02034582182041162" rpy="0 0 0"/>
         <mass value="0.01391683496290758"/>
         <inertia ixx="3e-06" iyy="4e-06" izz="3e-06" ixy="-0.0" iyz="0.0" ixz="0.0"/>
       </inertial>
       <visual>
-        <origin xyz="-0.003612 -0.056729 -0.0306" rpy="0 0 0"/>
+        <origin xyz="${'-0.003612 -0.056729 -0.0306' if side =='left' else '0.0035 -0.055 -0.0306'}" 
+          rpy="${'0.0 0.0 0.0' if side == 'left' else '0.0 0.0 ' + str(pi) }"/>
         <geometry>
-          <mesh filename="${meshes}/leg/cox_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/cox_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.003612 -0.056729 -0.0306" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/leg/cox_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/cox_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
-    <link name="${prefix}_tibia">
+    <link name="${position}_${side}_tibia">
       <inertial>
         <origin xyz="0.015589179677926173 0.010695585608516162 -0.0223992522730315" rpy="0 0 0"/>
         <mass value="0.012279438354877548"/>
         <inertia ixx="5e-06" iyy="6e-06" izz="2e-06" ixy="0.0" iyz="-1e-06" ixz="0.0"/>
       </inertial>
       <visual>
-        <origin xyz="0.005374 -0.126425 0.009767" rpy="0 0 0"/>
+        <origin xyz="${'0.005374 -0.126425 0.009767' if side == 'left' else '0.0275 -0.125 0.01'}" 
+          rpy="0 0 ${0 if side =='left' else pi}"/>
         <geometry>
-          <mesh filename="${meshes}/leg/tibia_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/tibia_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="0.005374 -0.126425 0.009767" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/leg/tibia_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/tibia_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
-    <link name="${prefix}_foot">
+    <link name="${position}_${side}_foot">
       <visual>
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
         <geometry>
           <sphere  radius="0.0080"/>
         </geometry>
-        <material name="dark"/>
+        <material name="TPU"/>
       </visual>
     </link>
 
-    <link name="${prefix}_femur">
+    <link name="${position}_${side}_femur">
       <inertial>
         <origin xyz="-0.015011654934717145 0.020989624323966824 -0.005728252734904802" rpy="0 0 0"/>
         <mass value="0.018823784549799234"/>
         <inertia ixx="5e-06" iyy="3e-06" izz="5e-06" ixy="0.0" iyz="2e-06" ixz="-0.0"/>
       </inertial>
       <visual>
-        <origin xyz="-0.024549 -0.086729 -0.008796" rpy="0 0 0"/>
+
+        <origin xyz="${'-0.024549 -0.086729 -0.008796' if side == 'left' else '-0.0035 -0.085 -0.0085'}" 
+          rpy="0.0 0.0 ${0 if side =='left' else pi}"/>
         <geometry>
-          <mesh filename="${meshes}/leg/femur_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/visual/femur_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
-        <material name="dark"/>
+        <material name="PLA"/>
       </visual>
       <collision>
         <origin xyz="-0.024549 -0.086729 -0.008796" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/leg/femur_left_mid.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/femur_${side}.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
-    <transmission name="${prefix}_rotate_joint_tran">
+    <transmission name="${position}_${side}_rotate_joint_tran">
       <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${prefix}_rotate_joint">
+      <joint name="${position}_${side}_rotate_joint">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       </joint>
-      <actuator name="${prefix}_rotate_joint_actr">
+      <actuator name="${position}_${side}_rotate_joint_actr">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>
     </transmission>
-    <transmission name="${prefix}_abduct_joint_tran">
+    <transmission name="${position}_${side}_abduct_joint_tran">
       <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${prefix}_abduct_joint">
+      <joint name="${position}_${side}_abduct_joint">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       </joint>
-      <actuator name="${prefix}_abduct_joint_actr">
+      <actuator name="${position}_${side}_abduct_joint_actr">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>
     </transmission>
-    <transmission name="${prefix}_retract_joint_tran">
+    <transmission name="${position}_${side}_retract_joint_tran">
       <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${prefix}_retract_joint">
+      <joint name="${position}_${side}_retract_joint">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       </joint>
-      <actuator name="${prefix}_retract_joint_actr">
+      <actuator name="${position}_${side}_retract_joint_actr">
         <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
         <mechanicalReduction>1</mechanicalReduction>
       </actuator>

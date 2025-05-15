@@ -31,14 +31,14 @@
     <visual>
         <origin xyz="-0.185 -0.0275 0.0" rpy="${1/2*pi} 0 ${1/2*pi}"/>
       <geometry>
-        <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="${meshes}/visual/camera_case_cover.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="dark"/>
+      <material name="PLA"/>
     </visual>
       <collision>
         <origin xyz="0.041999 0.020484 -0.080935" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="${meshes}/sensors/camera/camera.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="${meshes}/collision/camera_case_cover.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
@@ -46,7 +46,7 @@
     <!-- Links -->
     <link name="depth_camera_link">
     <visual>
-        <origin xyz="0.0 0.0025 0.0" rpy="0 0 0"/>
+        <origin xyz="-0.0125 0.0025 -0.0" rpy="0 0 0"/>
       <geometry>
         <box size="0.01 0.04 0.03"/>
       </geometry>

@@ -11,8 +11,15 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
+    # Share Dir
+    share_dir = get_package_share_directory('hexapod_description')
+
     # Define paths to package directories
     pkg_hexapod_description = os.path.join(get_package_share_directory('hexapod_description'))
+
+
+    # RViz config files
+    rviz_config_sim = os.path.join(share_dir, 'config', 'default.rviz')
 
     # Load robot description and controller configurations from files
     robot_controllers = PathJoinSubstitution([
@@ -42,7 +49,7 @@ def generate_launch_description():
     )
 
     # RViz configuration file for visualization
-    rviz_config_file = os.path.join(pkg_hexapod_description, 'rviz', 'hexapod.rviz')
+    rviz_config_file = os.path.join(share_dir, 'config', 'default.rviz')
 
     # RViz node configuration
     rviz_node = Node(

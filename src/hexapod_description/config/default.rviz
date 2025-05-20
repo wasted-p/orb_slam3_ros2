@@ -125,7 +125,11 @@ Visualization Manager:
         bottom_left_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         bottom_left_tibia:
           Alpha: 1
@@ -145,7 +149,11 @@ Visualization Manager:
         bottom_right_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         bottom_right_tibia:
           Alpha: 1
@@ -179,7 +187,11 @@ Visualization Manager:
         mid_left_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         mid_left_tibia:
           Alpha: 1
@@ -199,7 +211,11 @@ Visualization Manager:
         mid_right_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         mid_right_tibia:
           Alpha: 1
@@ -219,7 +235,11 @@ Visualization Manager:
         top_left_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         top_left_tibia:
           Alpha: 1
@@ -239,7 +259,11 @@ Visualization Manager:
         top_right_foot:
           Alpha: 1
           Show Axes: false
+<<<<<<< HEAD
           Show Trail: true
+=======
+          Show Trail: false
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         top_right_tibia:
           Alpha: 1
@@ -432,7 +456,11 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
+<<<<<<< HEAD
       Distance: 0.8851307034492493
+=======
+      Distance: 1.5039329528808594
+>>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

@@ -8,19 +8,20 @@
 // - [ ] Give each control a different color
 // - [ ] Dont show control when joint is not active
 // - [ ] Fix TF and RobotModel warning
-//
-#include "../utils/urdf_parser.cpp"
-#include "kinematics/solver.hpp"
+
+// FIXME: Remove unneeded includes
+// NOTE: Use most performant and appropriate algorithms
+// #include "hexapod_control/msg/show_marker.hpp"
+
+#include "hexapod_msgs/msg/leg_pose.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
-#include <Eigen/src/Core/Matrix.h>
 #include <cmath>
 #include <cstddef>
 #include <geometry_msgs/msg/pose.hpp>
+#include <hexapod_msgs/msg/show_marker.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
-// FIXME: Remove unneeded includes
-// NOTE: Use most performant and appropriate algorithms
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -33,6 +34,8 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_control.hpp>
@@ -106,34 +109,51 @@ private:
 
 public:
   LegControlNode() : Node("leg_control_node") {
+    readRobotDescription();
     initialize();
-    // Declare URDF string paramater
-
-    auto joint_state_msg = sensor_msgs::msg::JointState();
-    joint_state_msg.header.stamp = now(); // or this->now() in a
-    for (int i = 0; i < CHAIN_COUNT; i++) {
-      joint_state_msg.name.insert(joint_state_msg.name.end(),
-                                  {
-                                      leg_positions[i] + "_rotate_joint",
-                                      leg_positions[i] + "_abduct_joint",
-                                      leg_positions[i] + "_retract_joint",
-                                  });
-      joint_state_msg.position.insert(joint_state_msg.position.end(),
-                                      {0, 0, 0});
-    }
-    joint_state_msg.header.frame_id = "base_footprint";
-
-    joint_state_publisher_->publish(joint_state_msg);
-
-    RCLCPP_INFO(this->get_logger(), "Interactive marker server started");
   }
 
 private:
   KDL::Tree kdl_tree_;
   std::string urdf_string;
+  bool robot_description_loaded_ = false;
+
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
+
+  rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr sub_leg_pose_;
+
+  void readRobotDescription() {
+    auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
+        this, "robot_state_publisher");
+
+    auto future = parameters_client->get_parameters({"robot_description"});
+
+    // Wait for parameter with timeout
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(),
+                                           future, std::chrono::seconds(10)) ==
+        rclcpp::FutureReturnCode::SUCCESS) {
+      auto parameters = future.get();
+      if (!parameters.empty() && !parameters[0].as_string().empty()) {
+        urdf_string = parameters[0].as_string();
+        RCLCPP_INFO(this->get_logger(),
+                    "Robot description obtained from robot_state_publisher");
+        if (kdl_parser::treeFromString(urdf_string, kdl_tree_)) {
+          robot_description_loaded_ = true;
+          RCLCPP_INFO(this->get_logger(), "Parsed KDL Tree from URDF");
+        }
+      }
+    }
+
+    setJointPositions(
+        {
+            "top_left_rotate_joint",
+            "top_left_abduct_joint",
+            "top_left_retract_joint",
+        },
+        {0, 0, 0});
+  }
 
   void setupControl(unsigned int idx) {
     PlanningGroup top_left = PlanningGroup(chains_[idx]);
@@ -153,29 +173,21 @@ private:
     // Apply changes to server
     server_->applyChanges();
   }
+  void updateLegPose(const hexapod_msgs::msg::LegPose::SharedPtr msg) {
+    RCLCPP_INFO(get_logger(), "Updating Leg Pose = %s", msg->leg_name.c_str());
+    Eigen::Vector3d position = {msg->position.x, msg->position.y,
+                                msg->position.z};
+    TranslationMarker marker = add6DofControl(position, "base_footprint");
+    marker.name = msg->leg_name;
+  };
   void initialize() {
-    this->declare_parameter<std::string>("robot_description", "");
-
-    if (this->get_parameter("robot_description", urdf_string)) {
-      RCLCPP_INFO(this->get_logger(), "Received URDF of length: %ld",
-                  urdf_string.length());
-    } else {
-      RCLCPP_ERROR(this->get_logger(),
-                   "Failed to get 'robot_description' parameter.");
-    }
-
-    // Parse URDF string to KDL tree
-    if (!kdl_parser::treeFromString(urdf_string, kdl_tree_)) {
-      RCLCPP_ERROR(this->get_logger(),
-                   "Failed to construct KDL tree from URDF");
-      return;
-    } else {
-      RCLCPP_INFO(this->get_logger(), "Constructed KDL Tree from URDf");
-    }
-
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
                                                              rclcpp::QoS(10));
+    // sub_leg_pose_ = create_subscription<hexapod_msgs::msg::LegPose>(
+    //     "/hexapod_control/leg_pose/update", 10,
+    //     std::bind(&LegControlNode::updateLegPose, this,
+    //     std::placeholders::_1));
 
     server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
         "interactive_marker_server", this, rclcpp::QoS(10), rclcpp::QoS(10));
@@ -185,6 +197,8 @@ private:
                          chains_[i]);
       setupControl(i);
     }
+
+    RCLCPP_INFO(this->get_logger(), "Interactive marker server started");
   }
 
   TranslationMarker add6DofControl(Eigen::Vector3d point,
@@ -201,6 +215,18 @@ private:
     return marker;
   }
 
+  void setJointPositions(std::vector<std::string> names,
+                         std::vector<double> positions) {
+
+    sensor_msgs::msg::JointState joint_state_msg =
+        sensor_msgs::msg::JointState();
+    joint_state_msg.header.stamp = get_clock()->now(); // or this->now() in a
+    joint_state_msg.name = names;
+    joint_state_msg.header.frame_id = "base_footprint";
+    joint_state_msg.position = positions;
+
+    joint_state_publisher_->publish(joint_state_msg);
+  }
   void processFeedback(
       unsigned int idx,
       const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
@@ -219,13 +245,13 @@ private:
       break;
 
     case InteractiveMarkerFeedback::POSE_UPDATE: {
-      RCLCPP_INFO(this->get_logger(),
-                  "Marker moved to: position (x: %.2f, y: %.2f, z: %.2f), "
-                  "orientation (w: %.2f, x: %.2f, y: %.2f, z: %.2f)",
-                  feedback->pose.position.x, feedback->pose.position.y,
-                  feedback->pose.position.z, feedback->pose.orientation.w,
-                  feedback->pose.orientation.x, feedback->pose.orientation.y,
-                  feedback->pose.orientation.z);
+      RCLCPP_DEBUG(this->get_logger(),
+                   "Marker moved to: position (x: %.2f, y: %.2f, z: %.2f), "
+                   "orientation (w: %.2f, x: %.2f, y: %.2f, z: %.2f)",
+                   feedback->pose.position.x, feedback->pose.position.y,
+                   feedback->pose.position.z, feedback->pose.orientation.w,
+                   feedback->pose.orientation.x, feedback->pose.orientation.y,
+                   feedback->pose.orientation.z);
 
       PlanningGroup planning_group = PlanningGroup(chains_[idx]);
 
@@ -239,21 +265,17 @@ private:
         RCLCPP_INFO(get_logger(), "Error: %i", status);
         break;
       }
-      auto joint_state_msg = sensor_msgs::msg::JointState();
-      joint_state_msg.header.stamp = now(); // or this->now() in a
-      joint_state_msg.name = {
-          leg_positions[idx] + "_rotate_joint",
-          leg_positions[idx] + "_abduct_joint",
-          leg_positions[idx] + "_retract_joint",
-      };
-      joint_state_msg.header.frame_id = "base_footprint";
-      joint_state_msg.position = joint_positions;
+      setJointPositions(
+          {
+              leg_positions[idx] + "_rotate_joint",
+              leg_positions[idx] + "_abduct_joint",
+              leg_positions[idx] + "_retract_joint",
+          },
+          joint_positions);
 
-      joint_state_publisher_->publish(joint_state_msg);
-
-      RCLCPP_INFO(get_logger(),
-                  "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
-                  joint_positions[0], joint_positions[1], joint_positions[2]);
+      RCLCPP_DEBUG(get_logger(),
+                   "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
+                   joint_positions[0], joint_positions[1], joint_positions[2]);
 
     }
 

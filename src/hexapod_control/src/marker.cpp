@@ -25,8 +25,8 @@ using namespace visualization_msgs::msg;
 class TranslationMarker : public InteractiveMarker {
 
 private:
-  bool fixed = true;
-  bool show_6dof = false;
+  bool fixed = false;
+  bool show_6dof = true;
 
   Marker makeSphereMarker(float size = 0.25) {
     Marker marker;

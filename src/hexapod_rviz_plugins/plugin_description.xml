@@ -1,7 +1,7 @@
-<library path="hexapod_control">
+<library path="hexapod_rviz_plugins">
   <class
-    name="hexapod_control_plugin/HexapodControlRvizPanel"
-    type="hexapod_control_rviz_plugin::HexapodControlRvizPanel"
+    name="hexapod_rviz_plugins/HexapodControlRvizPanel"
+    type="hexapod_rviz_plugins::HexapodControlRvizPanel"
     base_class_type="rviz_common::Panel">
     <description>
       An RViz2 panel providing custom controls for robot interaction.

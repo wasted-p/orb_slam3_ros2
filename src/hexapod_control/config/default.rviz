@@ -1,0 +1,442 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 70
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /RobotModel1
+        - /TF1
+      Splitter Ratio: 0.5
+    Tree Height: 369
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Expanded:
+      - /2D Goal Pose1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: hexapod_control/HexapodControlPanel
+    Name: HexapodControlPanel
+  - Class: joystick_control/JoystickRvizPanel
+    Name: JoystickRvizPanel
+    publisher_mode: false
+  - Class: rviz_common/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /RobotModel1
+        - /TF1
+        - /TF1/Tree1
+        - /MarkerArray1
+        - /MarkerArray1/Topic1
+      Splitter Ratio: 0.7492957711219788
+    Tree Height: 217
+  - Class: rviz_common/Transformation
+    Name: Transformation
+  - Class: hexapod_rviz_plugins/HexapodControlRvizPanel
+    Name: HexapodControlRvizPanel
+    pose0_leg0_x: 0
+    pose0_leg0_y: 0
+    pose0_leg0_z: 0
+    pose0_leg1_x: 0
+    pose0_leg1_y: 0
+    pose0_leg1_z: 0
+    pose0_leg2_x: 0
+    pose0_leg2_y: 0
+    pose0_leg2_z: 0
+    pose0_leg3_x: 0
+    pose0_leg3_y: 0
+    pose0_leg3_z: 0
+    pose0_leg4_x: 0
+    pose0_leg4_y: 0
+    pose0_leg4_z: 0
+    pose0_leg5_x: 0
+    pose0_leg5_y: 0
+    pose0_leg5_z: 0
+    pose_count: 1
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        arm_abductor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_retractor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_rotator:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_left_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_left_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_left_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_left_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_right_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_right_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_right_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bottom_right_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        camera_case_cover:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        depth_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        depth_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        mid_left_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_left_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_left_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_left_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_right_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_right_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_right_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        mid_right_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_left_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_right_cox:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_right_femur:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_right_foot:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        top_right_tibia:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        arm_base:
+          Value: true
+        arm_retractor:
+          Value: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        bottom_left_foot:
+          Value: true
+        bottom_left_tibia:
+          Value: true
+        bottom_right_foot:
+          Value: true
+        bottom_right_tibia:
+          Value: true
+        camera_case_cover:
+          Value: true
+        depth_camera_link:
+          Value: true
+        depth_camera_optical_frame:
+          Value: true
+        mid_left_foot:
+          Value: true
+        mid_left_tibia:
+          Value: true
+        mid_right_foot:
+          Value: true
+        mid_right_tibia:
+          Value: true
+        top_left_foot:
+          Value: true
+        top_left_tibia:
+          Value: true
+        top_right_foot:
+          Value: true
+        top_right_tibia:
+          Value: true
+      Marker Scale: 0.15000000596046448
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        base_footprint:
+          base_link:
+            arm_base:
+              {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /point_marker_array
+      Value: true
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Interactive Markers Namespace: /interactive_marker_server
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: base_footprint
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
+    - Class: rviz_default_plugins/SetInitialPose
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
+    - Class: rviz_default_plugins/PublishPoint
+      Single click: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 1.9567420482635498
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0.052257828414440155
+        Y: -0.04190094769001007
+        Z: -0.007640868425369263
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.9553992748260498
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+      Yaw: 0.4722157418727875
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 964
+  HexapodControlPanel:
+    collapsed: false
+  HexapodControlRvizPanel:
+    collapsed: false
+  Hide Left Dock: false
+  Hide Right Dock: false
+  JoystickRvizPanel:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000019f00000366fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000003f0000016a0000000000000000fb0000000a0049006d0061006700650100000272000000c10000000000000000fb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000031b0000008a0000007e00fffffffb0000000c00430061006d00650072006101000002dd000000c80000000000000000000000010000016500000210fc0200000006fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb000000100044006900730070006c006100790073000000003f0000017d000000cc00fffffffb000000100044006900730070006c006100790073010000003f00000119000000cc00fffffffb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c010000015e000000f1000000e600fffffffb0000000a005600690065007700730000000203000000b6000000a900fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000049000000150fc0100000004fb0000002e00480065007800610070006f00640043006f006e00740072006f006c005200760069007a00500061006e0065006c010000000000000490000000e400fffffffb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c00000000000000031d000000c900fffffffb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003250000021000000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Transformation:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1168
+  X: 734
+  Y: 36

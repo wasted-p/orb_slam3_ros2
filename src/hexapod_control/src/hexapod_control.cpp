@@ -9,6 +9,7 @@
 // - [ ] Dont show control when joint is not active
 // - [ ] Fix TF and RobotModel warning
 //
+#include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -47,11 +48,16 @@ private:
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
   sensor_msgs::msg::JointState joint_state_msg_;
+  hexapod_msgs::msg::LegPose leg_pose_msg_;
   KDL::Tree kdl_tree_;
   std::string urdf_string;
   bool robot_description_loaded_ = false;
   PlanningGroup planning_group;
   rclcpp::TimerBase::SharedPtr timer_;
+  std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
+      joint_state_publisher_;
+  rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_sub_;
 
 public:
   LegControlNode() : Node("leg_control_node") {
@@ -74,7 +80,9 @@ public:
       KDL::Chain chain;
       kdl_tree_.getChain("base_footprint", leg_name + "_foot", chain);
       chains_.insert({leg_name, chain});
-      setupControl(leg_name);
+
+      Eigen::Vector3d rest_pos =
+          planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
       joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
       joint_state_msg_.name.insert(joint_state_msg_.name.cend(),
                                    {
@@ -87,18 +95,57 @@ public:
                                        {
 
                                            0.0, 0.0, 0.0});
+
+      setupControl(leg_name, rest_pos);
     };
   }
 
 private:
   void timer_callback() {
     joint_state_msg_.header.stamp = get_clock()->now();
+
     joint_state_publisher_->publish(joint_state_msg_);
   }
 
-  std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
-      joint_state_publisher_;
+  void leg_pose_callback(const hexapod_msgs::msg::LegPose msg) {
+    leg_pose_msg_ = msg;
+
+    std::vector<double> joint_positions;
+    Eigen::Vector3d position = {msg.position.x, msg.position.y, msg.position.z};
+
+    RCLCPP_DEBUG(get_logger(),
+                 "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
+                 "%.2f, %.2f]",
+                 msg.leg_name.c_str(), msg.position.x, msg.position.y,
+                 msg.position.z);
+
+    int status = planning_group.calculateJntArray(
+        chains_.at(msg.leg_name),
+        {msg.position.x, msg.position.y, msg.position.z}, joint_positions);
+
+    if (status < 0) {
+      RCLCPP_ERROR(get_logger(), "Error %i", status);
+      return;
+    }
+
+    joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
+    joint_state_msg_.name = {
+        msg.leg_name + "_rotate_joint",
+        msg.leg_name + "_abduct_joint",
+        msg.leg_name + "_retract_joint",
+    };
+    joint_state_msg_.header.frame_id = "base_footprint";
+    joint_state_msg_.position = joint_positions;
+
+    RCLCPP_DEBUG(get_logger(),
+                 "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
+                 joint_positions[0], joint_positions[1], joint_positions[2]);
+
+    geometry_msgs::msg::Pose pose;
+    pose.position = msg.position;
+    server_->setPose(msg.leg_name, pose);
+    server_->applyChanges();
+  }
 
   void readRobotDescription() {
     auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -123,15 +170,12 @@ private:
     }
   }
 
-  void setupControl(std::string leg_name) {
-    RCLCPP_INFO(get_logger(),
-                "Setting up %s Interactive Control with joints %d",
-                leg_name.c_str(), chains_.at(leg_name).getNrOfJoints());
+  void setupControl(std::string leg_name, Eigen::Vector3d point) {
+    RCLCPP_DEBUG(get_logger(),
+                 "Setting up %s Interactive Control with joints %d",
+                 leg_name.c_str(), chains_.at(leg_name).getNrOfJoints());
 
-    Eigen::Vector3d rest_pos =
-        planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
-
-    TranslationMarker marker = add6DofControl(rest_pos, "base_footprint");
+    TranslationMarker marker = add6DofControl(point, "base_footprint");
     marker.name = leg_name;
 
     server_->insert(marker);
@@ -151,6 +195,13 @@ private:
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
                                                              rclcpp::QoS(10));
+
+    leg_pose_sub_ = this->create_subscription<hexapod_msgs::msg::LegPose>(
+        "hexapod_control/leg_pose", // topic name
+        10,                         // QoS history depth
+        std::bind(&LegControlNode::leg_pose_callback, this,
+                  std::placeholders::_1));
+
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(100),
         std::bind(&LegControlNode::timer_callback, this));
@@ -177,8 +228,6 @@ private:
     return marker;
   }
 
-  void setJointPositions(std::vector<std::string> names,
-                         std::vector<double> positions) {}
   void processFeedback(
       std::string leg_name,
       const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
@@ -188,12 +237,12 @@ private:
 
       // NOTE: Add coord information like in POSE_UPDATE
     case InteractiveMarkerFeedback::BUTTON_CLICK:
-      RCLCPP_INFO(this->get_logger(), "Button Clicked");
+      RCLCPP_DEBUG(this->get_logger(), "Button Clicked");
       break;
 
     case InteractiveMarkerFeedback::MENU_SELECT:
-      RCLCPP_INFO(this->get_logger(), "Menu Item %d clicked (mo)",
-                  feedback->menu_entry_id);
+      RCLCPP_DEBUG(this->get_logger(), "Menu Item %d clicked (mo)",
+                   feedback->menu_entry_id);
       break;
 
     case InteractiveMarkerFeedback::POSE_UPDATE: {
@@ -205,48 +254,23 @@ private:
                    feedback->pose.orientation.x, feedback->pose.orientation.y,
                    feedback->pose.orientation.z);
 
-      hexapod_msgs::msg::LegPose pose;
-      pose.leg_name = leg_name;
-      pose.position = feedback->pose.position;
-      updateLegPose(pose);
+      leg_pose_msg_.leg_name = leg_name;
+      leg_pose_msg_.position = feedback->pose.position;
     }
 
     break;
 
     case InteractiveMarkerFeedback::MOUSE_DOWN:
-      RCLCPP_INFO(this->get_logger(), ": mouse down .");
+      RCLCPP_DEBUG(this->get_logger(), ": mouse down .");
       break;
 
     case InteractiveMarkerFeedback::MOUSE_UP:
-      RCLCPP_INFO(this->get_logger(), ": mouse up .");
+      RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
       break;
     }
   };
 
-  void updateLegPose(hexapod_msgs::msg::LegPose pose) {
-
-    std::vector<double> joint_positions;
-    int status = planning_group.calculateJntArray(
-        chains_.at(pose.leg_name),
-        {pose.position.x, pose.position.y, pose.position.z}, joint_positions);
-    if (status < 0) {
-      RCLCPP_INFO(get_logger(), "Error: %i", status);
-      return;
-    }
-
-    joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
-    joint_state_msg_.name = {
-        pose.leg_name + "_rotate_joint",
-        pose.leg_name + "_abduct_joint",
-        pose.leg_name + "_retract_joint",
-    };
-    joint_state_msg_.header.frame_id = "base_footprint";
-    joint_state_msg_.position = joint_positions;
-
-    RCLCPP_DEBUG(get_logger(),
-                 "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
-                 joint_positions[0], joint_positions[1], joint_positions[2]);
-  }
+  void updateLegPose(hexapod_msgs::msg::LegPose pose) {}
 };
 
 int main(int argc, char **argv) {

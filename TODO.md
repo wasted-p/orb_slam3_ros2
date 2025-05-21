@@ -1,4 +1,7 @@
-- [ ] Initialize joint state after tf init
-- [ ] Update leg pose via rviz
+- [x] Initialize joint state after tf init
+- [x] Update leg pose via rviz
+- [ ] On change in node, update rviz
+- [ ] Limit input in rviz
+- [ ] Limit input in node
 - [ ] Save pose via rviz and add to gait
-
+- [ ] Replace Eigen::Vector3D references with Pose

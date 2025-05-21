@@ -42,8 +42,8 @@ void HexapodControlRvizPanel::setupUi() {
   // leg_table_->verticalHeader()->setVisible(false);
 
   // Set leg names
-  const QStringList leg_names = {"Leg 1", "Leg 2", "Leg 3",
-                                 "Leg 4", "Leg 5", "Leg 6"};
+  const QStringList leg_names = {"top_left",  "mid_left",  "bottom_left",
+                                 "top_right", "mid_right", "bottom_right"};
   for (int i = 0; i < 6; ++i) {
     // Leg name
     QTableWidgetItem *name_item = new QTableWidgetItem(leg_names[i]);
@@ -112,7 +112,7 @@ void HexapodControlRvizPanel::setupUi() {
 QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
   QDoubleSpinBox *spin_box = new QDoubleSpinBox();
   spin_box->setRange(-100.0, 100.0);
-  spin_box->setSingleStep(0.1);
+  spin_box->setSingleStep(0.005);
   spin_box->setDecimals(3);
   spin_box->setStyleSheet("QDoubleSpinBox { background: transparent; }");
   return spin_box;
@@ -120,7 +120,7 @@ QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
 
 void HexapodControlRvizPanel::setupROS() {
   leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPose>(
-      "hexapod_control/leg_pose/update", 10);
+      "hexapod_control/leg_pose", 10);
 }
 
 void HexapodControlRvizPanel::onPoseChanged() {
@@ -173,6 +173,10 @@ void HexapodControlRvizPanel::updateUIFromCurrentPose() {
       x_spin->blockSignals(false);
       y_spin->blockSignals(false);
       z_spin->blockSignals(false);
+
+      x_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+      y_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
+      z_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
     }
   }
 }
@@ -181,19 +185,16 @@ void HexapodControlRvizPanel::publishCurrentPose() {
   if (current_pose_index_ >= 0 &&
       current_pose_index_ < static_cast<int>(poses_.size())) {
     hexapod_msgs::msg::LegPose msg;
-    // msg.header.stamp = node_->now();
-    // msg.header.frame_id = "base_link";
 
     const HexapodPose &pose = poses_[current_pose_index_];
-    RCLCPP_INFO(node_->get_logger(), "Pose=%.2f,%.2f,%.2f", pose.legs[0].x,
-                pose.legs[0].y, pose.legs[0].z);
+    RCLCPP_DEBUG(node_->get_logger(), "Pose=%.2f,%.2f,%.2f", pose.legs[0].x,
+                 pose.legs[0].y, pose.legs[0].z);
 
     // for (int i = 0; i < 6; ++i) {
-    hexapod_msgs::msg::LegPose leg_pose;
-    leg_pose.leg_name = "top_left";
-    leg_pose.position.x = pose.legs[0].x;
-    leg_pose.position.y = pose.legs[0].y;
-    leg_pose.position.z = pose.legs[0].z;
+    msg.leg_name = "top_left";
+    msg.position.x = pose.legs[0].x;
+    msg.position.y = pose.legs[0].y;
+    msg.position.z = pose.legs[0].z;
     // }
 
     leg_pose_pub_->publish(msg);

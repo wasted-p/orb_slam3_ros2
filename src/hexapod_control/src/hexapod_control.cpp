@@ -8,11 +8,7 @@
 // - [ ] Give each control a different color
 // - [ ] Dont show control when joint is not active
 // - [ ] Fix TF and RobotModel warning
-
-// FIXME: Remove unneeded includes
-// NOTE: Use most performant and appropriate algorithms
-// #include "hexapod_control/msg/show_marker.hpp"
-
+//
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -20,8 +16,14 @@
 #include <cmath>
 #include <cstddef>
 #include <geometry_msgs/msg/pose.hpp>
-#include <hexapod_msgs/msg/show_marker.hpp>
+#include <hexapod_control/planning_group.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
+#include <string>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+// FIXME: Remove unneeded includes
+// NOTE: Use most performant and appropriate algorithms
+// #include "hexapod_control/msg/show_marker.hpp"
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -34,95 +36,52 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 #include <urdf/model.h>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_control.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 
-class PlanningGroup {
-private:
-  std::unique_ptr<KDL::ChainFkSolverPos_recursive> fksolver_;
-  std::unique_ptr<KDL::ChainIkSolverPos_LMA> iksolver_;
-  unsigned int joint_count;
-
-public:
-  PlanningGroup(const KDL::Chain &chain) {
-    joint_count = chain.getNrOfJoints();
-    fksolver_ = std::make_unique<KDL::ChainFkSolverPos_recursive>(chain);
-    iksolver_ =
-        std::make_unique<KDL::ChainIkSolverPos_LMA>(KDL::ChainIkSolverPos_LMA(
-            chain, {1.0, 1.0, 1.0, 0.0, 0.0, 0.0}, 1e-3, 100, 1e-5));
-  };
-
-  int calculateJntArray(Eigen::Vector3d point,
-                        std::vector<double> &joint_positions) {
-    KDL::Frame T_base_goal;
-    T_base_goal.p.y(point.y());
-    T_base_goal.p.x(point.x());
-    T_base_goal.p.z(point.z());
-
-    KDL::JntArray q_out = KDL::JntArray(3);
-
-    KDL::JntArray q_init = KDL::JntArray(3);
-    q_init(0) = 0.4;
-    q_init(1) = -0.7;
-    q_init(2) = 1.0;
-
-    // Calculate forward position kinematics
-    int status = iksolver_->CartToJnt(q_init, T_base_goal, q_out);
-
-    joint_positions = {q_out.data.x(), q_out.data.y(), q_out.data.z()};
-    return status;
-  }
-
-  Eigen::Vector3d calculatePosition(std::array<double, 3> joint_position_arr) {
-    KDL::Frame position;
-    KDL::JntArray joint_positions(3);
-    for (size_t i = 0; i < 3; i++) {
-      joint_positions(i) = joint_position_arr[i];
-    }
-
-    int kinematics_status = fksolver_->JntToCart(joint_positions, position);
-
-    // std::cout << position.p.x() << " " << position.p.y() << " "
-    //           << position.p.y() << ", " << kinematics_status << std::endl;
-
-    if (kinematics_status < 0)
-      throw std::runtime_error("Forward Kinematics Solution not found");
-
-    return Eigen::Vector3d(position.p.x(), position.p.y(),
-                           position.p.z()); // Direct array access
-  };
-};
-
 class LegControlNode : public rclcpp::Node {
 
 private:
-  const static int CHAIN_COUNT = 6;
-  std::string leg_positions[CHAIN_COUNT] = {
+  const static int LEG_COUNT = 6;
+  const std::string LEG_NAMES[LEG_COUNT] = {
       "top_left",  "mid_left",  "bottom_left",
       "top_right", "mid_right", "bottom_right",
   };
-  KDL::Chain chains_[CHAIN_COUNT];
+  const std::string CHAIN_ROOT = "base_footprint";
+  std::map<std::string, KDL::Chain> chains_;
 
 public:
   LegControlNode() : Node("leg_control_node") {
     readRobotDescription();
-    initialize();
+    initInteractiveMarkerServer();
+    setupROS();
+
+    for (std::string leg_name : LEG_NAMES) {
+      KDL::Chain chain;
+      kdl_tree_.getChain(CHAIN_ROOT, leg_name + "_foot", chain);
+      chains_.insert({leg_name, chain});
+      setupControl(leg_name);
+      setJointPositions(
+          {
+              leg_name + "_rotate_joint",
+              leg_name + "_abduct_joint",
+              leg_name + "_retract_joint",
+          },
+          {0, 0, 0});
+    }
   }
 
 private:
   KDL::Tree kdl_tree_;
   std::string urdf_string;
   bool robot_description_loaded_ = false;
+  PlanningGroup planning_group;
 
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
-
-  rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr sub_leg_pose_;
 
   void readRobotDescription() {
     auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
@@ -145,58 +104,41 @@ private:
         }
       }
     }
-
-    setJointPositions(
-        {
-            "top_left_rotate_joint",
-            "top_left_abduct_joint",
-            "top_left_retract_joint",
-        },
-        {0, 0, 0});
   }
 
-  void setupControl(unsigned int idx) {
-    PlanningGroup top_left = PlanningGroup(chains_[idx]);
-    Eigen::Vector3d rest_pos = top_left.calculatePosition({0, 0, 0});
+  void setupControl(std::string leg_name) {
+    RCLCPP_INFO(get_logger(),
+                "Setting up %s Interactive Control with joints %d",
+                leg_name.c_str(), chains_.at(leg_name).getNrOfJoints());
+
+    Eigen::Vector3d rest_pos =
+        planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
 
     TranslationMarker marker = add6DofControl(rest_pos, "base_footprint");
-    marker.name = leg_positions[idx];
+    marker.name = leg_name;
 
     server_->insert(marker);
     server_->setCallback(
         marker.name,
-        [this, idx](const visualization_msgs::msg::InteractiveMarkerFeedback::
-                        ConstSharedPtr &feedback) {
-          processFeedback(idx, feedback);
+        [this,
+         leg_name](const visualization_msgs::msg::InteractiveMarkerFeedback::
+                       ConstSharedPtr &feedback) {
+          processFeedback(leg_name, feedback);
         });
 
     // Apply changes to server
     server_->applyChanges();
   }
-  void updateLegPose(const hexapod_msgs::msg::LegPose::SharedPtr msg) {
-    RCLCPP_INFO(get_logger(), "Updating Leg Pose = %s", msg->leg_name.c_str());
-    Eigen::Vector3d position = {msg->position.x, msg->position.y,
-                                msg->position.z};
-    TranslationMarker marker = add6DofControl(position, "base_footprint");
-    marker.name = msg->leg_name;
-  };
-  void initialize() {
+
+  void setupROS() {
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
                                                              rclcpp::QoS(10));
-    // sub_leg_pose_ = create_subscription<hexapod_msgs::msg::LegPose>(
-    //     "/hexapod_control/leg_pose/update", 10,
-    //     std::bind(&LegControlNode::updateLegPose, this,
-    //     std::placeholders::_1));
+  }
 
+  void initInteractiveMarkerServer() {
     server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
         "interactive_marker_server", this, rclcpp::QoS(10), rclcpp::QoS(10));
-
-    for (int i = 0; i < CHAIN_COUNT; i++) {
-      kdl_tree_.getChain("base_footprint", leg_positions[i] + "_foot",
-                         chains_[i]);
-      setupControl(i);
-    }
 
     RCLCPP_INFO(this->get_logger(), "Interactive marker server started");
   }
@@ -228,7 +170,7 @@ private:
     joint_state_publisher_->publish(joint_state_msg);
   }
   void processFeedback(
-      unsigned int idx,
+      std::string leg_name,
       const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
           &feedback) {
 
@@ -253,43 +195,46 @@ private:
                    feedback->pose.orientation.x, feedback->pose.orientation.y,
                    feedback->pose.orientation.z);
 
-      PlanningGroup planning_group = PlanningGroup(chains_[idx]);
-
-      const std::string frame_id = feedback->header.frame_id;
-      const auto pos = feedback->pose.position;
-
-      std::vector<double> joint_positions;
-      int status = planning_group.calculateJntArray({pos.x, pos.y, pos.z},
-                                                    joint_positions);
-      if (status < 0) {
-        RCLCPP_INFO(get_logger(), "Error: %i", status);
-        break;
-      }
-      setJointPositions(
-          {
-              leg_positions[idx] + "_rotate_joint",
-              leg_positions[idx] + "_abduct_joint",
-              leg_positions[idx] + "_retract_joint",
-          },
-          joint_positions);
-
-      RCLCPP_DEBUG(get_logger(),
-                   "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
-                   joint_positions[0], joint_positions[1], joint_positions[2]);
-
+      hexapod_msgs::msg::LegPose pose;
+      pose.leg_name = leg_name;
+      pose.position = feedback->pose.position;
+      updateLegPose(pose);
     }
 
     break;
 
     case InteractiveMarkerFeedback::MOUSE_DOWN:
-      RCLCPP_INFO(this->get_logger(), ": mouse down .");
+      RCLCPP_DEBUG(this->get_logger(), ": mouse down .");
       break;
 
     case InteractiveMarkerFeedback::MOUSE_UP:
-      RCLCPP_INFO(this->get_logger(), ": mouse up .");
+      RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
       break;
     }
   };
+
+  void updateLegPose(hexapod_msgs::msg::LegPose pose) {
+
+    std::vector<double> joint_positions;
+    int status = planning_group.calculateJntArray(
+        chains_.at(pose.leg_name),
+        {pose.position.x, pose.position.y, pose.position.z}, joint_positions);
+    if (status < 0) {
+      RCLCPP_INFO(get_logger(), "Error: %i", status);
+      return;
+    }
+    setJointPositions(
+        {
+            pose.leg_name + "_rotate_joint",
+            pose.leg_name + "_abduct_joint",
+            pose.leg_name + "_retract_joint",
+        },
+        joint_positions);
+
+    RCLCPP_DEBUG(get_logger(),
+                 "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
+                 joint_positions[0], joint_positions[1], joint_positions[2]);
+  }
 };
 
 int main(int argc, char **argv) {

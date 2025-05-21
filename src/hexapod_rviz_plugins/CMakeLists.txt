@@ -22,6 +22,7 @@ find_package(std_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(hexapod_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 
 # QT related setup
@@ -53,6 +54,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rviz_common
   rviz_rendering
   pluginlib
+  hexapod_msgs
 )
 
 target_link_libraries(${PROJECT_NAME}

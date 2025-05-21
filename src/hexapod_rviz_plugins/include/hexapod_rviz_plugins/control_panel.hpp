@@ -1,16 +1,19 @@
-// my_rviz_panel.hpp
 #ifndef MY_RVIZ_PANEL_HPP
 #define MY_RVIZ_PANEL_HPP
 
+#include "hexapod_msgs/msg/leg_pose.hpp"
+#include <hexapod_msgs/msg/leg_pose.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
-#include <std_msgs/msg/string.hpp>
 
 #include <QComboBox>
+#include <QDoubleSpinBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPushButton>
+#include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -20,62 +23,51 @@ class HexapodControlRvizPanel : public rviz_common::Panel {
   Q_OBJECT
 
 public:
-  // Constructor
   explicit HexapodControlRvizPanel(QWidget *parent = nullptr);
-
-  // Destructor
   ~HexapodControlRvizPanel() override;
 
-  // Override from rviz_common::Panel
   void onInitialize() override;
-
-  // Override from rviz_common::Panel
   void save(rviz_common::Config config) const override;
-
-  // Override from rviz_common::Panel
   void load(const rviz_common::Config &config) override;
 
 protected Q_SLOTS:
-  // Button click handlers
-  void onButton1Clicked();
-  void onButton2Clicked();
-
-  // Periodic update callback
-  void updatePanel();
+  void onPoseChanged();
+  void onSavePoseClicked();
+  void onDeletePoseClicked();
+  void onPoseSelected(QListWidgetItem *item);
+  void onPreviousPoseClicked();
+  void onNextPoseClicked();
 
 private:
-  // ROS node
   rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_pub_;
 
-  // ROS Publishers
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_command_;
-
-  // ROS Subscribers
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_status_;
-
-  // Qt UI elements
-  QVBoxLayout *main_layout_;
-  QHBoxLayout *buttons_layout_;
-  QLabel *status_label_;
-  QPushButton *button1_;
-  QPushButton *button2_;
-  QLineEdit *text_input_;
-  QComboBox *option_combo_;
-
-  // Update timer
-  QTimer *update_timer_;
-
-  // Track status messages
-  std::string last_status_msg_;
-
-  // Helper methods
   void setupUi();
   void setupROS();
-  void subscribeToTopics();
-  void publishCommand(const std::string &command);
+  void publishCurrentPose();
+  void updateCurrentPoseFromUI();
+  void updateUIFromCurrentPose();
+  void updatePoseList();
 
-  // Callback for status messages
-  void statusCallback(const std_msgs::msg::String::SharedPtr msg);
+  struct LegPosition {
+    double x;
+    double y;
+    double z;
+  };
+
+  struct HexapodPose {
+    std::string name;
+    std::array<LegPosition, 6> legs;
+  };
+
+  std::vector<HexapodPose> poses_;
+  int current_pose_index_ = -1;
+
+  // UI Elements
+  QTableWidget *leg_table_;
+  QListWidget *pose_list_;
+  QLineEdit *pose_name_input_;
+  QDoubleSpinBox *createSpinBox();
 };
 
 } // namespace hexapod_rviz_plugins

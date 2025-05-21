@@ -36,6 +36,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(hexapod_control_node
 src/hexapod_control.cpp
 src/marker.cpp
+src/planning_group.cpp
 )
 
 

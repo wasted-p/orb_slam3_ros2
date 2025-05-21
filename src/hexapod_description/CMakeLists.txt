@@ -50,7 +50,10 @@ install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch)
 
 
-
+xacro_add_files(
+  robots/hexapod.urdf.xacro
+    INSTALL DESTINATION robots
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -65,7 +68,3 @@ endif()
 
 ament_package()
 
-xacro_add_files(
-  robots/hexapod.urdf.xacro
-    INSTALL DESTINATION robots
-)

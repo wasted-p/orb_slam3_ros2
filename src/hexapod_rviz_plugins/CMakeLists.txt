@@ -17,12 +17,12 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
-find_package(hexapod_msgs REQUIRED)
 
 # QT related setup
 set(CMAKE_AUTOMOC ON)
@@ -34,13 +34,11 @@ include_directories(
   ${Qt5Widgets_INCLUDE_DIRS}
 )
 
-
 # Build the plugin library
 add_library(${PROJECT_NAME} SHARED
-  src/control_panel.cpp
+  src/control/panel.cpp
   include/hexapod_rviz_plugins/control_panel.hpp  # <-- Add this line
 )
-
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -50,11 +48,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   std_msgs
+  trajectory_msgs
   sensor_msgs
   rviz_common
   rviz_rendering
   pluginlib
-  hexapod_msgs
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -91,8 +89,6 @@ install(
   FILES plugin_description.xml
   DESTINATION share/${PROJECT_NAME}
 )
-
-
 
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})

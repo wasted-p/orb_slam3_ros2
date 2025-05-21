@@ -70,21 +70,21 @@ def generate_launch_description():
     )
 
     # Node: Control node (to be launched later)
-    hexapod_control_node = Node(
-        package='hexapod_control',
-        executable='hexapod_control_node',
-        name='hexapod_control_node',
-        parameters=[{
-            # 'robot_description': robot_urdf,
-            'use_sim_time': use_sim_time
-        }],
-    )
+    # hexapod_control_node = Node(
+    #     package='hexapod_control',
+    #     executable='hexapod_control_node',
+    #     name='hexapod_control_node',
+    #     parameters=[{
+    #         # 'robot_description': robot_urdf,
+    #         'use_sim_time': use_sim_time
+    #     }],
+    # )
 
     return LaunchDescription([
         rviz_config_arg,
         use_sim_time_arg,
         rviz_args_arg,
         robot_state_publisher_node,
-        hexapod_control_node,
+        # hexapod_control_node,
         rviz_node
     ])

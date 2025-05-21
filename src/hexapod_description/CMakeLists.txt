@@ -23,15 +23,12 @@ find_package(robot_state_publisher REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-xacro_add_files(
-  robots/hexapod.urdf.xacro
-    INSTALL DESTINATION robots
-)
 
 # add_custom_target(urdf ALL COMMAND "ros2" "launch" ${PROJECT_NAME} "wamv_description.launch.py")
 
 install(DIRECTORY robots/
   DESTINATION share/${PROJECT_NAME}/robots)
+
 
 install(DIRECTORY gazebo/
   DESTINATION share/${PROJECT_NAME}/gazebo)
@@ -53,6 +50,8 @@ install(DIRECTORY launch/
   DESTINATION share/${PROJECT_NAME}/launch)
 
 
+
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -65,3 +64,8 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+
+xacro_add_files(
+  robots/hexapod.urdf.xacro
+    INSTALL DESTINATION robots
+)

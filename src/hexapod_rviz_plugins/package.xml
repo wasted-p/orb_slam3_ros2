@@ -15,7 +15,6 @@
   <depend>rviz_rendering</depend>
   <depend>pluginlib</depend>
   <depend>qtbase5-dev</depend>
-  <depend>hexapod_msgs</depend>
 
   <exec_depend>libqt5-widgets</exec_depend>
 

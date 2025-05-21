@@ -1,8 +1,17 @@
 #include "hexapod_rviz_plugins/control_panel.hpp"
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
+#include <rclcpp/context.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/panel.hpp>
+#include <rviz_common/ros_integration/ros_node_abstraction.hpp>
+
 #include <string>
+
+using namespace rviz_common;
+using namespace rclcpp;
 
 namespace hexapod_rviz_plugins {
 
@@ -13,7 +22,16 @@ HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
 
 HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
 
-void HexapodControlRvizPanel::onInitialize() { setupROS(); }
+void HexapodControlRvizPanel::onInitialize() {
+  DisplayContext *context = getDisplayContext();
+  auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
+  auto ros_node_abstraction = ros_node_abstraction_weak.lock();
+  if (!context) {
+    throw std::runtime_error("RViz context not available");
+  }
+  node_ = ros_node_abstraction->get_raw_node();
+  setupROS();
+}
 
 void HexapodControlRvizPanel::setupUi() {
   QVBoxLayout *main_layout = new QVBoxLayout;
@@ -101,13 +119,8 @@ QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
 }
 
 void HexapodControlRvizPanel::setupROS() {
-  node_ = std::make_shared<rclcpp::Node>("hexapod_rviz_panel_node");
   leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPose>(
       "hexapod_control/leg_pose/update", 10);
-
-  auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-  executor->add_node(node_);
-  std::thread([executor]() { executor->spin(); }).detach();
 }
 
 void HexapodControlRvizPanel::onPoseChanged() {

@@ -44,40 +44,57 @@
 class LegControlNode : public rclcpp::Node {
 
 private:
-  const static int LEG_COUNT = 6;
-  const std::string LEG_NAMES[LEG_COUNT] = {
-      "top_left",  "mid_left",  "bottom_left",
-      "top_right", "mid_right", "bottom_right",
-  };
-  const std::string CHAIN_ROOT = "base_footprint";
+  const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
-
-public:
-  LegControlNode() : Node("leg_control_node") {
-    readRobotDescription();
-    initInteractiveMarkerServer();
-    setupROS();
-
-    for (std::string leg_name : LEG_NAMES) {
-      KDL::Chain chain;
-      kdl_tree_.getChain(CHAIN_ROOT, leg_name + "_foot", chain);
-      chains_.insert({leg_name, chain});
-      setupControl(leg_name);
-      setJointPositions(
-          {
-              leg_name + "_rotate_joint",
-              leg_name + "_abduct_joint",
-              leg_name + "_retract_joint",
-          },
-          {0, 0, 0});
-    }
-  }
-
-private:
+  sensor_msgs::msg::JointState joint_state_msg_;
   KDL::Tree kdl_tree_;
   std::string urdf_string;
   bool robot_description_loaded_ = false;
   PlanningGroup planning_group;
+  rclcpp::TimerBase::SharedPtr timer_;
+
+public:
+  LegControlNode() : Node("leg_control_node") {
+    using namespace std::chrono_literals;
+
+    std::string LEG_NAMES[6] = {
+        "top_left",  "mid_left",  "bottom_left",
+        "top_right", "mid_right", "bottom_right",
+    };
+
+    readRobotDescription();
+    initInteractiveMarkerServer();
+    setupROS();
+
+    joint_state_msg_.header.frame_id = "base_footprint";
+    joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
+    joint_state_msg_.header.frame_id = "base_footprint";
+
+    for (std::string leg_name : LEG_NAMES) {
+      KDL::Chain chain;
+      kdl_tree_.getChain("base_footprint", leg_name + "_foot", chain);
+      chains_.insert({leg_name, chain});
+      setupControl(leg_name);
+      joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
+      joint_state_msg_.name.insert(joint_state_msg_.name.cend(),
+                                   {
+
+                                       leg_name + "_rotate_joint",
+                                       leg_name + "_abduct_joint",
+                                       leg_name + "_retract_joint",
+                                   });
+      joint_state_msg_.position.insert(joint_state_msg_.position.cend(),
+                                       {
+
+                                           0.0, 0.0, 0.0});
+    };
+  }
+
+private:
+  void timer_callback() {
+    joint_state_msg_.header.stamp = get_clock()->now();
+    joint_state_publisher_->publish(joint_state_msg_);
+  }
 
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
@@ -134,6 +151,9 @@ private:
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
                                                              rclcpp::QoS(10));
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(100),
+        std::bind(&LegControlNode::timer_callback, this));
   }
 
   void initInteractiveMarkerServer() {
@@ -158,17 +178,7 @@ private:
   }
 
   void setJointPositions(std::vector<std::string> names,
-                         std::vector<double> positions) {
-
-    sensor_msgs::msg::JointState joint_state_msg =
-        sensor_msgs::msg::JointState();
-    joint_state_msg.header.stamp = get_clock()->now(); // or this->now() in a
-    joint_state_msg.name = names;
-    joint_state_msg.header.frame_id = "base_footprint";
-    joint_state_msg.position = positions;
-
-    joint_state_publisher_->publish(joint_state_msg);
-  }
+                         std::vector<double> positions) {}
   void processFeedback(
       std::string leg_name,
       const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
@@ -204,11 +214,11 @@ private:
     break;
 
     case InteractiveMarkerFeedback::MOUSE_DOWN:
-      RCLCPP_DEBUG(this->get_logger(), ": mouse down .");
+      RCLCPP_INFO(this->get_logger(), ": mouse down .");
       break;
 
     case InteractiveMarkerFeedback::MOUSE_UP:
-      RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
+      RCLCPP_INFO(this->get_logger(), ": mouse up .");
       break;
     }
   };
@@ -223,13 +233,15 @@ private:
       RCLCPP_INFO(get_logger(), "Error: %i", status);
       return;
     }
-    setJointPositions(
-        {
-            pose.leg_name + "_rotate_joint",
-            pose.leg_name + "_abduct_joint",
-            pose.leg_name + "_retract_joint",
-        },
-        joint_positions);
+
+    joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
+    joint_state_msg_.name = {
+        pose.leg_name + "_rotate_joint",
+        pose.leg_name + "_abduct_joint",
+        pose.leg_name + "_retract_joint",
+    };
+    joint_state_msg_.header.frame_id = "base_footprint";
+    joint_state_msg_.position = joint_positions;
 
     RCLCPP_DEBUG(get_logger(),
                  "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",

@@ -1,6 +1,7 @@
 - [x] Initialize joint state after tf init
 - [x] Update leg pose via rviz
 - [x] On change in node, update rviz
+- [ ] Change color of markers in rviz table
 - [ ] Limit input in rviz
 - [ ] Limit input in node
 - [ ] Save pose via rviz and add to gait

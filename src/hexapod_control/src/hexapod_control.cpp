@@ -15,6 +15,8 @@
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
+#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 #include <cmath>
 #include <cstddef>
 #include <geometry_msgs/msg/pose.hpp>
@@ -58,8 +60,11 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
   rclcpp::Publisher<hexapod_msgs::msg::LegPoses>::SharedPtr leg_poses_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
+      markers_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_sub_;
   hexapod_msgs::msg::LegPoses leg_poses_msg_;
+  std::vector<hexapod_msgs::msg::LegPoses> saved_leg_poses_;
 
 public:
   LegControlNode() : Node("leg_control_node") {
@@ -105,6 +110,8 @@ public:
       RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
                    leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
     };
+
+    saved_leg_poses_.push_back(leg_poses_msg_);
   }
 
 private:
@@ -120,21 +127,17 @@ private:
     updateLegPose(pose);
   }
 
-  void updateLegPose(const hexapod_msgs::msg::LegPose leg_pose_msg_) {
+  void updateLegPose(const hexapod_msgs::msg::LegPose leg_pose) {
     std::vector<double> joint_positions;
-    Eigen::Vector3d position = {leg_pose_msg_.position.x,
-                                leg_pose_msg_.position.y,
-                                leg_pose_msg_.position.z};
 
-    RCLCPP_INFO(get_logger(),
-                "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
-                "%.2f, %.2f]",
-                leg_pose_msg_.leg_name.c_str(), leg_pose_msg_.position.x,
-                leg_pose_msg_.position.y, leg_pose_msg_.position.z);
+    RCLCPP_DEBUG(get_logger(),
+                 "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
+                 "%.2f, %.2f]",
+                 leg_pose.leg_name.c_str(), leg_pose.position.x,
+                 leg_pose.position.y, leg_pose.position.z);
 
     int status = planning_group.calculateJntArray(
-        chains_.at(leg_pose_msg_.leg_name), leg_pose_msg_.position,
-        joint_positions);
+        chains_.at(leg_pose.leg_name), leg_pose.position, joint_positions);
 
     if (status < 0) {
       RCLCPP_ERROR(get_logger(), "Error %i", status);
@@ -143,9 +146,9 @@ private:
 
     joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
     joint_state_msg_.name = {
-        leg_pose_msg_.leg_name + "_rotate_joint",
-        leg_pose_msg_.leg_name + "_abduct_joint",
-        leg_pose_msg_.leg_name + "_retract_joint",
+        leg_pose.leg_name + "_rotate_joint",
+        leg_pose.leg_name + "_abduct_joint",
+        leg_pose.leg_name + "_retract_joint",
     };
     joint_state_msg_.header.frame_id = "base_footprint";
     joint_state_msg_.position = joint_positions;
@@ -155,15 +158,15 @@ private:
                  joint_positions[0], joint_positions[1], joint_positions[2]);
 
     geometry_msgs::msg::Pose pose;
-    pose.position = leg_pose_msg_.position;
-    server_->setPose(leg_pose_msg_.leg_name, pose);
+    pose.position = leg_pose.position;
+    server_->setPose(leg_pose.leg_name, pose);
     server_->applyChanges();
 
     auto it = find(leg_poses_msg_.leg_names.begin(),
-                   leg_poses_msg_.leg_names.end(), leg_pose_msg_.leg_name);
+                   leg_poses_msg_.leg_names.end(), leg_pose.leg_name);
     if (it != leg_poses_msg_.leg_names.end()) {
       size_t index = std::distance(leg_poses_msg_.leg_names.begin(), it);
-      leg_poses_msg_.positions[index] = leg_pose_msg_.position;
+      leg_poses_msg_.positions[index] = leg_pose.position;
     }
   }
 
@@ -212,6 +215,86 @@ private:
     server_->applyChanges();
   }
 
+  void savePose() {
+    visualization_msgs::msg::MarkerArray marker_array;
+
+    saved_leg_poses_.push_back(leg_poses_msg_);
+    RCLCPP_INFO(get_logger(), "Saved pose");
+    std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
+        {"top_left", makeColor(1.0, 0.0, 0.0)},
+        {"mid_left", makeColor(0.0, 1.0, 0.0)},
+        {"bottom_left", makeColor(0.0, 0.0, 1.0)},
+        {"top_right", makeColor(1.0, 1.0, 0.0)},
+        {"mid_right", makeColor(0.0, 1.0, 1.0)},
+        {"bottom_right", makeColor(1.0, 0.0, 1.0)}};
+
+    // Store previous pose per leg to draw arrows
+    std::map<std::string, geometry_msgs::msg::Point> previous_points;
+
+    int marker_id = 0;
+
+    for (size_t pose_index = 0; pose_index < saved_leg_poses_.size();
+         ++pose_index) {
+      const auto &pose = saved_leg_poses_[pose_index];
+
+      for (size_t leg_i = 0; leg_i < pose.leg_names.size(); ++leg_i) {
+        const auto &leg_name = pose.leg_names[leg_i];
+        const auto &position = pose.positions[leg_i];
+
+        // Create a sphere marker for this leg at this pose
+        visualization_msgs::msg::Marker sphere;
+        sphere.header.frame_id = "base_footprint"; // Or your TF frame
+        sphere.header.stamp = rclcpp::Clock().now();
+        sphere.ns = "leg_spheres";
+        sphere.id = marker_id++;
+        sphere.type = visualization_msgs::msg::Marker::SPHERE;
+        sphere.action = visualization_msgs::msg::Marker::ADD;
+        sphere.pose.position = position;
+        sphere.pose.orientation.w = 1.0;
+        const double size = 0.0075;
+        sphere.scale.x = size;
+        sphere.scale.y = size;
+        sphere.scale.z = size;
+        sphere.color = leg_colors[leg_name];
+        sphere.lifetime = rclcpp::Duration::from_seconds(0); // forever
+
+        marker_array.markers.push_back(sphere);
+
+        // If this isn't the first pose, draw an arrow from previous to current
+        if (pose_index > 0 && previous_points.count(leg_name)) {
+          visualization_msgs::msg::Marker arrow;
+          arrow.header = sphere.header;
+          arrow.ns = "leg_arrows";
+          arrow.id = marker_id++;
+          arrow.type = visualization_msgs::msg::Marker::ARROW;
+          arrow.action = visualization_msgs::msg::Marker::ADD;
+          arrow.points.push_back(previous_points[leg_name]);
+          arrow.points.push_back(position);
+          arrow.scale.x = 0.0025; // shaft diameter
+          arrow.scale.y = 0.01;   // head diameter
+          arrow.scale.z = 0.01;   // head length
+          arrow.color = sphere.color;
+          arrow.pose.orientation.w = 1.0;
+          arrow.lifetime = rclcpp::Duration::from_seconds(0);
+          marker_array.markers.push_back(arrow);
+        }
+
+        previous_points[leg_name] = position;
+      }
+    }
+
+    markers_pub_->publish(marker_array);
+  }
+
+  std_msgs::msg::ColorRGBA makeColor(float r, float g, float b,
+                                     float a = 1.0f) {
+    std_msgs::msg::ColorRGBA color;
+    color.r = r;
+    color.g = g;
+    color.b = b;
+    color.a = a;
+    return color;
+  }
   void setupROS() {
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
@@ -219,6 +302,9 @@ private:
 
     leg_poses_pub_ = this->create_publisher<hexapod_msgs::msg::LegPoses>(
         "hexapod_control/leg_pose", rclcpp::QoS(10));
+
+    markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
+        "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
 
     leg_pose_sub_ = this->create_subscription<hexapod_msgs::msg::LegPose>(
         "hexapod_control/leg_pose/update", // topic name
@@ -290,6 +376,7 @@ private:
 
     case InteractiveMarkerFeedback::MOUSE_UP:
       RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
+      savePose();
       break;
     }
   };

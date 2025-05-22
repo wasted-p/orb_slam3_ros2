@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /RobotModel1
-        - /RobotModel1/Links1
         - /TF1/Tree1
         - /Axes1
         - /MarkerArray1
@@ -115,7 +114,7 @@ Visualization Manager:
         bottom_left_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         bottom_left_tibia:
           Alpha: 1
@@ -135,7 +134,7 @@ Visualization Manager:
         bottom_right_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         bottom_right_tibia:
           Alpha: 1
@@ -169,7 +168,7 @@ Visualization Manager:
         mid_left_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         mid_left_tibia:
           Alpha: 1
@@ -189,7 +188,7 @@ Visualization Manager:
         mid_right_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         mid_right_tibia:
           Alpha: 1
@@ -209,7 +208,7 @@ Visualization Manager:
         top_left_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         top_left_tibia:
           Alpha: 1
@@ -229,7 +228,7 @@ Visualization Manager:
         top_right_foot:
           Alpha: 1
           Show Axes: false
-          Show Trail: true
+          Show Trail: false
           Value: true
         top_right_tibia:
           Alpha: 1
@@ -372,7 +371,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: visualization_marker_array
+        Value: /hexapod/visualization/leg_pose_markers
       Value: true
     - Class: rviz_default_plugins/InteractiveMarkers
       Enable Transparency: true
@@ -444,10 +443,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.24539844691753387
+      Pitch: 0.3553984761238098
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.063582420349121
+      Yaw: 4.308582782745361
     Saved: ~
 Window Geometry:
   Displays:

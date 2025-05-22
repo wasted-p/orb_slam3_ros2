@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
+#include <qlist.h>
 #include <qspinbox.h>
 #include <rclcpp/context.hpp>
 #include <rclcpp/logging.hpp>
@@ -52,11 +53,12 @@ void HexapodControlRvizPanel::setupUi() {
   // leg_table_->verticalHeader()->setVisible(false);
 
   // Set leg names
-  const QStringList leg_names = {"top_left",  "mid_left",  "bottom_left",
-                                 "top_right", "mid_right", "bottom_right"};
+  leg_names_ = QStringList{"top_left",  "mid_left",  "bottom_left",
+                           "top_right", "mid_right", "bottom_right"};
+
   for (int i = 0; i < 6; ++i) {
     // Leg name
-    QTableWidgetItem *name_item = new QTableWidgetItem(leg_names[i]);
+    QTableWidgetItem *name_item = new QTableWidgetItem(leg_names_[i]);
     name_item->setFlags(name_item->flags() & ~Qt::ItemIsEditable);
     leg_table_->setItem(i, 0, name_item);
 
@@ -70,7 +72,7 @@ void HexapodControlRvizPanel::setupUi() {
       QDoubleSpinBox *spin_box = createSpinBox();
       layout->addWidget(spin_box);
       widget->setLayout(layout);
-      spin_box->setProperty("legName", leg_names[i]);
+      spin_box->setProperty("legName", leg_names_[i]);
       spin_box->setProperty("axis", j); // 0 = X, 1 = Y, 2 = Z
 
       leg_table_->setCellWidget(i, j + 1, widget);
@@ -81,7 +83,7 @@ void HexapodControlRvizPanel::setupUi() {
       spin_array[j] = spin_box;
     }
 
-    spinners_[leg_names[i].toStdString()] = spin_array;
+    spinners_[leg_names_[i].toStdString()] = spin_array;
   }
   leg_table_->resizeColumnsToContents();
   horizontal_layout->addWidget(leg_table_, 1); // Stretch factor 1 for table
@@ -147,8 +149,8 @@ QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
 }
 
 void HexapodControlRvizPanel::setupROS() {
-  leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPose>(
-      "hexapod_control/leg_pose/update", 10);
+  leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPoses>(
+      "hexapod_control/leg_poses/update", 10);
 
   command_pub_ = node_->create_publisher<hexapod_msgs::msg::ControlCommand>(
       "hexapod_control/command", 10);
@@ -194,42 +196,54 @@ void HexapodControlRvizPanel::onSpinnerBoxUpdate(double value) {
   RCLCPP_INFO(node_->get_logger(), "Updating value for leg=%s, %s=%.4f",
               leg_name.c_str(), axis_name.c_str(), value);
 
-  hexapod_msgs::msg::LegPose msg;
-  // Optional: Update model, emit ROS msg, etc.
-  // for (int i = 0; i < 6; ++i) {
-  msg.leg_name = leg_name;
+  hexapod_msgs::msg::LegPoses pose;
+  geometry_msgs::msg::Point position;
+  position.x = spinners_.at(leg_name).at(0)->value();
+  position.y = spinners_.at(leg_name).at(1)->value();
+  position.z = spinners_.at(leg_name).at(2)->value();
 
-  msg.position.x = spinners_.at(leg_name).at(0)->value();
-  msg.position.y = spinners_.at(leg_name).at(1)->value();
-  msg.position.z = spinners_.at(leg_name).at(2)->value();
-  leg_pose_pub_->publish(msg);
-}
-
-void HexapodControlRvizPanel::publishCurrentPose() {
-  if (current_pose_index_ >= 0 &&
-      current_pose_index_ < static_cast<int>(poses_.size())) {
-
-    const HexapodPose &pose = poses_[current_pose_index_];
-    RCLCPP_DEBUG(node_->get_logger(), "Pose=%.2f,%.2f,%.2f", pose.legs[0].x,
-                 pose.legs[0].y, pose.legs[0].z);
-  }
-}
-
-void HexapodControlRvizPanel::updatePoseList() {
-  pose_list_->clear();
-  for (const auto &pose : poses_) {
-    pose_list_->addItem(QString::fromStdString(pose.name));
-  }
-
-  if (!poses_.empty()) {
-    pose_list_->setCurrentRow(current_pose_index_);
-  }
+  pose.leg_names.push_back(leg_name);
+  pose.positions.push_back(position);
+  leg_pose_pub_->publish(pose);
 }
 
 void HexapodControlRvizPanel::onSavePoseClicked() {
+  QString qname = pose_name_input_->text().trimmed();
+  std::string name = qname.toStdString();
+
+  pose_name_input_->setPlaceholderText("Pose Name");
+  // Default name if empty
+  if (name.empty()) {
+    name = "Pose " + std::to_string(poses_.size() + 1);
+  }
+
+  // Check for duplicate names
+  for (int i = 0; i < pose_list_->count(); ++i) {
+    if (pose_list_->item(i)->text().toStdString().compare(name) == 0) {
+      pose_name_input_->setStyleSheet("color: red;");
+      pose_name_input_->setPlaceholderText("Name already used!");
+      pose_name_input_->clear();
+      return;
+    }
+  }
+
+  pose_name_input_->setPlaceholderText("Pose Name");
+
+  // Send command to save
   hexapod_msgs::msg::ControlCommand msg;
   msg.command_type = "save";
+  msg.pose_name = name;
   command_pub_->publish(msg);
+
+  // Add to list and select the new item
+  QListWidgetItem *item = new QListWidgetItem(QString::fromStdString(name));
+  item->setData(Qt::UserRole, QString::fromStdString(name));
+  pose_list_->addItem(item);
+  pose_list_->setCurrentItem(item);
+
+  // Reset input field
+  pose_name_input_->clear();
+  pose_name_input_->setStyleSheet(""); // reset style
 }
 
 void HexapodControlRvizPanel::onDeletePoseClicked() {
@@ -241,13 +255,15 @@ void HexapodControlRvizPanel::onDeletePoseClicked() {
     } else if (current_pose_index_ >= static_cast<int>(poses_.size())) {
       current_pose_index_ = poses_.size() - 1;
     }
-    updatePoseList();
   }
 }
 
 void HexapodControlRvizPanel::onPoseSelected(QListWidgetItem *item) {
   current_pose_index_ = pose_list_->row(item);
-  publishCurrentPose();
+  hexapod_msgs::msg::ControlCommand command;
+  command.command_type = "change";
+  command.pose_name = item->text().toStdString().c_str();
+  command_pub_->publish(command);
 }
 
 void HexapodControlRvizPanel::onPreviousPoseClicked() {
@@ -255,7 +271,6 @@ void HexapodControlRvizPanel::onPreviousPoseClicked() {
     current_pose_index_ =
         (current_pose_index_ - 1 + poses_.size()) % poses_.size();
     pose_list_->setCurrentRow(current_pose_index_);
-    publishCurrentPose();
   }
 }
 
@@ -263,7 +278,6 @@ void HexapodControlRvizPanel::onNextPoseClicked() {
   if (!poses_.empty()) {
     current_pose_index_ = (current_pose_index_ + 1) % poses_.size();
     pose_list_->setCurrentRow(current_pose_index_);
-    publishCurrentPose();
   }
 }
 

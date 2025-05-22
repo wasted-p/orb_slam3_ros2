@@ -10,6 +10,7 @@
 // - [ ] Fix TF and RobotModel warning
 //
 #include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_msgs/msg/control_command.hpp"
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "hexapod_msgs/msg/leg_poses.hpp"
@@ -41,6 +42,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <urdf/model.h>
+#include <utility>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_control.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -62,11 +64,11 @@ private:
   rclcpp::Publisher<hexapod_msgs::msg::LegPoses>::SharedPtr leg_poses_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       markers_pub_;
-  rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_sub_;
+  rclcpp::Subscription<hexapod_msgs::msg::LegPoses>::SharedPtr leg_poses_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::ControlCommand>::SharedPtr
       command_sub_;
   hexapod_msgs::msg::LegPoses leg_poses_msg_;
-  std::vector<hexapod_msgs::msg::LegPoses> saved_leg_poses_;
+  std::map<std::string, hexapod_msgs::msg::LegPoses> saved_leg_poses_;
 
 public:
   LegControlNode() : Node("leg_control_node") {
@@ -112,8 +114,6 @@ public:
       RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
                    leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
     };
-
-    saved_leg_poses_.push_back(leg_poses_msg_);
   }
 
 private:
@@ -125,58 +125,74 @@ private:
     leg_poses_pub_->publish(leg_poses_msg_);
   }
 
-  void leg_pose_callback(const hexapod_msgs::msg::LegPose pose) {
-    updateLegPose(pose);
+  void leg_pose_callback(const hexapod_msgs::msg::LegPoses pose) {
+    updatePose(pose);
   }
 
   void command_callback(const hexapod_msgs::msg::ControlCommand command) {
     RCLCPP_INFO(get_logger(), "Command %s", command.command_type.c_str());
     if (command.command_type.compare("save") == 0) {
       RCLCPP_INFO(get_logger(), "Saving Pose");
-      savePose();
+      RCLCPP_INFO(get_logger(), "Saved pose");
+      saved_leg_poses_.insert({command.pose_name, leg_poses_msg_});
+      updateMarkerArray();
+    } else if (command.command_type.compare("change") == 0) {
+      RCLCPP_INFO(get_logger(), "Changing Pose to %s",
+                  command.pose_name.c_str());
+      hexapod_msgs::msg::LegPoses pose = saved_leg_poses_.at(command.pose_name);
+
+      updatePose(pose);
     }
   }
-
-  void updateLegPose(const hexapod_msgs::msg::LegPose leg_pose) {
+  void updatePose(const hexapod_msgs::msg::LegPoses leg_poses) {
     std::vector<double> joint_positions;
+    std::string leg_name;
+    geometry_msgs::msg::Point position;
 
-    RCLCPP_DEBUG(get_logger(),
-                 "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
-                 "%.2f, %.2f]",
-                 leg_pose.leg_name.c_str(), leg_pose.position.x,
-                 leg_pose.position.y, leg_pose.position.z);
+    for (size_t i = 0; i < leg_poses.leg_names.size(); i++) {
+      {
+        leg_name = leg_poses.leg_names[i];
+        position = leg_poses.positions[i];
+        RCLCPP_DEBUG(
+            get_logger(),
+            "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
+            "%.2f, %.2f]",
+            leg_name.c_str(), position.x, position.y, position.z);
 
-    int status = planning_group.calculateJntArray(
-        chains_.at(leg_pose.leg_name), leg_pose.position, joint_positions);
+        int status = planning_group.calculateJntArray(
+            chains_.at(leg_name), position, joint_positions);
 
-    if (status < 0) {
-      RCLCPP_ERROR(get_logger(), "Error %i", status);
-      return;
-    }
+        if (status < 0) {
+          RCLCPP_ERROR(get_logger(), "Error %i", status);
+          return;
+        }
 
-    joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
-    joint_state_msg_.name = {
-        leg_pose.leg_name + "_rotate_joint",
-        leg_pose.leg_name + "_abduct_joint",
-        leg_pose.leg_name + "_retract_joint",
-    };
-    joint_state_msg_.header.frame_id = "base_footprint";
-    joint_state_msg_.position = joint_positions;
+        joint_state_msg_.header.stamp =
+            get_clock()->now(); // or this->now() in a
+        joint_state_msg_.name = {
+            leg_name + "_rotate_joint",
+            leg_name + "_abduct_joint",
+            leg_name + "_retract_joint",
+        };
+        joint_state_msg_.header.frame_id = "base_footprint";
+        joint_state_msg_.position = joint_positions;
 
-    RCLCPP_DEBUG(get_logger(),
-                 "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
-                 joint_positions[0], joint_positions[1], joint_positions[2]);
+        RCLCPP_DEBUG(
+            get_logger(), "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
+            joint_positions[0], joint_positions[1], joint_positions[2]);
 
-    geometry_msgs::msg::Pose pose;
-    pose.position = leg_pose.position;
-    server_->setPose(leg_pose.leg_name, pose);
-    server_->applyChanges();
+        geometry_msgs::msg::Pose pose;
+        pose.position = position;
+        server_->setPose(leg_name, pose);
+        server_->applyChanges();
 
-    auto it = find(leg_poses_msg_.leg_names.begin(),
-                   leg_poses_msg_.leg_names.end(), leg_pose.leg_name);
-    if (it != leg_poses_msg_.leg_names.end()) {
-      size_t index = std::distance(leg_poses_msg_.leg_names.begin(), it);
-      leg_poses_msg_.positions[index] = leg_pose.position;
+        auto it = find(leg_poses_msg_.leg_names.begin(),
+                       leg_poses_msg_.leg_names.end(), leg_name);
+        if (it != leg_poses_msg_.leg_names.end()) {
+          size_t index = std::distance(leg_poses_msg_.leg_names.begin(), it);
+          leg_poses_msg_.positions[index] = position;
+        }
+      }
     }
   }
 
@@ -225,11 +241,9 @@ private:
     server_->applyChanges();
   }
 
-  void savePose() {
-    visualization_msgs::msg::MarkerArray marker_array;
+  void updateMarkerArray() {
 
-    saved_leg_poses_.push_back(leg_poses_msg_);
-    RCLCPP_INFO(get_logger(), "Saved pose");
+    visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
         {"mid_left", makeColor(0.0, 1.0, 0.0)},
@@ -243,9 +257,9 @@ private:
 
     int marker_id = 0;
 
-    for (size_t pose_index = 0; pose_index < saved_leg_poses_.size();
-         ++pose_index) {
-      const auto &pose = saved_leg_poses_[pose_index];
+    unsigned int idx = 0;
+    for (auto &pair : saved_leg_poses_) {
+      const auto &pose = pair.second;
 
       for (size_t leg_i = 0; leg_i < pose.leg_names.size(); ++leg_i) {
         const auto &leg_name = pose.leg_names[leg_i];
@@ -270,8 +284,9 @@ private:
 
         marker_array.markers.push_back(sphere);
 
-        // If this isn't the first pose, draw an arrow from previous to current
-        if (pose_index > 0 && previous_points.count(leg_name)) {
+        // If this isn't the first pose, draw an arrow from previous to
+        // current
+        if (idx > 0 && previous_points.count(leg_name)) {
           visualization_msgs::msg::Marker arrow;
           arrow.header = sphere.header;
           arrow.ns = "leg_arrows";
@@ -291,8 +306,8 @@ private:
 
         previous_points[leg_name] = position;
       }
+      idx++;
     }
-
     markers_pub_->publish(marker_array);
   }
 
@@ -316,7 +331,7 @@ private:
     markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
 
-    leg_pose_sub_ = this->create_subscription<hexapod_msgs::msg::LegPose>(
+    leg_poses_sub_ = this->create_subscription<hexapod_msgs::msg::LegPoses>(
         "hexapod_control/leg_pose/update", // topic name
         10,                                // QoS history depth
         std::bind(&LegControlNode::leg_pose_callback, this,
@@ -378,10 +393,10 @@ private:
                    feedback->pose.orientation.x, feedback->pose.orientation.y,
                    feedback->pose.orientation.z);
 
-      hexapod_msgs::msg::LegPose pose;
-      pose.leg_name = leg_name;
-      pose.position = feedback->pose.position;
-      updateLegPose(pose);
+      hexapod_msgs::msg::LegPoses pose;
+      pose.leg_names.push_back(leg_name);
+      pose.positions.push_back(feedback->pose.position);
+      updatePose(pose);
     }
 
     break;
@@ -392,7 +407,6 @@ private:
 
     case InteractiveMarkerFeedback::MOUSE_UP:
       RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
-      // savePose();
       break;
     }
   };

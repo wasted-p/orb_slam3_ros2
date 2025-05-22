@@ -1,7 +1,11 @@
 - [x] Initialize joint state after tf init
 - [x] Update leg pose via rviz
 - [x] On change in node, update rviz
-- [ ] Change color of markers in rviz table
+- [ ] Delete pose
+- [ ] Rename Pose
+- [ ] Update Pose coords
+- [ ] Change color of legs in rviz table based on rviz
+- [ ] Save Poses as gaits in yaml
 - [ ] Limit input in rviz
 - [ ] Limit input in node
 - [ ] Save pose via rviz and add to gait

@@ -5,6 +5,7 @@
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "hexapod_msgs/msg/leg_poses.hpp"
 #include <hexapod_msgs/msg/leg_pose.hpp>
+#include <qlist.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 
@@ -42,15 +43,14 @@ protected Q_SLOTS:
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_pub_;
+  rclcpp::Publisher<hexapod_msgs::msg::LegPoses>::SharedPtr leg_pose_pub_;
   rclcpp::Publisher<hexapod_msgs::msg::ControlCommand>::SharedPtr command_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::LegPoses>::SharedPtr leg_pose_sub_;
   std::map<std::string, std::array<QDoubleSpinBox *, 3>> spinners_;
+  QStringList leg_names_;
 
   void setupUi();
   void setupROS();
-  void publishCurrentPose();
-  void updatePoseList();
   void onSpinnerBoxUpdate(double value);
   void legPoseUpdateCallback(const hexapod_msgs::msg::LegPoses msg);
 

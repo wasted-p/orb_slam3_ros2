@@ -145,7 +145,7 @@ public:
   TranslationMarker() {
     header.frame_id = "base_link";
     // TODO: Figure out what this does and fix it
-    scale = 0.1;
+    scale = 0.05;
     name = "simple_6dof";
 
     makeSphereControl();

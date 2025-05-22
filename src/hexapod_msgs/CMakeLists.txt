@@ -16,6 +16,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegPose.msg"
   "msg/ShowMarker.msg"
+  "msg/LegPoses.msg"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 

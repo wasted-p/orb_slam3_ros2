@@ -11,6 +11,7 @@
 //
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/leg_pose.hpp"
+#include "hexapod_msgs/msg/leg_poses.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
@@ -48,7 +49,6 @@ private:
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
   sensor_msgs::msg::JointState joint_state_msg_;
-  hexapod_msgs::msg::LegPose leg_pose_msg_;
   KDL::Tree kdl_tree_;
   std::string urdf_string;
   bool robot_description_loaded_ = false;
@@ -57,7 +57,9 @@ private:
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
+  rclcpp::Publisher<hexapod_msgs::msg::LegPoses>::SharedPtr leg_poses_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_sub_;
+  hexapod_msgs::msg::LegPoses leg_poses_msg_;
 
 public:
   LegControlNode() : Node("leg_control_node") {
@@ -81,9 +83,9 @@ public:
       kdl_tree_.getChain("base_footprint", leg_name + "_foot", chain);
       chains_.insert({leg_name, chain});
 
-      Eigen::Vector3d rest_pos =
+      geometry_msgs::msg::Point rest_pos =
           planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
-      joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
+      joint_state_msg_.header.stamp = get_clock()->now(); // or this->now()
       joint_state_msg_.name.insert(joint_state_msg_.name.cend(),
                                    {
 
@@ -97,6 +99,12 @@ public:
                                            0.0, 0.0, 0.0});
 
       setupControl(leg_name, rest_pos);
+
+      leg_poses_msg_.leg_names.push_back(leg_name);
+      leg_poses_msg_.positions.push_back(rest_pos);
+      RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
+                  leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
+      // updateLegPose(pose);
     };
   }
 
@@ -105,23 +113,29 @@ private:
     joint_state_msg_.header.stamp = get_clock()->now();
 
     joint_state_publisher_->publish(joint_state_msg_);
+
+    leg_poses_pub_->publish(leg_poses_msg_);
   }
 
-  void leg_pose_callback(const hexapod_msgs::msg::LegPose msg) {
-    leg_pose_msg_ = msg;
+  void leg_pose_callback(const hexapod_msgs::msg::LegPose pose) {
+    updateLegPose(pose);
+  }
 
+  void updateLegPose(const hexapod_msgs::msg::LegPose leg_pose_msg_) {
     std::vector<double> joint_positions;
-    Eigen::Vector3d position = {msg.position.x, msg.position.y, msg.position.z};
+    Eigen::Vector3d position = {leg_pose_msg_.position.x,
+                                leg_pose_msg_.position.y,
+                                leg_pose_msg_.position.z};
 
-    RCLCPP_DEBUG(get_logger(),
-                 "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
-                 "%.2f, %.2f]",
-                 msg.leg_name.c_str(), msg.position.x, msg.position.y,
-                 msg.position.z);
+    RCLCPP_INFO(get_logger(),
+                "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
+                "%.2f, %.2f]",
+                leg_pose_msg_.leg_name.c_str(), leg_pose_msg_.position.x,
+                leg_pose_msg_.position.y, leg_pose_msg_.position.z);
 
     int status = planning_group.calculateJntArray(
-        chains_.at(msg.leg_name),
-        {msg.position.x, msg.position.y, msg.position.z}, joint_positions);
+        chains_.at(leg_pose_msg_.leg_name), leg_pose_msg_.position,
+        joint_positions);
 
     if (status < 0) {
       RCLCPP_ERROR(get_logger(), "Error %i", status);
@@ -130,9 +144,9 @@ private:
 
     joint_state_msg_.header.stamp = get_clock()->now(); // or this->now() in a
     joint_state_msg_.name = {
-        msg.leg_name + "_rotate_joint",
-        msg.leg_name + "_abduct_joint",
-        msg.leg_name + "_retract_joint",
+        leg_pose_msg_.leg_name + "_rotate_joint",
+        leg_pose_msg_.leg_name + "_abduct_joint",
+        leg_pose_msg_.leg_name + "_retract_joint",
     };
     joint_state_msg_.header.frame_id = "base_footprint";
     joint_state_msg_.position = joint_positions;
@@ -142,9 +156,16 @@ private:
                  joint_positions[0], joint_positions[1], joint_positions[2]);
 
     geometry_msgs::msg::Pose pose;
-    pose.position = msg.position;
-    server_->setPose(msg.leg_name, pose);
+    pose.position = leg_pose_msg_.position;
+    server_->setPose(leg_pose_msg_.leg_name, pose);
     server_->applyChanges();
+
+    auto it = find(leg_poses_msg_.leg_names.begin(),
+                   leg_poses_msg_.leg_names.end(), leg_pose_msg_.leg_name);
+    if (it != leg_poses_msg_.leg_names.end()) {
+      size_t index = std::distance(leg_poses_msg_.leg_names.begin(), it);
+      leg_poses_msg_.positions[index] = leg_pose_msg_.position;
+    }
   }
 
   void readRobotDescription() {
@@ -170,14 +191,15 @@ private:
     }
   }
 
-  void setupControl(std::string leg_name, Eigen::Vector3d point) {
+  void setupControl(std::string leg_name, geometry_msgs::msg::Point pos) {
     RCLCPP_DEBUG(get_logger(),
                  "Setting up %s Interactive Control with joints %d",
                  leg_name.c_str(), chains_.at(leg_name).getNrOfJoints());
 
-    TranslationMarker marker = add6DofControl(point, "base_footprint");
+    TranslationMarker marker = add6DofControl();
+    marker.pose.position = pos;
     marker.name = leg_name;
-
+    marker.header.frame_id = "base_footprint";
     server_->insert(marker);
     server_->setCallback(
         marker.name,
@@ -196,9 +218,12 @@ private:
         this->create_publisher<sensor_msgs::msg::JointState>("joint_states",
                                                              rclcpp::QoS(10));
 
+    leg_poses_pub_ = this->create_publisher<hexapod_msgs::msg::LegPoses>(
+        "hexapod_control/leg_pose", rclcpp::QoS(10));
+
     leg_pose_sub_ = this->create_subscription<hexapod_msgs::msg::LegPose>(
-        "hexapod_control/leg_pose", // topic name
-        10,                         // QoS history depth
+        "hexapod_control/leg_pose/update", // topic name
+        10,                                // QoS history depth
         std::bind(&LegControlNode::leg_pose_callback, this,
                   std::placeholders::_1));
 
@@ -214,13 +239,11 @@ private:
     RCLCPP_INFO(this->get_logger(), "Interactive marker server started");
   }
 
-  TranslationMarker add6DofControl(Eigen::Vector3d point,
-                                   std::string frame_id) {
+  TranslationMarker add6DofControl() {
     TranslationMarker marker;
-    marker.pose.position.x = point.x();
-    marker.pose.position.y = point.y();
-    marker.pose.position.z = point.z();
-    marker.header.frame_id = frame_id;
+    marker.pose.position.x = 0;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = 0;
 
     // Adding Menu Items
     marker.menu_handler.insert("Reset");
@@ -254,8 +277,10 @@ private:
                    feedback->pose.orientation.x, feedback->pose.orientation.y,
                    feedback->pose.orientation.z);
 
-      leg_pose_msg_.leg_name = leg_name;
-      leg_pose_msg_.position = feedback->pose.position;
+      hexapod_msgs::msg::LegPose pose;
+      pose.leg_name = leg_name;
+      pose.position = feedback->pose.position;
+      updateLegPose(pose);
     }
 
     break;
@@ -269,8 +294,6 @@ private:
       break;
     }
   };
-
-  void updateLegPose(hexapod_msgs::msg::LegPose pose) {}
 };
 
 int main(int argc, char **argv) {

@@ -1,6 +1,11 @@
+#include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/msg/leg_pose.hpp"
+#include "hexapod_msgs/msg/leg_poses.hpp"
 #include "hexapod_rviz_plugins/control_panel.hpp"
+#include <cstddef>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
+#include <qspinbox.h>
 #include <rclcpp/context.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -50,6 +55,7 @@ void HexapodControlRvizPanel::setupUi() {
     name_item->setFlags(name_item->flags() & ~Qt::ItemIsEditable);
     leg_table_->setItem(i, 0, name_item);
 
+    std::array<QDoubleSpinBox *, 3> spin_array;
     // X, Y, Z spin boxes
     for (int j = 0; j < 3; ++j) {
       QWidget *widget = new QWidget();
@@ -59,13 +65,18 @@ void HexapodControlRvizPanel::setupUi() {
       QDoubleSpinBox *spin_box = createSpinBox();
       layout->addWidget(spin_box);
       widget->setLayout(layout);
+      spin_box->setProperty("legName", leg_names[i]);
+      spin_box->setProperty("axis", j); // 0 = X, 1 = Y, 2 = Z
 
       leg_table_->setCellWidget(i, j + 1, widget);
 
       // Connect value changes
       connect(spin_box, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-              this, &HexapodControlRvizPanel::onPoseChanged);
+              this, &HexapodControlRvizPanel::onSpinnerBoxUpdate);
+      spin_array[j] = spin_box;
     }
+
+    spinners_[leg_names[i].toStdString()] = spin_array;
   }
   leg_table_->resizeColumnsToContents();
   main_layout->addWidget(leg_table_);
@@ -120,84 +131,68 @@ QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
 
 void HexapodControlRvizPanel::setupROS() {
   leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPose>(
-      "hexapod_control/leg_pose", 10);
+      "hexapod_control/leg_pose/update", 10);
+
+  leg_pose_sub_ = node_->create_subscription<hexapod_msgs::msg::LegPoses>(
+      "hexapod_control/leg_pose", // topic name
+      10,                         // QoS history depth
+      std::bind(&HexapodControlRvizPanel::legPoseUpdateCallback, this,
+                std::placeholders::_1));
 }
 
-void HexapodControlRvizPanel::onPoseChanged() {
-  updateCurrentPoseFromUI();
-  publishCurrentPose();
-}
+void HexapodControlRvizPanel::legPoseUpdateCallback(
+    const hexapod_msgs::msg::LegPoses msg) {
 
-void HexapodControlRvizPanel::updateCurrentPoseFromUI() {
-  if (current_pose_index_ >= 0 &&
-      current_pose_index_ < static_cast<int>(poses_.size())) {
-    HexapodPose &pose = poses_[current_pose_index_];
+  std::string leg_name;
+  geometry_msgs::msg::Point position;
+  for (size_t i = 0; i < msg.leg_names.size(); i++) {
+    leg_name = msg.leg_names.at(i);
+    position = msg.positions.at(i);
+    spinners_.at(leg_name).at(0)->blockSignals(true);
+    spinners_.at(leg_name).at(1)->blockSignals(true);
+    spinners_.at(leg_name).at(2)->blockSignals(true);
 
-    for (int leg = 0; leg < 6; ++leg) {
-      QDoubleSpinBox *x_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 1)->layout()->itemAt(0)->widget());
-      QDoubleSpinBox *y_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 2)->layout()->itemAt(0)->widget());
-      QDoubleSpinBox *z_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 3)->layout()->itemAt(0)->widget());
+    spinners_.at(leg_name).at(0)->setValue(position.x);
+    spinners_.at(leg_name).at(1)->setValue(position.y);
+    spinners_.at(leg_name).at(2)->setValue(position.z);
 
-      pose.legs[leg].x = x_spin->value();
-      pose.legs[leg].y = y_spin->value();
-      pose.legs[leg].z = z_spin->value();
-    }
+    spinners_.at(leg_name).at(0)->blockSignals(false);
+    spinners_.at(leg_name).at(1)->blockSignals(false);
+    spinners_.at(leg_name).at(2)->blockSignals(false);
   }
 }
 
-void HexapodControlRvizPanel::updateUIFromCurrentPose() {
-  if (current_pose_index_ >= 0 &&
-      current_pose_index_ < static_cast<int>(poses_.size())) {
-    const HexapodPose &pose = poses_[current_pose_index_];
-    pose_name_input_->setText(QString::fromStdString(pose.name));
+void HexapodControlRvizPanel::onSpinnerBoxUpdate(double value) {
+  QDoubleSpinBox *spinbox = qobject_cast<QDoubleSpinBox *>(sender());
+  if (!spinbox)
+    return;
 
-    for (int leg = 0; leg < 6; ++leg) {
-      QDoubleSpinBox *x_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 1)->layout()->itemAt(0)->widget());
-      QDoubleSpinBox *y_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 2)->layout()->itemAt(0)->widget());
-      QDoubleSpinBox *z_spin = qobject_cast<QDoubleSpinBox *>(
-          leg_table_->cellWidget(leg, 3)->layout()->itemAt(0)->widget());
+  std::string leg_name = spinbox->property("legName").toString().toStdString();
+  int axis = spinbox->property("axis").toInt();
 
-      x_spin->blockSignals(true);
-      y_spin->blockSignals(true);
-      z_spin->blockSignals(true);
+  std::string axis_name = (axis == 0) ? "X" : (axis == 1) ? "Y" : "Z";
+  RCLCPP_INFO(node_->get_logger(), "Updating value for leg=%s, %s=%.4f",
+              leg_name.c_str(), axis_name.c_str(), value);
 
-      x_spin->setValue(pose.legs[leg].x);
-      y_spin->setValue(pose.legs[leg].y);
-      z_spin->setValue(pose.legs[leg].z);
+  hexapod_msgs::msg::LegPose msg;
+  // Optional: Update model, emit ROS msg, etc.
+  // for (int i = 0; i < 6; ++i) {
+  msg.leg_name = leg_name;
 
-      x_spin->blockSignals(false);
-      y_spin->blockSignals(false);
-      z_spin->blockSignals(false);
+  msg.position.x = spinners_.at(leg_name).at(0)->value();
+  msg.position.y = spinners_.at(leg_name).at(1)->value();
+  msg.position.z = spinners_.at(leg_name).at(2)->value();
 
-      x_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-      y_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-      z_spin->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    }
-  }
+  leg_pose_pub_->publish(msg);
 }
 
 void HexapodControlRvizPanel::publishCurrentPose() {
   if (current_pose_index_ >= 0 &&
       current_pose_index_ < static_cast<int>(poses_.size())) {
-    hexapod_msgs::msg::LegPose msg;
 
     const HexapodPose &pose = poses_[current_pose_index_];
     RCLCPP_DEBUG(node_->get_logger(), "Pose=%.2f,%.2f,%.2f", pose.legs[0].x,
                  pose.legs[0].y, pose.legs[0].z);
-
-    // for (int i = 0; i < 6; ++i) {
-    msg.leg_name = "top_left";
-    msg.position.x = pose.legs[0].x;
-    msg.position.y = pose.legs[0].y;
-    msg.position.z = pose.legs[0].z;
-    // }
-
-    leg_pose_pub_->publish(msg);
   }
 }
 
@@ -255,13 +250,11 @@ void HexapodControlRvizPanel::onDeletePoseClicked() {
       current_pose_index_ = poses_.size() - 1;
     }
     updatePoseList();
-    updateUIFromCurrentPose();
   }
 }
 
 void HexapodControlRvizPanel::onPoseSelected(QListWidgetItem *item) {
   current_pose_index_ = pose_list_->row(item);
-  updateUIFromCurrentPose();
   publishCurrentPose();
 }
 
@@ -270,7 +263,6 @@ void HexapodControlRvizPanel::onPreviousPoseClicked() {
     current_pose_index_ =
         (current_pose_index_ - 1 + poses_.size()) % poses_.size();
     pose_list_->setCurrentRow(current_pose_index_);
-    updateUIFromCurrentPose();
     publishCurrentPose();
   }
 }
@@ -279,7 +271,6 @@ void HexapodControlRvizPanel::onNextPoseClicked() {
   if (!poses_.empty()) {
     current_pose_index_ = (current_pose_index_ + 1) % poses_.size();
     pose_list_->setCurrentRow(current_pose_index_);
-    updateUIFromCurrentPose();
     publishCurrentPose();
   }
 }

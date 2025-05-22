@@ -5,3 +5,5 @@
 - [ ] Limit input in node
 - [ ] Save pose via rviz and add to gait
 - [ ] Replace Eigen::Vector3D references with Pose
+- [ ] Add time stamp, frame_id and multiple leg poses to leg pose message
+- [ ] Store gaits in node

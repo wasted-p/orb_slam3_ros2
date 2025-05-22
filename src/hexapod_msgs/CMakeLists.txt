@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LegPose.msg"
   "msg/ShowMarker.msg"
   "msg/LegPoses.msg"
+  "msg/ControlCommand.msg"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 

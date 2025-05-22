@@ -1,7 +1,9 @@
 #include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/msg/control_command.hpp"
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "hexapod_msgs/msg/leg_poses.hpp"
 #include "hexapod_rviz_plugins/control_panel.hpp"
+#include <QApplication>
 #include <cstddef>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
@@ -41,7 +43,10 @@ void HexapodControlRvizPanel::onInitialize() {
 void HexapodControlRvizPanel::setupUi() {
   QVBoxLayout *main_layout = new QVBoxLayout;
 
-  // Create leg position table
+  // Create main horizontal layout
+  QHBoxLayout *horizontal_layout = new QHBoxLayout;
+
+  // Left side - leg position table
   leg_table_ = new QTableWidget(6, 4); // 6 legs, 4 columns (name + xyz)
   leg_table_->setHorizontalHeaderLabels({"Leg", "X", "Y", "Z"});
   // leg_table_->verticalHeader()->setVisible(false);
@@ -79,15 +84,23 @@ void HexapodControlRvizPanel::setupUi() {
     spinners_[leg_names[i].toStdString()] = spin_array;
   }
   leg_table_->resizeColumnsToContents();
-  main_layout->addWidget(leg_table_);
+  horizontal_layout->addWidget(leg_table_, 1); // Stretch factor 1 for table
 
-  // Pose navigation controls
+  // Right side - controls and pose list
+  QVBoxLayout *right_layout = new QVBoxLayout();
+
+  // Pose navigation controls with icons
   QHBoxLayout *nav_layout = new QHBoxLayout;
-  QPushButton *prev_button = new QPushButton("Previous");
-  QPushButton *next_button = new QPushButton("Next");
+  QPushButton *prev_button = new QPushButton();
+  prev_button->setIcon(QApplication::style()->standardIcon(QStyle::SP_ArrowUp));
+  prev_button->setToolTip("Previous pose");
+  QPushButton *next_button = new QPushButton();
+  next_button->setIcon(
+      QApplication::style()->standardIcon(QStyle::SP_ArrowDown));
+  next_button->setToolTip("Next pose");
   nav_layout->addWidget(prev_button);
   nav_layout->addWidget(next_button);
-  main_layout->addLayout(nav_layout);
+  right_layout->addLayout(nav_layout);
 
   connect(prev_button, &QPushButton::clicked, this,
           &HexapodControlRvizPanel::onPreviousPoseClicked);
@@ -103,7 +116,7 @@ void HexapodControlRvizPanel::setupUi() {
   save_layout->addWidget(pose_name_input_);
   save_layout->addWidget(save_button);
   save_layout->addWidget(delete_button);
-  main_layout->addLayout(save_layout);
+  right_layout->addLayout(save_layout);
 
   connect(save_button, &QPushButton::clicked, this,
           &HexapodControlRvizPanel::onSavePoseClicked);
@@ -111,11 +124,15 @@ void HexapodControlRvizPanel::setupUi() {
           &HexapodControlRvizPanel::onDeletePoseClicked);
 
   // Pose list
+  right_layout->addWidget(new QLabel("Saved Poses:"));
   pose_list_ = new QListWidget();
-  main_layout->addWidget(new QLabel("Saved Poses:"));
-  main_layout->addWidget(pose_list_);
+  right_layout->addWidget(pose_list_, 2); // Stretch factor 1 for list
   connect(pose_list_, &QListWidget::itemClicked, this,
           &HexapodControlRvizPanel::onPoseSelected);
+
+  horizontal_layout->addLayout(right_layout,
+                               1); // Stretch factor 1 for right side
+  main_layout->addLayout(horizontal_layout);
 
   setLayout(main_layout);
 }
@@ -132,6 +149,9 @@ QDoubleSpinBox *HexapodControlRvizPanel::createSpinBox() {
 void HexapodControlRvizPanel::setupROS() {
   leg_pose_pub_ = node_->create_publisher<hexapod_msgs::msg::LegPose>(
       "hexapod_control/leg_pose/update", 10);
+
+  command_pub_ = node_->create_publisher<hexapod_msgs::msg::ControlCommand>(
+      "hexapod_control/command", 10);
 
   leg_pose_sub_ = node_->create_subscription<hexapod_msgs::msg::LegPoses>(
       "hexapod_control/leg_pose", // topic name
@@ -182,7 +202,6 @@ void HexapodControlRvizPanel::onSpinnerBoxUpdate(double value) {
   msg.position.x = spinners_.at(leg_name).at(0)->value();
   msg.position.y = spinners_.at(leg_name).at(1)->value();
   msg.position.z = spinners_.at(leg_name).at(2)->value();
-
   leg_pose_pub_->publish(msg);
 }
 
@@ -208,36 +227,9 @@ void HexapodControlRvizPanel::updatePoseList() {
 }
 
 void HexapodControlRvizPanel::onSavePoseClicked() {
-  std::string name = pose_name_input_->text().toStdString();
-  if (name.empty()) {
-    name = "Pose " + std::to_string(poses_.size() + 1);
-  }
-
-  HexapodPose new_pose;
-  new_pose.name = name;
-
-  for (int leg = 0; leg < 6; ++leg) {
-    QDoubleSpinBox *x_spin = qobject_cast<QDoubleSpinBox *>(
-        leg_table_->cellWidget(leg, 1)->layout()->itemAt(0)->widget());
-    QDoubleSpinBox *y_spin = qobject_cast<QDoubleSpinBox *>(
-        leg_table_->cellWidget(leg, 2)->layout()->itemAt(0)->widget());
-    QDoubleSpinBox *z_spin = qobject_cast<QDoubleSpinBox *>(
-        leg_table_->cellWidget(leg, 3)->layout()->itemAt(0)->widget());
-
-    new_pose.legs[leg].x = x_spin->value();
-    new_pose.legs[leg].y = y_spin->value();
-    new_pose.legs[leg].z = z_spin->value();
-  }
-
-  if (current_pose_index_ >= 0 &&
-      current_pose_index_ < static_cast<int>(poses_.size())) {
-    poses_[current_pose_index_] = new_pose;
-  } else {
-    poses_.push_back(new_pose);
-    current_pose_index_ = poses_.size() - 1;
-  }
-
-  updatePoseList();
+  hexapod_msgs::msg::ControlCommand msg;
+  msg.command_type = "save";
+  command_pub_->publish(msg);
 }
 
 void HexapodControlRvizPanel::onDeletePoseClicked() {

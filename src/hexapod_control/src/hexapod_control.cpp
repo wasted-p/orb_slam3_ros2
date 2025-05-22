@@ -10,11 +10,11 @@
 // - [ ] Fix TF and RobotModel warning
 //
 #include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/msg/control_command.hpp"
 #include "hexapod_msgs/msg/leg_pose.hpp"
 #include "hexapod_msgs/msg/leg_poses.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
-#include "visualization_msgs/msg/interactive_marker.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include <cmath>
@@ -63,6 +63,8 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       markers_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::LegPose>::SharedPtr leg_pose_sub_;
+  rclcpp::Subscription<hexapod_msgs::msg::ControlCommand>::SharedPtr
+      command_sub_;
   hexapod_msgs::msg::LegPoses leg_poses_msg_;
   std::vector<hexapod_msgs::msg::LegPoses> saved_leg_poses_;
 
@@ -125,6 +127,14 @@ private:
 
   void leg_pose_callback(const hexapod_msgs::msg::LegPose pose) {
     updateLegPose(pose);
+  }
+
+  void command_callback(const hexapod_msgs::msg::ControlCommand command) {
+    RCLCPP_INFO(get_logger(), "Command %s", command.command_type.c_str());
+    if (command.command_type.compare("save") == 0) {
+      RCLCPP_INFO(get_logger(), "Saving Pose");
+      savePose();
+    }
   }
 
   void updateLegPose(const hexapod_msgs::msg::LegPose leg_pose) {
@@ -312,6 +322,12 @@ private:
         std::bind(&LegControlNode::leg_pose_callback, this,
                   std::placeholders::_1));
 
+    command_sub_ = this->create_subscription<hexapod_msgs::msg::ControlCommand>(
+        "hexapod_control/command", // topic name
+        10,                        // QoS history depth
+        std::bind(&LegControlNode::command_callback, this,
+                  std::placeholders::_1));
+
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(100),
         std::bind(&LegControlNode::timer_callback, this));
@@ -376,7 +392,7 @@ private:
 
     case InteractiveMarkerFeedback::MOUSE_UP:
       RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
-      savePose();
+      // savePose();
       break;
     }
   };

@@ -102,9 +102,8 @@ public:
 
       leg_poses_msg_.leg_names.push_back(leg_name);
       leg_poses_msg_.positions.push_back(rest_pos);
-      RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
-                  leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
-      // updateLegPose(pose);
+      RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
+                   leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
     };
   }
 

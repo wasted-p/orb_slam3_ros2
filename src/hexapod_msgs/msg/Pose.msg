@@ -1,2 +1,3 @@
-string[] leg_names
+string name
+string[] names
 geometry_msgs/Point[] positions

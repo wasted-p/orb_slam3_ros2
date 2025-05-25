@@ -14,10 +14,11 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Pose.msg"
   "msg/LegPose.msg"
-  "msg/ShowMarker.msg"
-  "msg/LegPoses.msg"
-  "msg/ControlCommand.msg"
+  "msg/Gait.msg"
+  "msg/Command.msg"
+  "srv/GetPose.srv"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 

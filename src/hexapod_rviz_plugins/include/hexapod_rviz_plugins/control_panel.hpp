@@ -1,10 +1,6 @@
 #ifndef MY_RVIZ_PANEL_HPP
 #define MY_RVIZ_PANEL_HPP
 
-#include "hexapod_msgs/msg/control_command.hpp"
-#include "hexapod_msgs/msg/leg_pose.hpp"
-#include "hexapod_msgs/msg/leg_poses.hpp"
-#include <hexapod_msgs/msg/leg_pose.hpp>
 #include <qlist.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
@@ -19,8 +15,26 @@
 #include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <hexapod_msgs/msg/command.hpp>
+#include <hexapod_msgs/msg/leg_pose.hpp>
+#include <hexapod_msgs/msg/pose.hpp>
 
 namespace hexapod_rviz_plugins {
+
+class PoseTable : public QTableWidget {
+  Q_OBJECT
+  const static int ROW_COUNT = 6;
+  const static int COLUMN_COUNT = 4;
+  std::map<std::string, std::array<QDoubleSpinBox *, 3>> spinners_;
+  void onSpinnerBoxUpdate();
+  QDoubleSpinBox *createSpinBox();
+signals:
+  void legPoseUpdated(std::string row_name, double x, double y, double z);
+
+public:
+  PoseTable();
+  void updateSpinners(const hexapod_msgs::msg::Pose pose);
+};
 
 class HexapodControlRvizPanel : public rviz_common::Panel {
   Q_OBJECT
@@ -28,51 +42,24 @@ class HexapodControlRvizPanel : public rviz_common::Panel {
 public:
   explicit HexapodControlRvizPanel(QWidget *parent = nullptr);
   ~HexapodControlRvizPanel() override;
-
   void onInitialize() override;
-  void save(rviz_common::Config config) const override;
-  void load(const rviz_common::Config &config) override;
 
 protected Q_SLOTS:
-  void onPoseChanged();
-  void onSavePoseClicked();
-  void onDeletePoseClicked();
-  void onPoseSelected(QListWidgetItem *item);
-  void onPreviousPoseClicked();
-  void onNextPoseClicked();
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<hexapod_msgs::msg::LegPoses>::SharedPtr leg_pose_pub_;
-  rclcpp::Publisher<hexapod_msgs::msg::ControlCommand>::SharedPtr command_pub_;
-  rclcpp::Subscription<hexapod_msgs::msg::LegPoses>::SharedPtr leg_pose_sub_;
-  std::map<std::string, std::array<QDoubleSpinBox *, 3>> spinners_;
+  rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
+  rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
+
   QStringList leg_names_;
 
   void setupUi();
   void setupROS();
-  void onSpinnerBoxUpdate(double value);
-  void legPoseUpdateCallback(const hexapod_msgs::msg::LegPoses msg);
-
-  struct LegPosition {
-    double x;
-    double y;
-    double z;
-  };
-
-  struct HexapodPose {
-    std::string name;
-    std::array<LegPosition, 6> legs;
-  };
-
-  std::vector<HexapodPose> poses_;
-  int current_pose_index_ = -1;
+  void legPoseUpdateCallback(const hexapod_msgs::msg::Pose msg);
+  void onLegPoseUpdate(std::string leg_name, double x, double y, double z);
 
   // UI Elements
-  QTableWidget *leg_table_;
-  QListWidget *pose_list_;
-  QLineEdit *pose_name_input_;
-  QDoubleSpinBox *createSpinBox();
+  PoseTable *pose_table_;
 };
 
 } // namespace hexapod_rviz_plugins

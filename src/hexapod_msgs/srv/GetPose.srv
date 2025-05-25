@@ -1,0 +1,7 @@
+# GetHexapodPose.srv
+
+# Request
+---
+
+# Response
+hexapod_msgs/Pose pose

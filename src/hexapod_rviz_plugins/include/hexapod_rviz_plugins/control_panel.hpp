@@ -53,7 +53,6 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
-  std::vector<rclcpp::TimerBase::SharedPtr> timers_;
 
   QStringList leg_names_;
 

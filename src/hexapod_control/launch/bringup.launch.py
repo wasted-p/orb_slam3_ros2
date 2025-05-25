@@ -81,11 +81,20 @@ def generate_launch_description():
         }],
     )
 
+    # Node: Control node (to be launched later)
+    hexapod_gait_planner_node = Node(
+        package='hexapod_gait',
+        executable='hexapod_gait_planner_node',
+        name='hexapod_gait_planner',
+        output="screen",
+    )
+
     return LaunchDescription([
         rviz_config_arg,
         use_sim_time_arg,
         rviz_args_arg,
         robot_state_publisher_node,
         hexapod_control_node,
+        hexapod_gait_planner_node,
         rviz_node
     ])

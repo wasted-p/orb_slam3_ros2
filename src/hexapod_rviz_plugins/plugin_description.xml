@@ -7,5 +7,14 @@
       An RViz2 panel providing custom controls for robot interaction.
     </description>
   </class>
+  <class
+    name="hexapod_rviz_plugins/GaitPlannerPanel"
+    type="hexapod_rviz_plugins::GaitPlannerRvizPanel"
+    base_class_type="rviz_common::Panel">
+    <description>
+      Rviz2 Panel for gait planning for the hexapod robot
+    </description>
+  </class>
+
 </library>
 

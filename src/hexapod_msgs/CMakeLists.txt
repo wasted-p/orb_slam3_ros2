@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Gait.msg"
   "msg/Command.msg"
   "srv/GetPose.srv"
+  "srv/Command.srv"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(hexapod_control)
+project(hexapod_gait)
 
 # Set C++ standard to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -18,65 +18,43 @@ find_package(rclcpp REQUIRED)
 find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(interactive_markers REQUIRED)
-find_package(kdl_parser REQUIRED)
-find_package(orocos_kdl REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(hexapod_msgs REQUIRED)
 
-# Find Eigen
-find_package(Eigen3 REQUIRED)
 
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
-# Build hexapod_control_node executable
-add_executable(hexapod_control_node
-src/hexapod_control.cpp
-src/marker.cpp
-src/planning_group.cpp
+# Build hexapod_gait_planner_node executable
+add_executable(hexapod_gait_planner_node
+src/gait_planner.cpp
 )
 
 
+# install(DIRECTORY launch/
+#   DESTINATION share/${PROJECT_NAME}/launch)
+#
+# install(DIRECTORY config/
+#   DESTINATION share/${PROJECT_NAME}/config)
 
-
-
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch)
-
-install(DIRECTORY config/
-  DESTINATION share/${PROJECT_NAME}/config)
-
-target_include_directories(hexapod_control_node PUBLIC
+target_include_directories(hexapod_gait_planner_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 
-ament_target_dependencies(hexapod_control_node
+ament_target_dependencies(hexapod_gait_planner_node
   rclcpp
   std_msgs
-  sensor_msgs
-  urdf
-  kdl_parser
-  orocos_kdl
-  tf2
-  tf2_ros
   hexapod_msgs
-  interactive_markers
+  visualization_msgs
 )
 
-
-
-target_link_libraries(hexapod_control_node Eigen3::Eigen)
 
 # Install executables
-install(TARGETS  hexapod_control_node
+install(TARGETS  hexapod_gait_planner_node
   DESTINATION lib/${PROJECT_NAME}
 )
+
 
 # Testing
 if(BUILD_TESTING)

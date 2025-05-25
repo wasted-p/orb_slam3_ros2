@@ -1,52 +1,69 @@
+#include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/save_pose.hpp"
 #include <geometry_msgs/msg/point.hpp>
 #include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
+#include <hexapod_msgs/srv/command.hpp>
+#include <hexapod_msgs/srv/save_pose.hpp>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
+#include <rclcpp/create_subscription.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
+using namespace std::chrono_literals;
 class GaitPlannerNode : public rclcpp::Node {
-private:
-  rclcpp::TimerBase::SharedPtr timer_;
 
+private:
   // ROS2 Subscriptions
-  rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr leg_poses_sub_;
-  rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
+  rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
 
   // ROS2 Publishers
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       markers_pub_;
-  rclcpp::Publisher<hexapod_msgs::msg::Gait>::SharedPtr hexapod_gait_pub_;
+  // ROS2 Publishers
+  rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
+  rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
 
   // ROS Message variables
   hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait gait_;
 
+  rclcpp::TimerBase::SharedPtr timer_;
+
 public:
-  GaitPlannerNode() : Node("gait_planner_node") {
-    using namespace std::chrono_literals;
-    setupROS();
-  }
+  GaitPlannerNode() : Node("gait_planner_node") { setupROS(); }
 
 private:
-  void timer_callback() { hexapod_gait_pub_->publish(gait_); }
+  void setupROS() {
+    markers_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
+        "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
 
-  void command_callback(const hexapod_msgs::msg::Command command) {
-    RCLCPP_INFO(get_logger(), "Command %s", command.command_type.c_str());
-    if (command.command_type.compare("save") == 0) {
-    } else if (command.command_type.compare("change") == 0) {
-      RCLCPP_INFO(get_logger(), "Changing Pose to %s",
-                  command.pose_name.c_str());
-    }
+    std::string POSE_TOPIC = "/hexapod/pose";
+    pose_pub_ =
+        create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC, rclcpp::QoS(10));
+
+    pose_sub_ = this->create_subscription<hexapod_msgs::msg::Pose>(
+        POSE_TOPIC,
+        10, // QoS history depth
+        std::bind(&GaitPlannerNode::onPoseUpdate, this, std::placeholders::_1));
+
+    timer_ =
+        create_wall_timer(std::chrono::milliseconds(100),
+                          std::bind(&GaitPlannerNode::timerCallback, this));
+
+    service_ = create_service<hexapod_msgs::srv::Command>(
+        "command", std::bind(&GaitPlannerNode::handleCommand, this,
+                             std::placeholders::_1, std::placeholders::_2));
+    RCLCPP_INFO(this->get_logger(), "Save gait pose service ready.");
   }
 
+  void onPoseUpdate(hexapod_msgs::msg::Pose pose) { pose_msg_ = pose; }
   void visualizeGait(hexapod_msgs::msg::Gait gait) {
-
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
@@ -123,33 +140,45 @@ private:
     return color;
   }
 
-  void legPoseCallback(const hexapod_msgs::msg::Pose pose) {
-    RCLCPP_INFO(get_logger(), "Recieved leg pose %s", pose.name.c_str());
+  void handleCommand(
+      const std::shared_ptr<hexapod_msgs::srv::Command::Request> request,
+      std::shared_ptr<hexapod_msgs::srv::Command::Response> response) {
+
+    // Do something with request->pose...
+    RCLCPP_INFO(get_logger(), "Recieved command %s", request->type.c_str());
+    if (request->type.compare("add_pose") == 0) {
+      RCLCPP_INFO(get_logger(), "Received Add Pose Request");
+      pose_msg_.name = request->pose_name;
+      gait_.poses.push_back(pose_msg_);
+      response->success = true;
+      response->message = "Pose added successfully";
+    } else if (request->type.compare("set_pose") == 0) {
+      RCLCPP_INFO(get_logger(), "Received Set Pose Request");
+
+      RCLCPP_INFO(get_logger(), "Target Pose Name=%s",
+                  request->pose_name.c_str());
+      for (size_t i = 0; i < gait_.poses.size(); i++) {
+        if (gait_.poses[i].name.compare(request->pose_name.c_str()) == 0) {
+          pose_pub_->publish(gait_.poses[i]);
+          for (size_t j = 0; j < gait_.poses[i].names.size(); j++) {
+            RCLCPP_INFO(
+                get_logger(), "Pose Name=%s, [%.4f,%.4f,%.4f]",
+                gait_.poses[i].names[j].c_str(), gait_.poses[i].positions[j].x,
+                gait_.poses[i].positions[j].y, gait_.poses[i].positions[j].z);
+          }
+        }
+      }
+
+      response->success = true;
+      response->message = "Pose set successfully";
+    } else if (request->type.compare("delete_pose") == 0) {
+      RCLCPP_INFO(get_logger(), "Received Set Pose Request");
+      response->success = true;
+      response->message = "Pose set successfully";
+    }
   }
 
-  void setupROS() {
-    hexapod_gait_pub_ = this->create_publisher<hexapod_msgs::msg::Gait>(
-        "/hexapod/gait", rclcpp::QoS(10));
-
-    markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
-
-    leg_poses_sub_ = this->create_subscription<hexapod_msgs::msg::Pose>(
-        "hexapod_control/leg_pose/update", // topic name
-        10,                                // QoS history depth
-        std::bind(&GaitPlannerNode::legPoseCallback, this,
-                  std::placeholders::_1));
-
-    command_sub_ = this->create_subscription<hexapod_msgs::msg::Command>(
-        "hexapod_control/command", // topic name
-        10,                        // QoS history depth
-        std::bind(&GaitPlannerNode::command_callback, this,
-                  std::placeholders::_1));
-
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(100),
-        std::bind(&GaitPlannerNode::timer_callback, this));
-  }
+  void timerCallback() {}
 };
 
 int main(int argc, char **argv) {

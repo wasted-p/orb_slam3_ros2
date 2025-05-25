@@ -62,8 +62,6 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
-      markers_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
 
@@ -110,6 +108,7 @@ private:
   }
 
   void poseUpdateCallback(const hexapod_msgs::msg::Pose pose) {
+    RCLCPP_INFO(get_logger(), "Recieved Pose");
     updatePose(pose);
   }
 
@@ -232,9 +231,6 @@ private:
                   std::placeholders::_1));
     pose_pub_ = this->create_publisher<hexapod_msgs::msg::Pose>(
         POSE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
-
-    markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
 
     command_sub_ = this->create_subscription<hexapod_msgs::msg::Command>(
         "hexapod_control/command", // topic name

@@ -49,7 +49,6 @@
 
 class LegControlNode : public rclcpp::Node {
 private:
-  rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr service_;
   hexapod_msgs::msg::Pose last_pose_msg_;
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
@@ -155,9 +154,9 @@ private:
             joint_state_msg_.position.cend(),
             {joint_positions[0], joint_positions[1], joint_positions[2]});
 
-        RCLCPP_INFO(get_logger(),
-                    "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
-                    joint_positions[0], joint_positions[1], joint_positions[2]);
+        RCLCPP_DEBUG(
+            get_logger(), "Sending Target Joint Positions = [%.2f, %.2f, %.2f]",
+            joint_positions[0], joint_positions[1], joint_positions[2]);
 
         int_marker_pose.position = position;
         server_->setPose(leg_name, int_marker_pose);
@@ -232,7 +231,7 @@ private:
         std::bind(&LegControlNode::poseUpdateCallback, this,
                   std::placeholders::_1));
     pose_pub_ = this->create_publisher<hexapod_msgs::msg::Pose>(
-        POSE_TOPIC, rclcpp::QoS(10));
+        POSE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
 
     markers_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
         "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
@@ -246,11 +245,6 @@ private:
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(100),
         std::bind(&LegControlNode::timer_callback, this));
-    service_ = this->create_service<hexapod_msgs::srv::GetPose>(
-        "get_pose", std::bind(&LegControlNode::handleGetPoseRequest, this,
-                              std::placeholders::_1, std::placeholders::_2));
-
-    RCLCPP_INFO(this->get_logger(), "Service 'get_hexapod_pose' ready.");
   }
 
   void handleGetPoseRequest(

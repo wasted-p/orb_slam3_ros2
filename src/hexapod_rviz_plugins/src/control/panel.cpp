@@ -35,6 +35,13 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
       QStringList{"top_left",  "mid_left",  "bottom_left",
                   "top_right", "mid_right", "bottom_right"};
 
+  // NOTE: Populate these values dynamically from the hexapod_pose node
+  double initial_pose[6][3] = {
+      {0.1287, 0.0911, 0.0043},  {0.0106, 0.1264, 0.0052},
+      {-0.1114, 0.1016, 0.0043}, {0.1293, -0.0917, 0.0043},
+      {0.0097, -0.1246, 0.0052}, {-0.1120, -0.1004, 0.0043},
+  };
+
   for (int i = 0; i < 6; ++i) {
     // Leg name
     QTableWidgetItem *name_item = new QTableWidgetItem(leg_names_[i]);
@@ -49,6 +56,7 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
       layout->setContentsMargins(0, 0, 0, 0);
 
       QDoubleSpinBox *spin_box = createSpinBox();
+      spin_box->setValue(initial_pose[i][j]);
       layout->addWidget(spin_box);
       widget->setLayout(layout);
       spin_box->setProperty("legName", leg_names_[i]);
@@ -96,8 +104,6 @@ void PoseTable::onSpinnerBoxUpdate() {
   int axis = spinbox->property("axis").toInt();
 
   std::string axis_name = (axis == 0) ? "X" : (axis == 1) ? "Y" : "Z";
-  // RCLCPP_INFO(node_->get_logger(), "Updating value for leg=%s, %s=%.4f",
-  //             leg_name.c_str(), axis_name.c_str(), value);
 
   double x, y, z;
 
@@ -133,7 +139,7 @@ HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
 
 void HexapodControlRvizPanel::onLegPoseUpdate(std::string leg_name, double x,
                                               double y, double z) {
-  RCLCPP_INFO(node_->get_logger(), "Spinner box updated");
+  RCLCPP_DEBUG(node_->get_logger(), "Spinner box updated");
   hexapod_msgs::msg::Pose pose;
   geometry_msgs::msg::Point position;
   position.x = x;
@@ -145,6 +151,7 @@ void HexapodControlRvizPanel::onLegPoseUpdate(std::string leg_name, double x,
 }
 
 void HexapodControlRvizPanel::onInitialize() {
+  Panel::onInitialize();
   DisplayContext *context = getDisplayContext();
   auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
   auto ros_node_abstraction = ros_node_abstraction_weak.lock();
@@ -177,28 +184,7 @@ void HexapodControlRvizPanel::setupROS() {
       std::bind(&HexapodControlRvizPanel::legPoseUpdateCallback, this,
                 std::placeholders::_1));
 
-  auto client = node_->create_client<hexapod_msgs::srv::GetPose>("get_pose");
-  auto request = std::make_shared<hexapod_msgs::srv::GetPose::Request>();
-  auto future = client->async_send_request(request);
-
-  // Optionally wait briefly or use a timer to let RViz settle
-  auto timer = node_->create_wall_timer(
-      std::chrono::milliseconds(500), [this, future]() {
-        if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                               future) ==
-            rclcpp::FutureReturnCode::SUCCESS) {
-          auto response = future.get();
-          RCLCPP_INFO(node_->get_logger(), "TESTING Received pose: %s",
-                      response->pose.name.c_str());
-        } else {
-          RCLCPP_ERROR(node_->get_logger(), "Service call failed.");
-        }
-      });
-
-  timers_.push_back(timer); // store so it doesn't go out of scope
-  // Wait for result
-
-  hexapod_msgs::msg::Pose initial_pose;
+  // hexapod_msgs::msg::Pose initial_pose;
   // pose_table_->updateSpinners(initial_pose);
 }
 

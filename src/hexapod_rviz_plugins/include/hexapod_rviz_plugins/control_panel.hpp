@@ -1,8 +1,11 @@
 #ifndef MY_RVIZ_PANEL_HPP
 #define MY_RVIZ_PANEL_HPP
 
+#include "hexapod_msgs/srv/get_pose.hpp"
 #include <qlist.h>
+#include <rclcpp/client.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/service.hpp>
 #include <rviz_common/panel.hpp>
 
 #include <QComboBox>
@@ -50,6 +53,7 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
+  std::vector<rclcpp::TimerBase::SharedPtr> timers_;
 
   QStringList leg_names_;
 

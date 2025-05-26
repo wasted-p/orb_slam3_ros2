@@ -18,6 +18,7 @@
 #include "hexapod_msgs/srv/get_pose.hpp"
 #include "marker.cpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <geometry_msgs/msg/pose.hpp>
@@ -26,6 +27,7 @@
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
+#include <iterator>
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
@@ -64,22 +66,22 @@ private:
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
+  hexapod_msgs::msg::Pose pose_msg_;
+
+  std::string LEG_NAMES[6] = {
+      "top_left",  "mid_left",  "bottom_left",
+      "top_right", "mid_right", "bottom_right",
+  };
 
 public:
   LegControlNode() : Node("leg_control_node") {
     using namespace std::chrono_literals;
-
-    std::string LEG_NAMES[6] = {
-        "top_left",  "mid_left",  "bottom_left",
-        "top_right", "mid_right", "bottom_right",
-    };
 
     readRobotDescription();
     initInteractiveMarkerServer();
     setupROS();
 
     geometry_msgs::msg::Point rest_pos;
-    hexapod_msgs::msg::Pose initial_pose;
     for (std::string leg_name : LEG_NAMES) {
       KDL::Chain chain;
       kdl_tree_.getChain("base_footprint", leg_name + "_foot", chain);
@@ -90,14 +92,14 @@ public:
 
       setupControl(leg_name, rest_pos);
 
-      initial_pose.names.push_back(leg_name);
-      initial_pose.positions.push_back(rest_pos);
+      pose_msg_.names.push_back(leg_name);
+      pose_msg_.positions.push_back(rest_pos);
 
       RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
                    leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
     };
 
-    pose_pub_->publish(initial_pose);
+    pose_pub_->publish(pose_msg_);
   }
 
 private:
@@ -230,7 +232,7 @@ private:
         std::bind(&LegControlNode::poseUpdateCallback, this,
                   std::placeholders::_1));
     pose_pub_ = this->create_publisher<hexapod_msgs::msg::Pose>(
-        POSE_TOPIC, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
+        POSE_TOPIC, rclcpp::QoS(10));
 
     command_sub_ = this->create_subscription<hexapod_msgs::msg::Command>(
         "hexapod_control/command", // topic name
@@ -275,6 +277,7 @@ private:
     case InteractiveMarkerFeedback::MENU_SELECT:
       RCLCPP_DEBUG(this->get_logger(), "Menu Item %d clicked (mo)",
                    feedback->menu_entry_id);
+
       break;
 
     case InteractiveMarkerFeedback::POSE_UPDATE: {
@@ -286,10 +289,6 @@ private:
                    feedback->pose.orientation.x, feedback->pose.orientation.y,
                    feedback->pose.orientation.z);
 
-      hexapod_msgs::msg::Pose pose;
-      pose.names = {leg_name};
-      pose.positions = {feedback->pose.position};
-      pose_pub_->publish(pose);
     }
 
     break;
@@ -300,6 +299,10 @@ private:
 
     case InteractiveMarkerFeedback::MOUSE_UP:
       RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
+
+      pose_msg_.names = {leg_name};
+      pose_msg_.positions = {feedback->pose.position};
+      pose_pub_->publish(pose_msg_);
       break;
     }
   };

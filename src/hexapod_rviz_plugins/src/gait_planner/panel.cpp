@@ -192,8 +192,9 @@ void GaitPlannerRvizPanel::onPoseSelected(QListWidgetItem *item) {
   RCLCPP_INFO(node_->get_logger(), "Pose selected: %s",
               item->text().toStdString().c_str());
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
+  size_t idx = pose_list_widget_->currentRow();
   std::string name = item->text().toStdString();
-  command->pose_name = name;
+  command->pose_idx = idx;
   command->type = "set_pose";
 
   using ServiceResponseFuture =
@@ -235,23 +236,22 @@ void GaitPlannerRvizPanel::onAddPose() {
 
 void GaitPlannerRvizPanel::onDeletePose() {
   QListWidgetItem *item = pose_list_widget_->currentItem();
+  size_t idx = pose_list_widget_->currentRow();
   std::string name = item->text().toStdString();
 
-  int count = pose_list_widget_->count();
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
-  command->pose_name = name.c_str();
+  command->pose_idx = idx;
   command->type = "delete_pose";
 
   using ServiceResponseFuture =
       rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
   client_->async_send_request(
-      command, [this, name, count, item](ServiceResponseFuture future) {
+      command, [this, name, idx, item](ServiceResponseFuture future) {
         try {
           auto response = future.get();
-          if (item) {
+          if (item)
             delete item;
-          }
-          pose_list_widget_->setCurrentRow(count - 2);
+          pose_list_widget_->setCurrentRow(idx - 1);
           RCLCPP_INFO(node_->get_logger(), "Got response: %s",
                       response->message.c_str());
         } catch (const std::exception &e) {

@@ -94,7 +94,8 @@ def generate_launch_description():
         use_sim_time_arg,
         rviz_args_arg,
         robot_state_publisher_node,
-        hexapod_control_node,
+
         hexapod_gait_planner_node,
+        hexapod_control_node,
         rviz_node
     ])

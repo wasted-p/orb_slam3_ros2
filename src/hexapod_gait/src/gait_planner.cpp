@@ -1,3 +1,5 @@
+#include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/save_pose.hpp"
 #include "visualization_msgs/msg/marker.hpp"
@@ -12,6 +14,7 @@
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/command.hpp>
 #include <hexapod_msgs/srv/save_pose.hpp>
+#include <iterator>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>
@@ -28,6 +31,7 @@ class GaitPlannerNode : public rclcpp::Node {
 
 private:
   int pose_idx = 1;
+  int current_pose = -1;
   // ROS2 Subscriptions
   rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
 
@@ -39,13 +43,32 @@ private:
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
 
   // ROS Message variables
-  hexapod_msgs::msg::Pose pose_msg_;
+  // hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait gait_;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
+  std::map<std::string, geometry_msgs::msg::Point> buffer;
+  std::vector<std::string> LEG_NAMES = {
+      "top_left",  "mid_left",  "bottom_left",
+      "top_right", "mid_right", "bottom_right",
+  };
+
 public:
-  GaitPlannerNode() : Node("gait_planner_node") { setupROS(); }
+  GaitPlannerNode() : Node("gait_planner_node") {
+
+    double initial_pose[6][3] = {
+        {0.1287, 0.0911, 0.0043},  {0.0106, 0.1264, 0.0052},
+        {-0.1114, 0.1016, 0.0043}, {0.1293, -0.0917, 0.0043},
+        {0.0097, -0.1246, 0.0052}, {-0.1120, -0.1004, 0.0043},
+    };
+    for (size_t i = 0; i < 6; i++) {
+      buffer[LEG_NAMES[i]].x = initial_pose[i][0];
+      buffer[LEG_NAMES[i]].y = initial_pose[i][1];
+      buffer[LEG_NAMES[i]].z = initial_pose[i][2];
+    }
+    setupROS();
+  }
 
 private:
   void setupROS() {
@@ -68,10 +91,48 @@ private:
     service_ = create_service<hexapod_msgs::srv::Command>(
         "command", std::bind(&GaitPlannerNode::handleCommand, this,
                              std::placeholders::_1, std::placeholders::_2));
+
     RCLCPP_INFO(this->get_logger(), "Save gait pose service ready.");
   }
 
-  void onPoseUpdate(hexapod_msgs::msg::Pose pose) { pose_msg_ = pose; }
+  void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
+    if (current_pose == -1) {
+      return;
+    }
+
+    RCLCPP_INFO(get_logger(), "Updating Pose");
+    // Search an element 6
+    RCLCPP_INFO(get_logger(), "Incoming Pose:");
+    for (size_t i = 0; i < pose.names.size(); i++) {
+      buffer[pose.names[i]] = pose.positions[i];
+      RCLCPP_INFO(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
+                  pose.names[i].c_str(), buffer[pose.names[i]].x,
+                  pose.positions[i].y, pose.positions[i].z);
+    }
+
+    gait_.poses[current_pose].names = {};
+    gait_.poses[current_pose].positions = {};
+    RCLCPP_INFO(get_logger(), "Current Pose:");
+    for (size_t i = 0; i < 6; i++) {
+      gait_.poses[current_pose].names.push_back(LEG_NAMES[i]);
+      gait_.poses[current_pose].positions.push_back(buffer.at(LEG_NAMES[i]));
+      // RCLCPP_DEBUG(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
+      //              pose_msg_.names[i].c_str(), pose_msg_.positions[i].x,
+      //              pose_msg_.positions[i].y, pose_msg_.positions[i].z);
+    }
+
+    // visualization_msgs::msg::Marker marker;
+
+    // size_t leg_idx = 0;
+    // marker.pose.position = gait_.poses[current_pose].positions[leg_idx];
+    // marker.id = current_pose * 6 + leg_idx;
+    addMarkers(gait_);
+  }
+
+  void updateMarkerPosition() {
+    // marker.ns = "my_marker_ns";
+    // marker.id = 0;
+  }
 
   void clearMarkers() {
     visualization_msgs::msg::Marker delete_all_marker;
@@ -80,7 +141,7 @@ private:
     marker_array.markers = {delete_all_marker};
     markers_pub_->publish(marker_array);
   }
-  void updateMarkers(hexapod_msgs::msg::Gait gait) {
+  void addMarkers(hexapod_msgs::msg::Gait gait) {
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
@@ -165,50 +226,35 @@ private:
     RCLCPP_INFO(get_logger(), "Recieved command %s", request->type.c_str());
     if (request->type.compare("add_pose") == 0) {
       RCLCPP_INFO(get_logger(), "Received Add Pose Request");
-      std::string new_pose_name = "Pose " + std::to_string(pose_idx);
-      pose_msg_.name = new_pose_name;
-      gait_.poses.push_back(pose_msg_);
-
-      response->pose_names = {new_pose_name};
+      hexapod_msgs::msg::Pose new_pose;
+      new_pose.name = "Pose " + std::to_string(pose_idx);
+      gait_.poses.push_back(new_pose);
+      response->pose_names = {new_pose.name};
       response->success = true;
       response->message = "Pose added successfully";
-      updateMarkers(gait_);
+      addMarkers(gait_);
       pose_idx++;
+      current_pose++;
     } else if (request->type.compare("set_pose") == 0) {
       RCLCPP_INFO(get_logger(), "Received Set Pose Request");
-
-      RCLCPP_INFO(get_logger(), "Target Pose Name=%s",
-                  request->pose_name.c_str());
-      for (size_t i = 0; i < gait_.poses.size(); i++) {
-        if (gait_.poses[i].name.compare(request->pose_name.c_str()) == 0) {
-          pose_pub_->publish(gait_.poses[i]);
-          for (size_t j = 0; j < gait_.poses[i].names.size(); j++) {
-            RCLCPP_INFO(
-                get_logger(), "Pose Name=%s, [%.4f,%.4f,%.4f]",
-                gait_.poses[i].names[j].c_str(), gait_.poses[i].positions[j].x,
-                gait_.poses[i].positions[j].y, gait_.poses[i].positions[j].z);
-          }
-        }
-      }
+      RCLCPP_INFO(get_logger(), "Target Pose Name=%d", request->pose_idx);
+      current_pose = request->pose_idx;
+      pose_pub_->publish(gait_.poses[current_pose]);
       response->success = true;
       response->message = "Pose set successfully";
     } else if (request->type.compare("delete_pose") == 0) {
-      RCLCPP_INFO(get_logger(), "Deleting (%s) from Gait %s",
-                  request->pose_name.c_str(), gait_.name.c_str());
-      for (size_t i = 0; i < gait_.poses.size(); i++) {
-        if (gait_.poses[i].name.compare(request->pose_name.c_str()) == 0) {
-          gait_.poses.erase(gait_.poses.cbegin() + i);
-        }
-      }
+      RCLCPP_INFO(get_logger(), "Deleting Pose (%d) from Gait %s",
+                  request->pose_idx, gait_.name.c_str());
 
-      RCLCPP_INFO(get_logger(), "Remaining Poses:");
-      for (size_t i = 0; i < gait_.poses.size(); i++) {
-        RCLCPP_INFO(get_logger(), " - %s", gait_.poses[i].name.c_str());
-      }
+      gait_.poses.erase(gait_.poses.cbegin() + request->pose_idx);
+      current_pose = request->pose_idx - 1;
       response->success = true;
-      response->message = "Pose set successfully";
+      response->message = "Pose Deleted successfully";
       clearMarkers();
-      updateMarkers(gait_);
+      if (gait_.poses.empty()) {
+        return;
+      }
+      addMarkers(gait_);
       pose_pub_->publish(gait_.poses[gait_.poses.size() - 1]);
     } else if (request->type.compare("save_gait") == 0) {
       try {
@@ -227,7 +273,7 @@ private:
       try {
         loadGaitFromYamlFile(request->filepath, gait_);
         clearMarkers();
-        updateMarkers(gait_);
+        addMarkers(gait_);
         pose_pub_->publish(gait_.poses[0]);
 
         for (hexapod_msgs::msg::Pose pose : gait_.poses) {

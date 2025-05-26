@@ -19,6 +19,8 @@ find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(hexapod_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
 
 
 # Enable compilation database for Clangd
@@ -48,6 +50,8 @@ ament_target_dependencies(hexapod_gait_planner_node
   hexapod_msgs
   visualization_msgs
 )
+
+target_link_libraries(hexapod_gait_planner_node yaml-cpp)
 
 
 # Install executables

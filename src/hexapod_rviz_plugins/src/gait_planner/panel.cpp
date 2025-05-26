@@ -1,3 +1,4 @@
+#include "hexapod_msgs/srv/command.hpp"
 #include "hexapod_rviz_plugins/gait_planner.hpp"
 #include <QApplication>
 #include <QHBoxLayout>
@@ -7,9 +8,11 @@
 #include <QVBoxLayout>
 #include <hexapod_msgs/srv/command.hpp>
 
+#include <QFileDialog>
 #include <exception>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <pluginlib/class_list_macros.hpp>
+#include <qlist.h>
 #include <rclcpp/client.hpp>
 #include <rclcpp/create_client.hpp>
 #include <rclcpp/logger.hpp>
@@ -62,6 +65,11 @@ void GaitPlannerRvizPanel::setupUi() {
 
   // === Pose List ===
   pose_list_widget_ = new QListWidget();
+  pose_list_widget_->setSelectionMode(
+      QAbstractItemView::SingleSelection); // Only one item selectable
+  pose_list_widget_->setSelectionBehavior(
+      QAbstractItemView::SelectRows); // Optional: whole row if styled
+  pose_list_widget_->setDisabled(false);
 
   // === Bottom Button Layout ===
   QHBoxLayout *bottom_buttons = new QHBoxLayout();
@@ -89,10 +97,93 @@ void GaitPlannerRvizPanel::setupUi() {
           &GaitPlannerRvizPanel::onMovePoseUp);
   connect(btn_down, &QPushButton::clicked, this,
           &GaitPlannerRvizPanel::onMovePoseDown);
+
+  connect(btn_export, &QPushButton::clicked, this,
+          &GaitPlannerRvizPanel::onExport);
+  connect(btn_load, &QPushButton::clicked, this, &GaitPlannerRvizPanel::onLoad);
   connect(pose_list_widget_, &QListWidget::itemDoubleClicked, this,
           &GaitPlannerRvizPanel::onRenamePose);
+  // Connect a signal to re-select if nothing is selected
+  connect(pose_list_widget_, &QListWidget::itemSelectionChanged, [=]() {
+    if (pose_list_widget_->selectedItems().isEmpty() &&
+        pose_list_widget_->count() > 0) {
+      pose_list_widget_->setCurrentRow(0); // or reselect previous item
+    }
+  });
 }
 
+void GaitPlannerRvizPanel::onLoad() {
+  QString file_path = QFileDialog::getOpenFileName(
+      this, tr("Load Gait YAML File"), QDir::currentPath(),
+      tr("YAML Files (*.yaml *.yml)"));
+
+  if (file_path.isEmpty()) {
+    return; // User canceled
+  }
+
+  auto request = std::make_shared<hexapod_msgs::srv::Command::Request>();
+  request->type = "load_gait";
+  request->filepath = file_path.toStdString();
+
+  auto future = client_->async_send_request(
+      request, [this](rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture
+                          future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(rclcpp::get_logger("GaitPlanner"), "Load successful: %s",
+                      response->message.c_str());
+          pose_list_widget_->clear();
+          for (std::string pose_name : response->pose_names) {
+            pose_list_widget_->addItem(pose_name.c_str());
+          }
+        } else {
+          RCLCPP_ERROR(rclcpp::get_logger("GaitPlanner"), "Load failed: %s",
+                       response->message.c_str());
+        }
+      });
+}
+
+void GaitPlannerRvizPanel::onExport() {
+  // Step 1: Open file dialog for saving
+  QString filename = QFileDialog::getSaveFileName(
+      this, tr("Export Gait as YAML"),
+      QDir::currentPath() + "/sample_gait.yaml", // Prefilled filename
+      tr("YAML Files (*.yaml *.yml)")            // Filter
+  );
+
+  if (filename.isEmpty()) {
+    RCLCPP_WARN(node_->get_logger(), "Export cancelled by user.");
+    return;
+  }
+
+  if (!filename.endsWith(".yaml") && !filename.endsWith(".yml")) {
+    filename += ".yaml";
+  }
+
+  std::string path = filename.toStdString();
+  RCLCPP_INFO(node_->get_logger(), "Selected export path: %s", path.c_str());
+
+  // Step 2: Send service request with file path
+  auto request = std::make_shared<hexapod_msgs::srv::Command::Request>();
+  request->type = "save_gait";
+  request->filepath = path;
+
+  using FutureResponse =
+      rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
+  client_->async_send_request(request, [this](FutureResponse future) {
+    try {
+      auto response = future.get();
+      if (response->success) {
+        RCLCPP_INFO(node_->get_logger(), "Gait successfully saved.");
+      } else {
+        RCLCPP_WARN(node_->get_logger(), "Gait save failed: %s",
+                    response->message.c_str());
+      }
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(node_->get_logger(), "Service call exception: %s", e.what());
+    }
+  });
+}
 void GaitPlannerRvizPanel::setupROS() {
   client_ = node_->create_client<hexapod_msgs::srv::Command>("command");
 }
@@ -122,19 +213,18 @@ void GaitPlannerRvizPanel::onPoseSelected(QListWidgetItem *item) {
 void GaitPlannerRvizPanel::onAddPose() {
 
   int count = pose_list_widget_->count();
-  QString name = QString("Pose %1").arg(count + 1);
 
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
-  command->pose_name = name.toStdString().c_str();
   command->type = "add_pose";
 
   using ServiceResponseFuture =
       rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
   client_->async_send_request(
-      command, [this, name](ServiceResponseFuture future) {
+      command, [this, count](ServiceResponseFuture future) {
         try {
           auto response = future.get();
-          pose_list_widget_->addItem(name);
+          pose_list_widget_->addItem(response->pose_names[0].c_str());
+          pose_list_widget_->setCurrentRow(count);
           RCLCPP_INFO(node_->get_logger(), "Got response: %s",
                       response->message.c_str());
         } catch (const std::exception &e) {
@@ -145,9 +235,29 @@ void GaitPlannerRvizPanel::onAddPose() {
 
 void GaitPlannerRvizPanel::onDeletePose() {
   QListWidgetItem *item = pose_list_widget_->currentItem();
-  if (item) {
-    delete item;
-  }
+  std::string name = item->text().toStdString();
+
+  int count = pose_list_widget_->count();
+  auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
+  command->pose_name = name.c_str();
+  command->type = "delete_pose";
+
+  using ServiceResponseFuture =
+      rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
+  client_->async_send_request(
+      command, [this, name, count, item](ServiceResponseFuture future) {
+        try {
+          auto response = future.get();
+          if (item) {
+            delete item;
+          }
+          pose_list_widget_->setCurrentRow(count - 2);
+          RCLCPP_INFO(node_->get_logger(), "Got response: %s",
+                      response->message.c_str());
+        } catch (const std::exception &e) {
+          RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
+        }
+      });
 }
 
 void GaitPlannerRvizPanel::onMovePoseUp() {

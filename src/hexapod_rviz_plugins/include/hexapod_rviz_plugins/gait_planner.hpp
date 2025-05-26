@@ -25,6 +25,8 @@ private Q_SLOTS:
   void onDeletePose();
   void onMovePoseUp();
   void onMovePoseDown();
+  void onExport();
+  void onLoad();
   void onRenamePose(QListWidgetItem *item);
 
 private:

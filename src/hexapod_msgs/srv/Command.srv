@@ -1,9 +1,11 @@
 # hexapod_msgs/srv/RobotCommand.srv
 
 string pose_name
+string filepath
 string type  # e.g., "add_pose", "start_gait"
 # hexapod_msgs/Pose pose  # used only for "set_pose"
 # other optional fields could go here
 ---
 bool success
 string message
+string[] pose_names

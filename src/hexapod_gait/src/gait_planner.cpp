@@ -1,5 +1,11 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/save_pose.hpp"
+#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include <cmath>
+#include <exception>
+#include <format>
+#include <fstream>
 #include <geometry_msgs/msg/point.hpp>
 #include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/gait.hpp>
@@ -11,14 +17,17 @@
 #include <rclcpp/create_subscription.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <stdexcept>
 #include <string>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <yaml-cpp/yaml.h>
 
 using namespace std::chrono_literals;
 class GaitPlannerNode : public rclcpp::Node {
 
 private:
+  int pose_idx = 1;
   // ROS2 Subscriptions
   rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
 
@@ -63,7 +72,15 @@ private:
   }
 
   void onPoseUpdate(hexapod_msgs::msg::Pose pose) { pose_msg_ = pose; }
-  void visualizeGait(hexapod_msgs::msg::Gait gait) {
+
+  void clearMarkers() {
+    visualization_msgs::msg::Marker delete_all_marker;
+    delete_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+    visualization_msgs::msg::MarkerArray marker_array;
+    marker_array.markers = {delete_all_marker};
+    markers_pub_->publish(marker_array);
+  }
+  void updateMarkers(hexapod_msgs::msg::Gait gait) {
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
@@ -148,10 +165,15 @@ private:
     RCLCPP_INFO(get_logger(), "Recieved command %s", request->type.c_str());
     if (request->type.compare("add_pose") == 0) {
       RCLCPP_INFO(get_logger(), "Received Add Pose Request");
-      pose_msg_.name = request->pose_name;
+      std::string new_pose_name = "Pose " + std::to_string(pose_idx);
+      pose_msg_.name = new_pose_name;
       gait_.poses.push_back(pose_msg_);
+
+      response->pose_names = {new_pose_name};
       response->success = true;
       response->message = "Pose added successfully";
+      updateMarkers(gait_);
+      pose_idx++;
     } else if (request->type.compare("set_pose") == 0) {
       RCLCPP_INFO(get_logger(), "Received Set Pose Request");
 
@@ -168,13 +190,127 @@ private:
           }
         }
       }
-
       response->success = true;
       response->message = "Pose set successfully";
     } else if (request->type.compare("delete_pose") == 0) {
-      RCLCPP_INFO(get_logger(), "Received Set Pose Request");
+      RCLCPP_INFO(get_logger(), "Deleting (%s) from Gait %s",
+                  request->pose_name.c_str(), gait_.name.c_str());
+      for (size_t i = 0; i < gait_.poses.size(); i++) {
+        if (gait_.poses[i].name.compare(request->pose_name.c_str()) == 0) {
+          gait_.poses.erase(gait_.poses.cbegin() + i);
+        }
+      }
+
+      RCLCPP_INFO(get_logger(), "Remaining Poses:");
+      for (size_t i = 0; i < gait_.poses.size(); i++) {
+        RCLCPP_INFO(get_logger(), " - %s", gait_.poses[i].name.c_str());
+      }
       response->success = true;
       response->message = "Pose set successfully";
+      clearMarkers();
+      updateMarkers(gait_);
+      pose_pub_->publish(gait_.poses[gait_.poses.size() - 1]);
+    } else if (request->type.compare("save_gait") == 0) {
+      try {
+        saveGaitToYamlFile(request->filepath);
+        response->success = true;
+        response->message = "Gait saved successfully";
+        RCLCPP_INFO(this->get_logger(), "Saved gait to %s",
+                    request->filepath.c_str());
+      } catch (const std::exception &e) {
+
+        response->message = e.what();
+        RCLCPP_ERROR(this->get_logger(), "Failed to open file: %s",
+                     request->filepath.c_str());
+      }
+    } else if (request->type.compare("load_gait") == 0) {
+      try {
+        loadGaitFromYamlFile(request->filepath, gait_);
+        clearMarkers();
+        updateMarkers(gait_);
+        pose_pub_->publish(gait_.poses[0]);
+
+        for (hexapod_msgs::msg::Pose pose : gait_.poses) {
+          response->pose_names.push_back(pose.name);
+        }
+        response->success = true;
+        response->message = "Gait loaded successfully";
+        RCLCPP_INFO(this->get_logger(), "Loaded gait to %s",
+                    request->filepath.c_str());
+      } catch (const std::exception &e) {
+        response->success = false;
+        response->message = "Error occurred";
+        RCLCPP_ERROR(this->get_logger(), "Error Loading Gait: %s",
+                     request->filepath.c_str());
+      }
+    }
+  }
+
+  void saveGaitToYamlFile(std::string path) {
+    std::ofstream file(path);
+    if (!file.is_open())
+      throw std::runtime_error("Failed to open file for writing");
+
+    file << "gait:\n";
+    file << "  name: " << gait_.name << "\n";
+    file << "  poses:\n";
+
+    for (const auto &pose : gait_.poses) {
+      file << "    - name: " << pose.name << "\n";
+      file << "      names:\n";
+      for (const auto &leg_name : pose.names) {
+        file << "        - " << leg_name << "\n";
+      }
+      file << "      positions:\n";
+      for (const auto &pos : pose.positions) {
+        file << "        - {x: " << pos.x << ", y: " << pos.y
+             << ", z: " << pos.z << "}\n";
+      }
+    }
+    file.close();
+  }
+
+  void loadGaitFromYamlFile(const std::string &filepath,
+                            hexapod_msgs::msg::Gait &gait_msg) {
+    YAML::Node root = YAML::LoadFile(filepath);
+    auto gait_node = root["gait"];
+    if (!gait_node)
+      throw std::runtime_error("No 'gait' key in YAML.");
+
+    gait_msg.name = gait_node["name"].as<std::string>();
+    gait_msg.poses = {};
+
+    auto poses_node = gait_node["poses"];
+    if (!poses_node || !poses_node.IsSequence()) {
+      throw std::runtime_error("'poses' is missing or not a sequence");
+    }
+
+    for (const auto &pose_node : poses_node) {
+      hexapod_msgs::msg::Pose pose_msg;
+
+      pose_msg.name = pose_node["name"].as<std::string>();
+
+      // Load names
+      auto names_node = pose_node["names"];
+      if (names_node && names_node.IsSequence()) {
+        for (const auto &name_entry : names_node) {
+          pose_msg.names.push_back(name_entry.as<std::string>());
+        }
+      }
+
+      // Load positions
+      auto pos_node = pose_node["positions"];
+      if (pos_node && pos_node.IsSequence()) {
+        for (const auto &p : pos_node) {
+          geometry_msgs::msg::Point pt;
+          pt.x = p["x"].as<double>();
+          pt.y = p["y"].as<double>();
+          pt.z = p["z"].as<double>();
+          pose_msg.positions.push_back(pt);
+        }
+      }
+
+      gait_msg.poses.push_back(pose_msg);
     }
   }
 

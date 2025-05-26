@@ -93,8 +93,8 @@ public:
       initial_pose.names.push_back(leg_name);
       initial_pose.positions.push_back(rest_pos);
 
-      RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
-                  leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
+      RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
+                   leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
     };
 
     pose_pub_->publish(initial_pose);
@@ -108,12 +108,12 @@ private:
   }
 
   void poseUpdateCallback(const hexapod_msgs::msg::Pose pose) {
-    RCLCPP_INFO(get_logger(), "Recieved Pose");
+    RCLCPP_DEBUG(get_logger(), "Recieved Pose");
     updatePose(pose);
   }
 
   void command_callback(const hexapod_msgs::msg::Command command) {
-    RCLCPP_INFO(get_logger(), "Command %s", command.command_type.c_str());
+    RCLCPP_DEBUG(get_logger(), "Command %s", command.command_type.c_str());
   }
 
   void updatePose(const hexapod_msgs::msg::Pose pose) {
@@ -241,16 +241,6 @@ private:
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(100),
         std::bind(&LegControlNode::timer_callback, this));
-  }
-
-  void handleGetPoseRequest(
-      const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
-      std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
-    (void)request; // unused
-
-    response->pose = last_pose_msg_;
-    RCLCPP_INFO(this->get_logger(), "Returning Pose %s",
-                last_pose_msg_.name.c_str());
   }
 
   void initInteractiveMarkerServer() {

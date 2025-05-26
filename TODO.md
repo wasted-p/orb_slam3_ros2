@@ -1,6 +1,11 @@
 - [x] Initialize joint state after tf init
 - [x] Update leg pose via rviz
 - [x] On change in node, update rviz
+- [ ] Edit selected pose
+- [ ] Export gait to yaml
+- [ ] Gait play, pause, reset
+- [ ] load gait
+- [ ] hide interactive markers until focus
 - [ ] Delete pose
 - [ ] Rename Pose
 - [ ] Update Pose coords

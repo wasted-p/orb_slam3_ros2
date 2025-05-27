@@ -4,7 +4,6 @@
 #include <QListWidget>
 #include <QStringList>
 #include <hexapod_msgs/srv/command.hpp>
-#include <hexapod_msgs/srv/save_pose.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 

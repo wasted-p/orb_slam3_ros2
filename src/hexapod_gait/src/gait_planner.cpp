@@ -11,7 +11,6 @@
 #include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/command.hpp>
-#include <hexapod_msgs/srv/save_pose.hpp>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>

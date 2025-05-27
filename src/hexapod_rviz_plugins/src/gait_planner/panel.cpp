@@ -14,7 +14,6 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <qlist.h>
 #include <rclcpp/client.hpp>
-#include <rclcpp/create_client.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/display_context.hpp>
@@ -226,7 +225,7 @@ void GaitPlannerRvizPanel::onAddPose() {
       command, [this, count](ServiceResponseFuture future) {
         try {
           auto response = future.get();
-          std::string name = "Pose " + std::to_string(count);
+          std::string name = "Pose " + std::to_string(count + 1);
           pose_list_widget_->addItem(name.c_str());
           pose_list_widget_->setCurrentRow(count);
           RCLCPP_INFO(node_->get_logger(), "Got response: %s",

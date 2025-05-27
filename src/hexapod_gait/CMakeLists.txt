@@ -26,8 +26,8 @@ find_package(yaml-cpp REQUIRED)
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Build hexapod_gait_planner_node executable
-add_executable(hexapod_gait_planner_node
+# Build gait_planner_node executable
+add_executable(gait_planner_node
 src/gait_planner.cpp
 )
 
@@ -38,24 +38,24 @@ src/gait_planner.cpp
 # install(DIRECTORY config/
 #   DESTINATION share/${PROJECT_NAME}/config)
 
-target_include_directories(hexapod_gait_planner_node PUBLIC
+target_include_directories(gait_planner_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
 
-ament_target_dependencies(hexapod_gait_planner_node
+ament_target_dependencies(gait_planner_node
   rclcpp
   std_msgs
   hexapod_msgs
   visualization_msgs
 )
 
-target_link_libraries(hexapod_gait_planner_node yaml-cpp)
+target_link_libraries(gait_planner_node yaml-cpp)
 
 
 # Install executables
-install(TARGETS  hexapod_gait_planner_node
+install(TARGETS  gait_planner_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

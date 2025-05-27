@@ -46,6 +46,8 @@ void GaitPlannerRvizPanel::onInitialize() {
   }
   node_ = ros_node_abstraction->get_raw_node();
   setupROS();
+  pose_list_widget_->addItem("Pose 1");
+  pose_list_widget_->setCurrentRow(0);
 }
 
 void GaitPlannerRvizPanel::setupUi() {
@@ -224,7 +226,8 @@ void GaitPlannerRvizPanel::onAddPose() {
       command, [this, count](ServiceResponseFuture future) {
         try {
           auto response = future.get();
-          pose_list_widget_->addItem(response->pose_names[0].c_str());
+          std::string name = "Pose " + std::to_string(count);
+          pose_list_widget_->addItem(name.c_str());
           pose_list_widget_->setCurrentRow(count);
           RCLCPP_INFO(node_->get_logger(), "Got response: %s",
                       response->message.c_str());

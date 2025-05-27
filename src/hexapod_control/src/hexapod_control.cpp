@@ -110,7 +110,11 @@ private:
   }
 
   void poseUpdateCallback(const hexapod_msgs::msg::Pose pose) {
-    RCLCPP_DEBUG(get_logger(), "Recieved Pose");
+    RCLCPP_DEBUG(get_logger(), "Recieved Pose:");
+    for (size_t i = 0; i < pose.names.size(); i++) {
+      RCLCPP_DEBUG(get_logger(), " - [%.4f,%.4f,%.4f]", pose.positions[i].x,
+                   pose.positions[i].y, pose.positions[i].z);
+    }
     updatePose(pose);
   }
 

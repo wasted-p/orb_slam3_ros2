@@ -1,5 +1,7 @@
 #include "hexapod_msgs/srv/command.hpp"
+#include "hexapod_rviz_plugins/control_panel.hpp"
 #include "hexapod_rviz_plugins/gait_planner.hpp"
+#include "ui/pose_list.hpp"
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QInputDialog>
@@ -12,7 +14,11 @@
 #include <exception>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <pluginlib/class_list_macros.hpp>
+#include <qevent.h>
 #include <qlist.h>
+#include <qlistwidget.h>
+#include <qobject.h>
+#include <qobjectdefs.h>
 #include <rclcpp/client.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -27,7 +33,9 @@ using namespace rclcpp;
 
 namespace hexapod_rviz_plugins {
 
+// Gait planner
 GaitPlannerRvizPanel::GaitPlannerRvizPanel(QWidget *parent)
+
     : rviz_common::Panel(parent) {
   leg_names_ = QStringList{"top_left",  "mid_left",  "bottom_left",
                            "top_right", "mid_right", "bottom_right"};
@@ -45,8 +53,6 @@ void GaitPlannerRvizPanel::onInitialize() {
   }
   node_ = ros_node_abstraction->get_raw_node();
   setupROS();
-  pose_list_widget_->addItem("Pose 1");
-  pose_list_widget_->setCurrentRow(0);
 }
 
 void GaitPlannerRvizPanel::setupUi() {
@@ -65,7 +71,7 @@ void GaitPlannerRvizPanel::setupUi() {
   top_buttons->addWidget(btn_delete);
 
   // === Pose List ===
-  pose_list_widget_ = new QListWidget();
+  pose_list_widget_ = new PoseList();
   pose_list_widget_->setSelectionMode(
       QAbstractItemView::SingleSelection); // Only one item selectable
   pose_list_widget_->setSelectionBehavior(
@@ -88,29 +94,22 @@ void GaitPlannerRvizPanel::setupUi() {
   setLayout(main_layout);
 
   // === Connect Signals ===
-  connect(pose_list_widget_, &QListWidget::itemClicked, this,
-          &GaitPlannerRvizPanel::onPoseSelected);
   connect(btn_add, &QPushButton::clicked, this,
           &GaitPlannerRvizPanel::onAddPose);
   connect(btn_delete, &QPushButton::clicked, this,
           &GaitPlannerRvizPanel::onDeletePose);
-  connect(btn_up, &QPushButton::clicked, this,
-          &GaitPlannerRvizPanel::onMovePoseUp);
-  connect(btn_down, &QPushButton::clicked, this,
-          &GaitPlannerRvizPanel::onMovePoseDown);
+  connect(btn_up, &QPushButton::clicked, pose_list_widget_,
+          &PoseList::moveCurrentPoseUp);
+  connect(btn_down, &QPushButton::clicked, pose_list_widget_,
+          &PoseList::moveCurrentPoseDown);
 
   connect(btn_export, &QPushButton::clicked, this,
           &GaitPlannerRvizPanel::onExport);
   connect(btn_load, &QPushButton::clicked, this, &GaitPlannerRvizPanel::onLoad);
-  connect(pose_list_widget_, &QListWidget::itemDoubleClicked, this,
-          &GaitPlannerRvizPanel::onRenamePose);
   // Connect a signal to re-select if nothing is selected
-  connect(pose_list_widget_, &QListWidget::itemSelectionChanged, [=]() {
-    if (pose_list_widget_->selectedItems().isEmpty() &&
-        pose_list_widget_->count() > 0) {
-      pose_list_widget_->setCurrentRow(0); // or reselect previous item
-    }
-  });
+  connect(pose_list_widget_, &PoseList::poseSelected, this,
+          &GaitPlannerRvizPanel::setCurrentPose);
+  // Connect a signal to re-select if nothing is selected
 }
 
 void GaitPlannerRvizPanel::onLoad() {
@@ -187,29 +186,26 @@ void GaitPlannerRvizPanel::onExport() {
 }
 void GaitPlannerRvizPanel::setupROS() {
   client_ = node_->create_client<hexapod_msgs::srv::Command>("command");
+  pose_list_widget_->addPose();
 }
 
-void GaitPlannerRvizPanel::onPoseSelected(QListWidgetItem *item) {
-  RCLCPP_INFO(node_->get_logger(), "Pose selected: %s",
-              item->text().toStdString().c_str());
+void GaitPlannerRvizPanel::setCurrentPose(const size_t idx) {
+  RCLCPP_INFO(node_->get_logger(), "Pose (%d)", idx);
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
-  size_t idx = pose_list_widget_->currentRow();
-  std::string name = item->text().toStdString();
   command->pose_idx = idx;
   command->type = "set_pose";
 
   using ServiceResponseFuture =
       rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
-  client_->async_send_request(
-      command, [this, name](ServiceResponseFuture future) {
-        try {
-          auto response = future.get();
-          RCLCPP_INFO(node_->get_logger(), "Got response: %s",
-                      response->message.c_str());
-        } catch (const std::exception &e) {
-          RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
-        }
-      });
+  client_->async_send_request(command, [this](ServiceResponseFuture future) {
+    try {
+      auto response = future.get();
+      RCLCPP_INFO(node_->get_logger(), "Got response: %s",
+                  response->message.c_str());
+    } catch (const std::exception &e) {
+      RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
+    }
+  });
 }
 
 void GaitPlannerRvizPanel::onAddPose() {
@@ -221,25 +217,20 @@ void GaitPlannerRvizPanel::onAddPose() {
 
   using ServiceResponseFuture =
       rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
-  client_->async_send_request(
-      command, [this, count](ServiceResponseFuture future) {
-        try {
-          auto response = future.get();
-          std::string name = "Pose " + std::to_string(count + 1);
-          pose_list_widget_->addItem(name.c_str());
-          pose_list_widget_->setCurrentRow(count);
-          RCLCPP_INFO(node_->get_logger(), "Got response: %s",
-                      response->message.c_str());
-        } catch (const std::exception &e) {
-          RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
-        }
-      });
+  client_->async_send_request(command, [this](ServiceResponseFuture future) {
+    try {
+      auto response = future.get();
+      pose_list_widget_->addPose();
+      RCLCPP_INFO(node_->get_logger(), "Got response: %s",
+                  response->message.c_str());
+    } catch (const std::exception &e) {
+      RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
+    }
+  });
 }
 
 void GaitPlannerRvizPanel::onDeletePose() {
-  QListWidgetItem *item = pose_list_widget_->currentItem();
   size_t idx = pose_list_widget_->currentRow();
-  std::string name = item->text().toStdString();
 
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
   command->pose_idx = idx;
@@ -248,46 +239,16 @@ void GaitPlannerRvizPanel::onDeletePose() {
   using ServiceResponseFuture =
       rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
   client_->async_send_request(
-      command, [this, name, idx, item](ServiceResponseFuture future) {
+      command, [this, idx](ServiceResponseFuture future) {
         try {
           auto response = future.get();
-          if (item)
-            delete item;
-          pose_list_widget_->setCurrentRow(idx - 1);
+          pose_list_widget_->removePose(idx);
           RCLCPP_INFO(node_->get_logger(), "Got response: %s",
                       response->message.c_str());
         } catch (const std::exception &e) {
           RCLCPP_INFO(node_->get_logger(), "Service call failed: %s", e.what());
         }
       });
-}
-
-void GaitPlannerRvizPanel::onMovePoseUp() {
-  int row = pose_list_widget_->currentRow();
-  if (row > 0) {
-    QListWidgetItem *item = pose_list_widget_->takeItem(row);
-    pose_list_widget_->insertItem(row - 1, item);
-    pose_list_widget_->setCurrentItem(item);
-  }
-}
-
-void GaitPlannerRvizPanel::onMovePoseDown() {
-  int row = pose_list_widget_->currentRow();
-  if (row < pose_list_widget_->count() - 1) {
-    QListWidgetItem *item = pose_list_widget_->takeItem(row);
-    pose_list_widget_->insertItem(row + 1, item);
-    pose_list_widget_->setCurrentItem(item);
-  }
-}
-
-void GaitPlannerRvizPanel::onRenamePose(QListWidgetItem *item) {
-  bool ok;
-  QString new_name = QInputDialog::getText(this, "Rename Pose",
-                                           "Enter new name:", QLineEdit::Normal,
-                                           item->text(), &ok);
-  if (ok && !new_name.isEmpty()) {
-    item->setText(new_name);
-  }
 }
 
 } // namespace hexapod_rviz_plugins

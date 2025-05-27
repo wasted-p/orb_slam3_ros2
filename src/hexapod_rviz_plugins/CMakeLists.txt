@@ -43,6 +43,9 @@ add_library(${PROJECT_NAME} SHARED
 
   src/gait_planner/panel.cpp
   include/hexapod_rviz_plugins/gait_planner.hpp  # <-- Add this line
+
+  src/gait_planner/pose_list.cpp
+  include/ui/pose_list.hpp  # <-- Add this line
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

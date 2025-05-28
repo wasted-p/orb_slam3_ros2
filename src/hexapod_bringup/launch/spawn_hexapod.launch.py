@@ -7,31 +7,72 @@ from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from pathlib import Path
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
 
     # Share Dir
-    share_dir = get_package_share_directory('hexapod_description')
+    share_dir = get_package_share_directory('hexapod_bringup')
 
-    # Define paths to package directories
-    pkg_hexapod_description = os.path.join(get_package_share_directory('hexapod_description'))
-
-
-    # RViz config files
-    rviz_config_sim = os.path.join(share_dir, 'config', 'default.rviz')
 
     # Load robot description and controller configurations from files
     robot_controllers = PathJoinSubstitution([
-        FindPackageShare("hexapod_description"),
+        FindPackageShare("hexapod_bringup"),
         "config",
         "hexapod_controllers.yaml",
     ])
 
     # Process the XACRO file to get robot URDF description
-    xacro_file = os.path.join(pkg_hexapod_description, 'robots', 'hexapod.urdf.xacro')
-    doc = xacro.process_file(xacro_file, mappings={'use_ros2_control': 'true'})
-    robot_desc = doc.toprettyxml(indent='  ')
+    # xacro_file = os.path.join(get_package_share_directory('hexapod_description'), 'robots', 'hexapod.urdf.xacro')
+    # doc = xacro.process_file(xacro_file, mappings={'use_ros2_control': 'true'})
+
+    urdf_file = os.path.join(get_package_share_directory('hexapod_description'), 'robots', 'hexapod.urdf')
+
+    with open(urdf_file, 'r') as f:
+        robot_desc = f.read()
+
+
+    # Set Gazebo simulation resource path
+    gazebo_resource_path = SetEnvironmentVariable(
+        name='GZ_SIM_RESOURCE_PATH',
+        value=[
+            os.path.join(get_package_share_directory('hexapod_sim'), 'worlds'),
+            ':' + str(Path(get_package_share_directory('hexapod_description')).parent.resolve())
+        ]
+    )
+
+    # World argument to specify the Gazebo world file
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value='hexapod_world',
+        description='Gazebo world'
+    )
+
+    # Include Gazebo simulation launch description
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch'),
+            '/gz_sim.launch.py'
+        ]),
+        launch_arguments=[
+            ('gz_args', [LaunchConfiguration('world'), '.sdf', ' -v 4', ' -r'])
+        ]
+    )
+
+    # ROS-Gazebo bridge parameters file
+    bridge_params = os.path.join(share_dir, 'config', 'hexapod_bridge.yaml')
+
+    # ROS-Gazebo bridge node to bridge communication between ROS and Gazebo
+    ros_gz_bridge_node = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        arguments=['--ros-args', '-p', f'config_file:={bridge_params}'],
+        output='screen'
+    )
+
 
     # Set the robot description as a parameter
     params = {'robot_description': robot_desc, 'use_sim_time': use_sim_time}
@@ -49,7 +90,7 @@ def generate_launch_description():
     )
 
     # RViz configuration file for visualization
-    rviz_config_file = os.path.join(share_dir, 'config', 'default.rviz')
+    rviz_config_file = os.path.join(share_dir, 'rviz', 'sim.rviz')
 
     # RViz node configuration
     rviz_node = Node(
@@ -145,5 +186,9 @@ def generate_launch_description():
         delay_control_node_after_robot_state_publisher,
         robot_controller_spawner,
         delay_joint_state_broadcaster_after_robot_controller_spawner,
-        delay_rviz_after_joint_state_broadcaster_spawner
+        delay_rviz_after_joint_state_broadcaster_spawner,
+        gazebo_resource_path,
+        world_arg,
+        gazebo,
+        ros_gz_bridge_node
     ])

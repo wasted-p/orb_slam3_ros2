@@ -10,15 +10,17 @@
 #include <QVBoxLayout>
 #include <hexapod_msgs/srv/command.hpp>
 
-#include <QFileDialog>
 #include <exception>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include <qevent.h>
+#include <qfiledialog.h>
 #include <qlist.h>
 #include <qlistwidget.h>
 #include <qobject.h>
 #include <qobjectdefs.h>
+#include <qpushbutton.h>
+#include <qvariant.h>
 #include <rclcpp/client.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -64,10 +66,28 @@ void GaitPlannerRvizPanel::setupUi() {
   QPushButton *btn_down = new QPushButton("⬇");
   QPushButton *btn_add = new QPushButton("+");
   QPushButton *btn_delete = new QPushButton("🗑");
+  QPushButton *btn_loop = new QPushButton("⟳");
+
+  btn_up->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+  btn_down->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+  btn_add->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+  btn_delete->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+  btn_loop->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+
+  btn_up->setMaximumWidth(35);
+  btn_down->setMaximumWidth(35);
+  btn_add->setMaximumWidth(35);
+  btn_delete->setMaximumWidth(35);
+  btn_loop->setMaximumWidth(35);
+
+  btn_up->setFixedHeight(30);
+
+  top_buttons->setSizeConstraint(QLayout::SetMinimumSize);
 
   top_buttons->addWidget(btn_up);
   top_buttons->addWidget(btn_down);
   top_buttons->addWidget(btn_add);
+  top_buttons->addWidget(btn_loop);
   top_buttons->addWidget(btn_delete);
 
   // === Pose List ===
@@ -109,9 +129,40 @@ void GaitPlannerRvizPanel::setupUi() {
   // Connect a signal to re-select if nothing is selected
   connect(pose_list_widget_, &PoseList::poseSelected, this,
           &GaitPlannerRvizPanel::setCurrentPose);
+
+  connect(pose_list_widget_, &PoseList::poseMoved, this,
+          &GaitPlannerRvizPanel::onPoseMoved);
+
+  connect(pose_list_widget_, &PoseList::loopCreated, this,
+          &GaitPlannerRvizPanel::createLoop);
+  connect(btn_loop, &QPushButton::clicked, this,
+          [this]() { pose_list_widget_->startLoopSelection(); });
   // Connect a signal to re-select if nothing is selected
 }
 
+void GaitPlannerRvizPanel::createLoop(const int from_idx, const int to_idx) {
+  RCLCPP_INFO(node_->get_logger(), "%d to %d", from_idx, to_idx);
+  pose_list_widget_->addPose();
+}
+
+void GaitPlannerRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
+  auto request = std::make_shared<hexapod_msgs::srv::Command::Request>();
+  request->type = "move_pose";
+  request->pose_idx = from_idx;
+  request->pose_idx_2 = to_idx;
+  auto future = client_->async_send_request(
+      request, [this](rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture
+                          future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node_->get_logger(), "Move successful: %s",
+                      response->message.c_str());
+        } else {
+          RCLCPP_ERROR(rclcpp::get_logger("GaitPlanner"), "Load failed: %s",
+                       response->message.c_str());
+        }
+      });
+};
 void GaitPlannerRvizPanel::onLoad() {
   QString file_path = QFileDialog::getOpenFileName(
       this, tr("Load Gait YAML File"), QDir::currentPath(),
@@ -190,7 +241,7 @@ void GaitPlannerRvizPanel::setupROS() {
 }
 
 void GaitPlannerRvizPanel::setCurrentPose(const size_t idx) {
-  RCLCPP_INFO(node_->get_logger(), "Pose (%d)", idx);
+  RCLCPP_INFO(node_->get_logger(), "Pose (%lu)", idx);
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
   command->pose_idx = idx;
   command->type = "set_pose";
@@ -209,9 +260,6 @@ void GaitPlannerRvizPanel::setCurrentPose(const size_t idx) {
 }
 
 void GaitPlannerRvizPanel::onAddPose() {
-
-  int count = pose_list_widget_->count();
-
   auto command = std::make_shared<hexapod_msgs::srv::Command::Request>();
   command->type = "add_pose";
 

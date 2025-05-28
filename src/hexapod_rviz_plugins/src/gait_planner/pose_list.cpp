@@ -1,5 +1,6 @@
 
 #include <qevent.h>
+#include <qobjectdefs.h>
 #include <ui/pose_list.hpp>
 
 using namespace hexapod_rviz_plugins;
@@ -10,7 +11,6 @@ PoseList::PoseList() {
 
   connect(this, &QListWidget::itemDoubleClicked, this, &PoseList::onRenamePose);
   connect(this, &QListWidget::itemClicked, this, &PoseList::onItemClicked);
-  connect(this, &QListWidget::itemClicked, this, &PoseList::onPoseSelected);
   connect(this, &QListWidget::itemSelectionChanged, [=]() {
     if (this->selectedItems().isEmpty() && this->count() > 0) {
       this->setCurrentRow(0); // or reselect previous item
@@ -37,15 +37,13 @@ void PoseList::moveCurrentPose(int distance) {
     insertItem(row + distance, item);
     setCurrentItem(item);
   }
+  emit poseMoved(row, row + distance);
 }
 
-void PoseList::moveCurrentPoseUp() { moveCurrentPose(1); }
-void PoseList::moveCurrentPoseDown() { moveCurrentPose(-1); }
+void PoseList::moveCurrentPoseUp() { moveCurrentPose(-1); }
+void PoseList::moveCurrentPoseDown() { moveCurrentPose(1); }
 
-void PoseList::onPoseSelected() {
-  size_t idx = currentRow();
-  emit poseSelected(idx);
-}
+void PoseList::onPoseSelected() {}
 void PoseList::onRenamePose(QListWidgetItem *item) {
   bool ok;
   QString new_name = QInputDialog::getText(this, "Rename Pose",
@@ -63,8 +61,11 @@ void PoseList::startLoopSelection() {
   this->setCursor(loop_cursor_);
 }
 void PoseList::onItemClicked(QListWidgetItem *item) {
-  if (!selecting_loop_)
+  if (!selecting_loop_) {
+    size_t idx = currentRow();
+    emit poseSelected(idx);
     return;
+  }
 
   if (!loop_start_item_) {
     loop_start_item_ = item;
@@ -74,6 +75,9 @@ void PoseList::onItemClicked(QListWidgetItem *item) {
     item->setIcon(loop_end_icon_);
     selecting_loop_ = false;
     this->unsetCursor();
+    const int from_idx = this->row(loop_start_item_);
+    const int to_idx = this->row(loop_end_item_);
+    emit loopCreated(from_idx, to_idx);
     // Optional: emit signal or callback with loop range
   }
 }

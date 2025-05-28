@@ -36,18 +36,12 @@ install(DIRECTORY gazebo/
 install(DIRECTORY ros2_control/
   DESTINATION share/${PROJECT_NAME}/ros2_control)
 
-install(DIRECTORY config/
-  DESTINATION share/${PROJECT_NAME}/config)
 
 install(DIRECTORY meshes/
   DESTINATION share/${PROJECT_NAME}/meshes)
 
 install(DIRECTORY materials/
   DESTINATION share/${PROJECT_NAME}/materials)
-
-
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch)
 
 
 xacro_add_files(

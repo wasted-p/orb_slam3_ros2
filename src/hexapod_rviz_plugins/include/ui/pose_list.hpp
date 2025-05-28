@@ -28,14 +28,16 @@ public:
   void moveCurrentPose(int distance = 1);
   void moveCurrentPoseUp();
   void moveCurrentPoseDown();
+  void startLoopSelection();
 
 signals:
   void poseSelected(const size_t idx);
+  void poseMoved(const int from_idx, const int to_idx);
+  void loopCreated(const int from_idx, const int to_idx);
 
 private:
   void onPoseSelected();
   void onRenamePose(QListWidgetItem *item);
-  void startLoopSelection();
   void onItemClicked(QListWidgetItem *item);
   bool eventFilter(QObject *obj, QEvent *event);
   void cancelLoopSelection();

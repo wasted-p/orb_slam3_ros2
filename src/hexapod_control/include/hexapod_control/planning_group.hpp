@@ -1,3 +1,5 @@
+#ifndef PLANNING_GROUP_HPP
+#define PLANNING_GROUP_HPP
 
 #include <geometry_msgs/msg/point.hpp>
 #include <kdl/chain.hpp>
@@ -12,3 +14,5 @@ public:
   geometry_msgs::msg::Point
   calculatePosition(KDL::Chain chain, std::array<double, 3> joint_position_arr);
 };
+
+#endif

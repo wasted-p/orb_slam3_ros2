@@ -32,31 +32,37 @@ find_package(Eigen3 REQUIRED)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-# Build hexapod_control_node executable
-add_executable(hexapod_control_node
-src/hexapod_control.cpp
-src/marker.cpp
-src/planning_group.cpp
+
+# RViz Node
+add_executable(hexapod_ik_rviz_node
+  src/hexapod_ik_rviz_node.cpp
+  src/hexapod_ik_base.cpp
+  src/planning_group.cpp
+  src/6_dof_marker.cpp
+)
+
+# GZ Node
+add_executable(hexapod_ik_gz_node
+  src/hexapod_ik_gz_node.cpp
+  src/hexapod_ik_base.cpp
+  src/planning_group.cpp
+  src/6_dof_marker.cpp
 )
 
 
-
-
-
-install(DIRECTORY launch/
-  DESTINATION share/${PROJECT_NAME}/launch)
-
-install(DIRECTORY config/
-  DESTINATION share/${PROJECT_NAME}/config)
-
-target_include_directories(hexapod_control_node PUBLIC
+target_include_directories(hexapod_ik_rviz_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
   ${EIGEN3_INCLUDE_DIRS}
 )
 
+target_include_directories(hexapod_ik_gz_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  ${EIGEN3_INCLUDE_DIRS}
+)
 
-ament_target_dependencies(hexapod_control_node
+ament_target_dependencies(hexapod_ik_rviz_node
   rclcpp
   std_msgs
   sensor_msgs
@@ -69,12 +75,26 @@ ament_target_dependencies(hexapod_control_node
   interactive_markers
 )
 
-
-
-target_link_libraries(hexapod_control_node Eigen3::Eigen)
+ament_target_dependencies(hexapod_ik_gz_node
+  rclcpp
+  std_msgs
+  sensor_msgs
+  urdf
+  kdl_parser
+  orocos_kdl
+  tf2
+  tf2_ros
+  hexapod_msgs
+  interactive_markers
+)
 
 # Install executables
-install(TARGETS  hexapod_control_node
+install(TARGETS  hexapod_ik_rviz_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# Install executables
+install(TARGETS  hexapod_ik_gz_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

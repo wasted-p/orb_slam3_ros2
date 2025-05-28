@@ -6,19 +6,19 @@ import os
 
 def generate_launch_description():
     # Define paths to package directories
-    pkg_hexapod_sim = os.path.join(get_package_share_directory('hexapod_sim'))
+    share_dir = os.path.join(get_package_share_directory('hexapod_bringup'))
 
     # Include spawn_world.launch.py
     spawn_world = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_hexapod_sim, 'launch', 'spawn_world.launch.py')
+            os.path.join(share_dir, 'launch', 'spawn_world.launch.py')
         )
     )
 
     # Include spawn_hexapod.launch.py
     spawn_hexapod = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_hexapod_sim, 'launch', 'spawn_hexapod.launch.py')
+            os.path.join(share_dir, 'launch', 'spawn_hexapod.launch.py')
         )
     )
 

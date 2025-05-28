@@ -27,23 +27,22 @@ Panels:
     Name: JoystickRvizPanel
     publisher_mode: false
   - Class: rviz_common/Displays
-    Help Height: 70
+    Help Height: 0
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /RobotModel1
-        - /RobotModel1/Status1
-        - /RobotModel1/Links1
         - /TF1
-        - /TF1/Status1
         - /TF1/Tree1
-        - /MarkerArray1
-        - /MarkerArray1/Topic1
+        - /Point Cloud1
       Splitter Ratio: 0.7492957711219788
-    Tree Height: 365
+    Tree Height: 274
   - Class: rviz_common/Transformation
     Name: Transformation
+  - Class: hexapod_rviz_plugins/HexapodControlPanel
+    Name: HexapodControlPanel
+  - Class: hexapod_rviz_plugins/GaitPlannerPanel
+    Name: GaitPlannerPanel
 Visualization Manager:
   Class: ""
   Displays:
@@ -125,11 +124,7 @@ Visualization Manager:
         bottom_left_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         bottom_left_tibia:
           Alpha: 1
@@ -149,11 +144,7 @@ Visualization Manager:
         bottom_right_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         bottom_right_tibia:
           Alpha: 1
@@ -187,11 +178,7 @@ Visualization Manager:
         mid_left_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         mid_left_tibia:
           Alpha: 1
@@ -211,11 +198,7 @@ Visualization Manager:
         mid_right_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         mid_right_tibia:
           Alpha: 1
@@ -235,11 +218,7 @@ Visualization Manager:
         top_left_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         top_left_tibia:
           Alpha: 1
@@ -259,11 +238,7 @@ Visualization Manager:
         top_right_foot:
           Alpha: 1
           Show Axes: false
-<<<<<<< HEAD
-          Show Trail: true
-=======
           Show Trail: false
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
           Value: true
         top_right_tibia:
           Alpha: 1
@@ -278,6 +253,20 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: false
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /depth_camera/depth/image_raw
+      Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
       Filter (blacklist): ""
@@ -285,9 +274,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        arm_abductor:
+          Value: true
         arm_base:
           Value: true
         arm_retractor:
+          Value: true
+        arm_rotator:
           Value: true
         base_footprint:
           Value: true
@@ -347,7 +340,7 @@ Visualization Manager:
           Value: true
         top_right_tibia:
           Value: true
-      Marker Scale: 0.15000000596046448
+      Marker Scale: 0.25
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -356,7 +349,14 @@ Visualization Manager:
         base_footprint:
           base_link:
             arm_base:
-              {}
+              arm_rotator:
+                arm_abductor:
+                  arm_retractor:
+                    camera_case_cover:
+                      {}
+                    depth_camera_link:
+                      depth_camera_optical_frame:
+                        {}
             bottom_left_cox:
               bottom_left_femur:
                 bottom_left_tibia:
@@ -389,26 +389,38 @@ Visualization Manager:
                     {}
       Update Interval: 0
       Value: true
-    - Class: rviz_default_plugins/MarkerArray
+    - Alpha: 0.800000011920929
+      Autocompute Intensity Bounds: false
+      Autocompute Value Bounds:
+        Max Value: 0.3079531788825989
+        Min Value: -0.0048612505197525024
+        Value: true
+      Axis: Z
+      Channel Name: z
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
       Enabled: true
-      Name: MarkerArray
-      Namespaces:
-        {}
+      Invert Rainbow: false
+      Max Color: 165; 29; 45
+      Max Intensity: 2.5
+      Min Color: 249; 240; 107
+      Min Intensity: 0.019999999552965164
+      Name: Point Cloud
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /point_marker_array
-      Value: true
-    - Class: rviz_default_plugins/InteractiveMarkers
-      Enable Transparency: true
-      Enabled: true
-      Interactive Markers Namespace: /interactive_marker_server
-      Name: InteractiveMarkers
-      Show Axes: false
-      Show Descriptions: true
-      Show Visual Aids: false
+        Value: /depth_camera/points
+      Use Fixed Frame: true
+      Use rainbow: true
       Value: true
   Enabled: true
   Global Options:
@@ -456,41 +468,41 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-<<<<<<< HEAD
-      Distance: 0.8851307034492493
-=======
-      Distance: 1.5039329528808594
->>>>>>> e5c815024a578ac64bde5335eae273d43dec9d3d
+      Distance: 1.8420875072479248
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.052257828414440155
-        Y: -0.04190094769001007
-        Z: -0.007640868425369263
+        X: 0.04786155745387077
+        Y: -0.0329974889755249
+        Z: -0.014037936925888062
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.1603996306657791
+      Pitch: 0.8553991317749023
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.4422149658203125
+      Yaw: 2.2703869342803955
     Saved: ~
 Window Geometry:
   Displays:
+    collapsed: false
+  GaitPlannerPanel:
     collapsed: false
   Height: 964
   HexapodControlPanel:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
+  Image:
+    collapsed: false
   JoystickRvizPanel:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000019f00000366fc020000000bfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000003f0000016a0000000000000000fb0000000a0049006d0061006700650100000272000000c10000000000000000fb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000031b0000008a0000007e00fffffffb0000000c00430061006d00650072006101000002dd000000c80000000000000000000000010000016500000366fc0200000006fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb000000100044006900730070006c006100790073000000003f0000017d000000cc00fffffffb000000100044006900730070006c006100790073010000003f000001f3000000cc00fffffffb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c01000002380000016d000000e600fffffffb0000000a005600690065007700730000000203000000b6000000a900fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000049000000167fc0100000003fb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c00000000000000031d000000c900fffffffb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000003250000036600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001be00000366fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000003f000001890000001700fffffffb0000000a0049006d0061006700650100000272000000c10000000000000000fb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c000000013a000001530000006f00fffffffb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000031b0000008a0000007e00fffffffb0000002000470061006900740050006c0061006e006e0065007200500061006e0065006c01000001ce000001d7000000b900ffffff000000010000016500000366fc0200000007fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb000000100044006900730070006c006100790073000000003f0000017d000000cc00fffffffb000000100044006900730070006c006100790073010000003f00000152000000cc00fffffffb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c01000001970000011a0000009100fffffffb0000000a005600690065007700730000000203000000b6000000a900fffffffb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c01000002b7000000ee000000e600fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000001610000036600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Tool Properties:

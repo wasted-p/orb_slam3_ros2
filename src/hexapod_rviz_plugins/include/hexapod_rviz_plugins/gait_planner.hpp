@@ -25,6 +25,7 @@ private Q_SLOTS:
   void onExport();
   void onLoad();
   void onRenamePose(QListWidgetItem *item);
+  void onPoseMoved(const int from_idx, const int to_idx);
 
 private:
   void setCurrentPose(const size_t idx);
@@ -36,6 +37,7 @@ private:
   QStringList leg_names_;
   rclcpp::Client<hexapod_msgs::srv::Command>::SharedPtr client_;
   rclcpp::TimerBase::SharedPtr timer_;
+  void createLoop(const int from_idx, const int to_idx);
 };
 
 } // namespace hexapod_rviz_plugins

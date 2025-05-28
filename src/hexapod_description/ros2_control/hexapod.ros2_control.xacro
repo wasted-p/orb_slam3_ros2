@@ -22,7 +22,7 @@
 
   <gazebo>
     <plugin filename="libgz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>$(find hexapod_description)/config/hexapod_controllers.yaml</parameters>
+      <parameters>$(find hexapod_bringup)/config/hexapod_controllers.yaml</parameters>
     </plugin>
   </gazebo>
 

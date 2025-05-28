@@ -1,6 +1,7 @@
 # hexapod_msgs/srv/RobotCommand.srv
 
 int8 pose_idx
+int8 pose_idx_2
 string filepath
 string type  # e.g., "add_pose", "start_gait"
 # hexapod_msgs/Pose pose  # used only for "set_pose"

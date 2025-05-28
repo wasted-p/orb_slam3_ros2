@@ -1,7 +1,7 @@
 
-#include "marker.cpp"
 #include <cmath>
 #include <geometry_msgs/msg/pose.hpp>
+#include <hexapod_control/6_dof_marker.hpp>
 #include <hexapod_control/planning_group.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
 #include <kdl/chain.hpp>

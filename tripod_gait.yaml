@@ -1,7 +1,7 @@
 gait:
   name: 
   poses:
-    - name: 
+    - name: Rest
       names:
         - top_left
         - mid_left
@@ -16,7 +16,7 @@ gait:
         - {x: 0.1293, y: -0.0917, z: 0.0043}
         - {x: 0.0097, y: -0.1246, z: 0.0052}
         - {x: -0.112, y: -0.1004, z: 0.0043}
-    - name: 
+    - name: Pose 1
       names:
         - top_left
         - mid_left
@@ -31,7 +31,7 @@ gait:
         - {x: 0.1293, y: -0.0917, z: 0.0143}
         - {x: 0.0097, y: -0.1246, z: 0.0052}
         - {x: -0.112, y: -0.1004, z: 0.0143}
-    - name: 
+    - name: Pose 2
       names:
         - top_left
         - mid_left
@@ -46,7 +46,7 @@ gait:
         - {x: 0.1143, y: -0.0917, z: 0.0243}
         - {x: 0.0247, y: -0.1246, z: 0.0052}
         - {x: -0.127, y: -0.1004, z: 0.0243}
-    - name: 
+    - name: Pose 3
       names:
         - top_left
         - mid_left
@@ -61,7 +61,7 @@ gait:
         - {x: 0.0993, y: -0.0917, z: 0.0043}
         - {x: 0.0397, y: -0.1246, z: 0.0052}
         - {x: -0.142, y: -0.1004, z: 0.0043}
-    - name: 
+    - name: Pose 4
       names:
         - top_left
         - mid_left
@@ -76,7 +76,7 @@ gait:
         - {x: 0.1143, y: -0.0917, z: 0.0043}
         - {x: 0.0247, y: -0.1246, z: 0.0252}
         - {x: -0.127, y: -0.1004, z: 0.0043}
-    - name: 
+    - name: Pose 5
       names:
         - top_left
         - mid_left
@@ -91,7 +91,7 @@ gait:
         - {x: 0.1293, y: -0.0917, z: 0.0043}
         - {x: -0.0053, y: -0.1246, z: 0.0252}
         - {x: -0.112, y: -0.1004, z: 0.0043}
-    - name: 
+    - name: Pose 6
       names:
         - top_left
         - mid_left
@@ -106,7 +106,7 @@ gait:
         - {x: 0.1593, y: -0.0917, z: 0.0043}
         - {x: -0.0203, y: -0.1246, z: 0.0052}
         - {x: -0.082, y: -0.1004, z: 0.0043}
-    - name: 
+    - name: Pose 7
       names:
         - top_left
         - mid_left
@@ -121,7 +121,7 @@ gait:
         - {x: 0.1443, y: -0.0917, z: 0.0243}
         - {x: -0.0053, y: -0.1246, z: 0.0052}
         - {x: -0.097, y: -0.1004, z: 0.0243}
-    - name: 
+    - name: Pose 8
       names:
         - top_left
         - mid_left
@@ -136,7 +136,7 @@ gait:
         - {x: 0.1293, y: -0.0917, z: 0.0243}
         - {x: 0.0097, y: -0.1246, z: 0.0052}
         - {x: -0.112, y: -0.1004, z: 0.0243}
-    - name: 
+    - name: Pose 9
       names:
         - top_left
         - mid_left

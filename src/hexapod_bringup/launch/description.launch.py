@@ -8,9 +8,9 @@ import os
 
 def generate_launch_description():
     # Paths
-    share_dir = get_package_share_directory('hexapod_description')
-    default_rviz_config = os.path.join(share_dir, 'config', 'default.rviz')
-    urdf_file = os.path.join(share_dir, 'robots', 'hexapod.urdf')
+    share_dir = get_package_share_directory('hexapod_bringup')
+    default_rviz_config = os.path.join(share_dir, 'rviz', 'default.rviz')
+    urdf_file = os.path.join(get_package_share_directory('hexapod_description'), 'robots', 'hexapod.urdf')
 
     with open(urdf_file, 'r') as f:
         robot_urdf = f.read()

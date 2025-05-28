@@ -1,8 +1,10 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
+from launch.conditions import IfCondition
+
 import os
 
 def generate_launch_description():
@@ -73,13 +75,33 @@ def generate_launch_description():
         arguments=["-d", rviz_config, rviz_args, '--ros-args', '--log-level', log_level],
     )
 
-    hexapod_control_node = Node(
+    # Declare the argument
+    ik_backend_arg = DeclareLaunchArgument(
+        'ik_backend',
+        default_value='rviz',
+        description='Choose the IK backend to use: "rviz" or "gz"'
+    )
+
+    # LaunchConfiguration substitution
+    ik_backend = LaunchConfiguration('ik_backend')
+
+    # Nodes
+    hexapod_ik_rviz_node = Node(
         package='hexapod_control',
-        executable='hexapod_control_node',
-        name='hexapod_control_node',
+        executable='hexapod_ik_rviz_node',
+        name='hexapod_ik_rviz_node',
         output="screen",
         parameters=[{'robot_description': robot_urdf}],
-        # arguments=['--ros-args', '--log-level', log_level],
+        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'rviz'"]))
+    )
+
+    hexapod_ik_gz_node = Node(
+        package='hexapod_control',
+        executable='hexapod_ik_gz_node',
+        name='hexapod_ik_gz_node',
+        output="screen",
+        parameters=[{'robot_description': robot_urdf}],
+        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'gz'"]))
     )
 
     hexapod_gait_planner_node = Node(
@@ -99,6 +121,8 @@ def generate_launch_description():
         log_level_arg,
         robot_state_publisher_node,
         hexapod_gait_planner_node,
-        hexapod_control_node,
-        rviz_node
+        rviz_node,
+        ik_backend_arg,
+        hexapod_ik_rviz_node,
+        hexapod_ik_gz_node,
     ])

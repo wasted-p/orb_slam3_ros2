@@ -7,9 +7,11 @@ from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.substitutions import PythonExpression
 from pathlib import Path
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default=True)
@@ -35,6 +37,8 @@ def generate_launch_description():
         robot_desc = f.read()
 
 
+    initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
+
     # Set Gazebo simulation resource path
     gazebo_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
@@ -52,13 +56,23 @@ def generate_launch_description():
     )
 
 
+    # Declare the argument
+    ik_backend_arg = DeclareLaunchArgument(
+        'ik_backend',
+        default_value='rviz',
+        description='Choose the IK backend to use: "rviz" or "gz"'
+    )
+
+    # LaunchConfiguration substitution
+    ik_backend = LaunchConfiguration('ik_backend')
+
+
     hexapod_ik_gz_node = Node(
         package='hexapod_control',
         executable='hexapod_ik_gz_node',
         name='hexapod_ik_gz_node',
         output="screen",
-        parameters=[{'robot_description': robot_urdf}],
-        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'gz'"]))
+        parameters=[{'robot_description': robot_desc}],
     )
 
     hexapod_gait_planner_node = Node(
@@ -199,6 +213,7 @@ def generate_launch_description():
 
     # Return launch description with hexapod-specific nodes
     return LaunchDescription([
+        ik_backend_arg,
         gz_spawn_entity,
         robot_state_pub_node,
         point_cloud_node,
@@ -211,5 +226,5 @@ def generate_launch_description():
         gazebo,
         ros_gz_bridge_node,
         hexapod_ik_gz_node,
-        hexapod_gait_planner_node
+        hexapod_gait_planner_node,
     ])

@@ -371,9 +371,30 @@ Visualization Manager:
                     {}
       Update Interval: 0
       Value: true
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Interactive Markers Namespace: /interactive_marker_server
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /visualization_marker_array
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 163; 72
     Fixed Frame: base_footprint
     Frame Rate: 30
   Name: root
@@ -417,25 +438,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.8420875072479248
+      Distance: 1.219437837600708
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.04786155745387077
-        Y: -0.0329974889755249
-        Z: -0.014037936925888062
+        X: -0.020205508917570114
+        Y: -0.018902374431490898
+        Z: 0.005440676584839821
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.33539921045303345
+      Pitch: 0.9003989100456238
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.225386381149292
+      Yaw: 1.0053865909576416
     Saved: ~
 Window Geometry:
   Displays:

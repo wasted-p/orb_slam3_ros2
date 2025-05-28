@@ -9,10 +9,9 @@ import os
 
 def generate_launch_description():
     # Paths
-    hexapod_description_share_dir = get_package_share_directory('hexapod_description')
-    share_dir = get_package_share_directory('hexapod_control')
-    default_rviz_config = os.path.join(share_dir, 'config', 'default.rviz')
-    urdf_file = os.path.join(hexapod_description_share_dir, 'robots', 'hexapod.urdf')
+    share_dir = get_package_share_directory('hexapod_bringup')
+    default_rviz_config = os.path.join(share_dir, 'rviz', 'gait_planner.rviz')
+    urdf_file = os.path.join(get_package_share_directory('hexapod_description'), 'robots', 'hexapod.urdf')
     initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
     
     with open(urdf_file, 'r') as f:
@@ -95,14 +94,6 @@ def generate_launch_description():
         condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'rviz'"]))
     )
 
-    hexapod_ik_gz_node = Node(
-        package='hexapod_control',
-        executable='hexapod_ik_gz_node',
-        name='hexapod_ik_gz_node',
-        output="screen",
-        parameters=[{'robot_description': robot_urdf}],
-        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'gz'"]))
-    )
 
     hexapod_gait_planner_node = Node(
         package='hexapod_gait',
@@ -124,5 +115,4 @@ def generate_launch_description():
         rviz_node,
         ik_backend_arg,
         hexapod_ik_rviz_node,
-        hexapod_ik_gz_node,
     ])

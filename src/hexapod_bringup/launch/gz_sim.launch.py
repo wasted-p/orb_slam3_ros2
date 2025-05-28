@@ -51,6 +51,25 @@ def generate_launch_description():
         description='Gazebo world'
     )
 
+
+    hexapod_ik_gz_node = Node(
+        package='hexapod_control',
+        executable='hexapod_ik_gz_node',
+        name='hexapod_ik_gz_node',
+        output="screen",
+        parameters=[{'robot_description': robot_urdf}],
+        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'gz'"]))
+    )
+
+    hexapod_gait_planner_node = Node(
+        package='hexapod_gait',
+        executable='gait_planner_node',
+        name='gait_planner_node',
+        output="screen",
+        parameters=[initial_pose_path],
+        # arguments=['--ros-args', '--log-level', log_level],
+    )
+
     # Include Gazebo simulation launch description
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -190,5 +209,7 @@ def generate_launch_description():
         gazebo_resource_path,
         world_arg,
         gazebo,
-        ros_gz_bridge_node
+        ros_gz_bridge_node,
+        hexapod_ik_gz_node,
+        hexapod_gait_planner_node
     ])

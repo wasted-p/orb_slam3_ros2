@@ -297,7 +297,6 @@ private:
         clearMarkers();
         addMarkers(gait_);
         pose_pub_->publish(gait_.poses[0]);
-
         for (hexapod_msgs::msg::Pose pose : gait_.poses) {
           response->pose_names.push_back(pose.name);
         }

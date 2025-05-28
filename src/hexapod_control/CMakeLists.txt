@@ -24,6 +24,8 @@ find_package(orocos_kdl REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(hexapod_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+find_package(control_msgs REQUIRED)
 
 # Find Eigen
 find_package(Eigen3 REQUIRED)
@@ -78,7 +80,8 @@ ament_target_dependencies(hexapod_ik_rviz_node
 ament_target_dependencies(hexapod_ik_gz_node
   rclcpp
   std_msgs
-  sensor_msgs
+  trajectory_msgs
+  control_msgs
   urdf
   kdl_parser
   orocos_kdl

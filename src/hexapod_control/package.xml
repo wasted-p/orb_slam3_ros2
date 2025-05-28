@@ -17,6 +17,8 @@
   <depend>interactive_markers</depend>
   <depend>kdl_parser</depend>
   <depend>geometry_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>trajectory_msgs</depend>
   <depend>hexapod_msgs</depend>
 
   <!-- Test dependencies -->

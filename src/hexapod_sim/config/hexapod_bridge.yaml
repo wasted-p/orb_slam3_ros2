@@ -14,7 +14,7 @@
   gz_topic_name: "/world/hexapod_world/model/hexapod/joint_state"
   ros_type_name: "sensor_msgs/msg/JointState"
   gz_type_name: "gz.msgs.Model"
-  direction: "bidirectional"
+  direction: GZ_TO_ROS
 
 # gz topic published by IMU plugin
 - ros_topic_name: "imu"
@@ -28,6 +28,13 @@
   gz_topic_name: "depth_camera/depth/camera_info"  # Changed to match the depth image namespace
   ros_type_name: "sensor_msgs/msg/CameraInfo"
   gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/tf"
+  gz_topic_name: "/model/hexapod/pose"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V"
+  lazy: true
   direction: GZ_TO_ROS
 
 # gz topic published by Sensors plugin (Depth Camera)

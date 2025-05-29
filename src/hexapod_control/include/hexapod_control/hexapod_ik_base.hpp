@@ -75,11 +75,15 @@ public:
   HexapodIKBaseNode();
   ~HexapodIKBaseNode();
 
+protected:
+  virtual void updateJointState(std::vector<std::string> joint_names,
+                                std::vector<double> joint_positions) = 0;
+
 private:
   void timer_callback();
   void poseUpdateCallback(const hexapod_msgs::msg::Pose pose);
   void command_callback(const hexapod_msgs::msg::Command command);
-  virtual void updatePose(const hexapod_msgs::msg::Pose pose) = 0;
+  void updatePose(const hexapod_msgs::msg::Pose pose);
   void readRobotDescription();
   void setupControl(std::string leg_name, geometry_msgs::msg::Point pos);
   std_msgs::msg::ColorRGBA makeColor(float r, float g, float b, float a = 1.0f);

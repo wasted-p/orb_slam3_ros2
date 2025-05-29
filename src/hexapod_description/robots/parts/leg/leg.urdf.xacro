@@ -75,15 +75,55 @@
         </geometry>
       </collision>
     </link>
-    <link name="${position}_${side}_foot">
-      <visual>
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-        <geometry>
-          <sphere  radius="0.0080"/>
-        </geometry>
-        <material name="TPU"/>
-      </visual>
-    </link>
+
+<link name="${position}_${side}_foot">
+<inertial>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <mass value="0.01"/>
+    <inertia 
+      ixx="1.28e-6" ixy="0" ixz="0"
+      iyy="1.28e-6" iyz="0"
+      izz="1.28e-6"/>
+  </inertial>
+  <collision name="foot_collision">
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+    <geometry>
+      <sphere radius="0.0080"/>
+    </geometry>
+ <surface>
+    <friction>
+      <ode>
+        <mu>1000000.0</mu>     <!-- Max static friction -->
+        <mu2>1000000.0</mu2>   <!-- Max dynamic friction -->
+      </ode>
+    </friction>
+    <contact>
+      <ode>
+        <kp>100000</kp>       <!-- stiffness -->
+        <kd>100</kd>          <!-- damping -->
+        <max_vel>0.1</max_vel>
+        <min_depth>0.001</min_depth>
+      </ode>
+    </contact>
+  </surface>
+  </collision>
+
+  <visual>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+    <geometry>
+      <sphere radius="0.0080"/>
+    </geometry>
+    <material name="TPU"/>
+  </visual>
+</link>
+
+<!-- <collision name="bottom_left_femur_collision"> -->
+<!--   <geometry> -->
+<!--     <mesh> -->
+<!--       <uri>package://your_package/meshes/femur_collision.dae</uri> -->
+<!--     </mesh> -->
+<!--   </geometry> -->
+<!-- </collision> -->
 
     <link name="${position}_${side}_femur">
       <inertial>

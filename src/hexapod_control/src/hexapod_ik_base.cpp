@@ -1,6 +1,49 @@
 #include <hexapod_control/hexapod_ik_base.hpp>
 
 HexapodIKBaseNode::~HexapodIKBaseNode() {}
+
+void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
+  std::vector<double> joint_positions;
+  std::string leg_name;
+  geometry_msgs::msg::Point position;
+  geometry_msgs::msg::Pose int_marker_pose;
+
+  std::vector<std::string> all_joint_names;
+  std::vector<double> all_joint_positions;
+  for (size_t i = 0; i < pose.names.size(); i++) {
+    {
+      leg_name = pose.names[i];
+      position = pose.positions[i];
+      RCLCPP_DEBUG(get_logger(),
+                   "Recieved Leg Pose Message for leg %s with positions=[%.2f, "
+                   "%.2f, %.2f]",
+                   leg_name.c_str(), position.x, position.y, position.z);
+
+      int status = planning_group.calculateJntArray(chains_.at(leg_name),
+                                                    position, joint_positions);
+
+      if (status < 0) {
+        RCLCPP_ERROR(get_logger(), "Error %i", status);
+        return;
+      }
+
+      all_joint_names.push_back(leg_name + "_rotate_joint");
+      all_joint_names.push_back(leg_name + "_abduct_joint");
+      all_joint_names.push_back(leg_name + "_retract_joint");
+
+      all_joint_positions.push_back(joint_positions[0]);
+      all_joint_positions.push_back(joint_positions[1]);
+      all_joint_positions.push_back(joint_positions[2]);
+
+      int_marker_pose.position = position;
+      server_->setPose(leg_name, int_marker_pose);
+      server_->applyChanges();
+    }
+
+    updateJointState(all_joint_names, all_joint_positions);
+  }
+}
+
 HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
   using namespace std::chrono_literals;
 

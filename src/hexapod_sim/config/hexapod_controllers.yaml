@@ -1,6 +1,5 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
     legs_joint_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
@@ -16,6 +15,7 @@ arm_joint_group_position_controller:
       - arm_rotator_joint
       - arm_abductor_joint
       - arm_retractor_joint
+
 
 
 legs_joint_trajectory_controller:

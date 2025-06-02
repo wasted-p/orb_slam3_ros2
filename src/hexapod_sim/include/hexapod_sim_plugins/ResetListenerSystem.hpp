@@ -1,7 +1,6 @@
 // In ResetListenerSystem.hh
 #include <gz/math/Pose3.hh>
 #include <gz/sim/System.hh>
-#include <unordered_map>
 
 namespace reset_listener_system {
 class ResetListenerSystem
@@ -27,9 +26,5 @@ public:
 
   // Add storage for initial states
 private:
-  std::unordered_map<gz::sim::Entity, gz::math::Pose3d> initialPoses_;
-
-private:
-  std::unordered_map<gz::sim::Entity, double> initialJointPositions_;
 };
 } // namespace reset_listener_system

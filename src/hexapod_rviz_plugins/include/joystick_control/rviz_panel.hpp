@@ -14,7 +14,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-namespace joystick_rviz_panel {
+namespace hexapod_rviz_panels {
 
 class JoystickWidget : public QWidget {
   Q_OBJECT
@@ -49,24 +49,18 @@ public:
   void load(const rviz_common::Config &config) override;
 
 protected Q_SLOTS:
-  void onButton1Clicked();
-  void onButton2Clicked();
   void updatePanel();
   void publishJoystickState(const float axes[4]);
-  void onModeChanged(bool checked);
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_command_;
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  QVBoxLayout *main_layout_;
+  QHBoxLayout *main_layout_;
   QHBoxLayout *buttons_layout_;
   QLabel *status_label_;
-  QPushButton *button1_;
-  QPushButton *button2_;
-  QCheckBox *mode_checkbox_;
-  JoystickWidget *joystick_widget_;
+  JoystickWidget *joystick_left_;
+  JoystickWidget *joystick_right_;
   QTimer *update_timer_;
   std::string last_status_msg_ = "Waiting for joystick input...";
   pid_t joy_node_pid_ = 0;
@@ -78,6 +72,6 @@ private:
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg);
 };
 
-} // namespace joystick_rviz_panel
+} // namespace hexapod_rviz_panels
 
 #endif // JOYSTICK_RVIZ_PANEL_HPP

@@ -2,16 +2,21 @@
 #include <QCheckBox>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QStackedLayout>
 #include <csignal>
 #include <cstdlib>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
+#include <qboxlayout.h>
+#include <qcoreapplication.h>
+#include <qdir.h>
 #include <rclcpp/rclcpp.hpp>
+#include <rviz_common/display_context.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <string>
 #include <unistd.h>
 
-namespace joystick_rviz_panel {
+namespace hexapod_rviz_panels {
 
 JoystickWidget::JoystickWidget(QWidget *parent) : QWidget(parent) {
   setMinimumSize(200, 100);
@@ -130,48 +135,83 @@ JoystickRvizPanel::~JoystickRvizPanel() {
 
 void JoystickRvizPanel::onInitialize() {
   setupROS();
-  launchJoyNode();
+  // launchJoyNode();
 }
 
 void JoystickRvizPanel::setupUi() {
-  main_layout_ = new QVBoxLayout;
+  main_layout_ = new QHBoxLayout;
   setLayout(main_layout_);
 
-  // Mode toggle checkbox
-  mode_checkbox_ =
-      new QCheckBox("Publisher Mode (uncheck for Subscriber Mode)");
-  mode_checkbox_->setChecked(false); // Start in Subscriber Mode
-  main_layout_->addWidget(mode_checkbox_);
-  connect(mode_checkbox_, &QCheckBox::toggled, this,
-          &JoystickRvizPanel::onModeChanged);
+  // === LEFT SIDE: Stack image + joystick ===
+  // QHBoxLayout
+  QVBoxLayout *left_layout = new QVBoxLayout;
+  // main_layout_->addLayout(left_layout);
 
   // Status display
   status_label_ = new QLabel("Status: Waiting for joystick input...");
-  main_layout_->addWidget(status_label_);
+  left_layout->addWidget(status_label_);
 
-  // Joystick visualization widget
-  joystick_widget_ = new JoystickWidget;
-  joystick_widget_->setInteractive(false); // Start in Subscriber Mode
-  main_layout_->addWidget(joystick_widget_);
-  connect(joystick_widget_, &JoystickWidget::joystickMoved, this,
+  // Stacked layout: image + joystick widget
+  QStackedLayout *stacked_layout = new QStackedLayout;
+  QWidget *stacked_container = new QWidget;
+  stacked_container->setLayout(stacked_layout);
+  main_layout_->addWidget(stacked_container, /*stretch=*/1);
+
+  // Controller background image
+  QLabel *background_image = new QLabel;
+  QPixmap original(":/assets/controller.png");
+  QPixmap scaled =
+      original.scaled(100, 75, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  background_image->setPixmap(scaled);
+  background_image->setScaledContents(true); // Resize to fit
+  background_image->setSizePolicy(QSizePolicy::Expanding,
+                                  QSizePolicy::Expanding);
+  stacked_layout->addWidget(background_image);
+
+  // Joystick visualization widget (overlaid)
+  joystick_left_ = new JoystickWidget;
+  joystick_left_->setAttribute(Qt::WA_TransparentForMouseEvents);
+  joystick_left_->setStyleSheet("background: transparent;");
+  joystick_left_->setInteractive(false); // Start in Subscriber Mode
+  // stacked_layout->addWidget(joystick_left_);
+
+  connect(joystick_left_, &JoystickWidget::joystickMoved, this,
           &JoystickRvizPanel::publishJoystickState);
 
-  // Buttons layout
-  buttons_layout_ = new QHBoxLayout;
-  main_layout_->addLayout(buttons_layout_);
+  // === RIGHT SIDE: Diamond-shaped buttons ===
+  QVBoxLayout *right_layout = new QVBoxLayout;
+  // stacked_layout->addItem(right_layout);
 
-  // Control buttons
-  button1_ = new QPushButton("Execute");
-  connect(button1_, SIGNAL(clicked()), this, SLOT(onButton1Clicked()));
-  buttons_layout_->addWidget(button1_);
+  QGridLayout *diamond_layout = new QGridLayout;
+  right_layout->addLayout(diamond_layout);
+  right_layout->addStretch();
 
-  button2_ = new QPushButton("Reset");
-  connect(button2_, SIGNAL(clicked()), this, SLOT(onButton2Clicked()));
-  buttons_layout_->addWidget(button2_);
+  // Create 4 buttons in diamond layout
+  QPushButton *up_button = new QPushButton("▲");
+  QPushButton *down_button = new QPushButton("▼");
+  QPushButton *left_button = new QPushButton("◀");
+  QPushButton *right_button = new QPushButton("▶");
+
+  diamond_layout->addWidget(up_button, 0, 1);
+  diamond_layout->addWidget(left_button, 1, 0);
+  diamond_layout->addWidget(right_button, 1, 2);
+  diamond_layout->addWidget(down_button, 2, 1);
+
+  // Optional: central button (disabled)
+  QLabel *center = new QLabel;
+  diamond_layout->addWidget(center, 1, 1);
+  center->setFixedSize(20, 20);
 }
 
 void JoystickRvizPanel::setupROS() {
-  node_ = std::make_shared<rclcpp::Node>("my_rviz_panel_node");
+
+  rviz_common::DisplayContext *context = getDisplayContext();
+  auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
+  auto ros_node_abstraction = ros_node_abstraction_weak.lock();
+  if (!context) {
+    throw std::runtime_error("RViz context not available");
+  }
+  node_ = ros_node_abstraction->get_raw_node();
 
   // Create publisher for joystick data
   joy_pub_ = node_->create_publisher<sensor_msgs::msg::Joy>("/joy", 10);
@@ -180,15 +220,6 @@ void JoystickRvizPanel::setupROS() {
   joy_sub_ = node_->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", 10,
       std::bind(&JoystickRvizPanel::joyCallback, this, std::placeholders::_1));
-
-  // Create publisher for commands
-  pub_command_ =
-      node_->create_publisher<std_msgs::msg::String>("panel_commands", 10);
-
-  // Spin the node
-  auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-  executor->add_node(node_);
-  std::thread([executor]() { executor->spin(); }).detach();
 }
 
 void JoystickRvizPanel::launchJoyNode() {
@@ -210,38 +241,19 @@ void JoystickRvizPanel::launchJoyNode() {
 
 void JoystickRvizPanel::joyCallback(
     const sensor_msgs::msg::Joy::SharedPtr msg) {
-  if (!mode_checkbox_->isChecked()) { // Only update in Subscriber Mode
+  if (false) { // Only update in Subscriber Mode
     // Update joystick axes (assuming Logitech controller with at least 4 axes)
     for (size_t i = 0; i < std::min(msg->axes.size(), size_t(6)); ++i) {
-      joystick_widget_->axes_values_[i] = msg->axes[i];
+      joystick_left_->axes_values_[i] = msg->axes[i];
     }
 
     last_status_msg_ = "Joystick input received from subscription";
-    joystick_widget_->update(); // Trigger repaint
-
-#if VERBOSITY_LEVEL == 4
-    // Print joystick message
-    std::stringstream ss;
-    ss << "Joy message: axes=[";
-    for (size_t i = 0; i < msg->axes.size(); ++i) {
-      ss << msg->axes[i];
-      if (i < msg->axes.size() - 1)
-        ss << ", ";
-    }
-    ss << "], buttons=[";
-    for (size_t i = 0; i < msg->buttons.size(); ++i) {
-      ss << msg->buttons[i];
-      if (i < msg->buttons.size() - 1)
-        ss << ", ";
-    }
-    ss << "]";
-    RCLCPP_INFO(node_->get_logger(), "%s", ss.str().c_str());
-#endif
+    joystick_left_->update(); // Trigger repaint
   }
 }
 
 void JoystickRvizPanel::publishJoystickState(const float axes[4]) {
-  if (mode_checkbox_->isChecked()) { // Only publish in Publisher Mode
+  if (false) { // Only publish in Publisher Mode
     auto msg = std::make_unique<sensor_msgs::msg::Joy>();
     msg->axes = {-axes[0], axes[1], -axes[2], axes[3]}; // Invert X-axes
     msg->buttons = {0, 0, 0, 0, 0, 0, 0, 0}; // Placeholder, no buttons
@@ -261,57 +273,15 @@ void JoystickRvizPanel::updatePanel() {
   status_label_->setText(QString("Status: %1").arg(last_status_msg_.c_str()));
 }
 
-void JoystickRvizPanel::onModeChanged(bool checked) {
-  joystick_widget_->setInteractive(checked);
-  last_status_msg_ =
-      checked ? "Switched to Publisher Mode" : "Switched to Subscriber Mode";
-  if (!checked) {
-    // Clear joystick positions in Subscriber Mode
-    for (int i = 0; i < 4; ++i) {
-      joystick_widget_->axes_values_[i] = 0.0f;
-    }
-    joystick_widget_->update();
-  }
-}
-
-void JoystickRvizPanel::onButton1Clicked() {
-  last_status_msg_ = "Execute command sent";
-  publishCommand("execute");
-}
-
-void JoystickRvizPanel::onButton2Clicked() {
-  last_status_msg_ = "Reset command sent";
-  for (int i = 0; i < 4; ++i) {
-    joystick_widget_->axes_values_[i] = 0.0f;
-  }
-  joystick_widget_->update();
-  publishCommand("reset");
-  if (mode_checkbox_->isChecked()) {
-    publishJoystickState(joystick_widget_->axes_values_);
-  }
-}
-
-void JoystickRvizPanel::publishCommand(const std::string &command) {
-  auto msg = std::make_unique<std_msgs::msg::String>();
-  msg->data = command;
-  pub_command_->publish(std::move(msg));
-}
-
 void JoystickRvizPanel::save(rviz_common::Config config) const {
   Panel::save(config);
-  config.mapSetValue("publisher_mode", mode_checkbox_->isChecked());
 }
 
 void JoystickRvizPanel::load(const rviz_common::Config &config) {
   Panel::load(config);
-  bool publisher_mode = false;
-  if (config.mapGetBool("publisher_mode", &publisher_mode)) {
-    mode_checkbox_->setChecked(publisher_mode);
-    joystick_widget_->setInteractive(publisher_mode);
-  }
 }
 
-} // namespace joystick_rviz_panel
+} // namespace hexapod_rviz_panels
 
-PLUGINLIB_EXPORT_CLASS(joystick_rviz_panel::JoystickRvizPanel,
+PLUGINLIB_EXPORT_CLASS(hexapod_rviz_panels::JoystickRvizPanel,
                        rviz_common::Panel)

@@ -105,7 +105,7 @@ def generate_launch_description():
         robot_state_pub_node,
         point_cloud_node,
         ros_gz_bridge_node,
-        hexapod_ik_gz_node,
         hexapod_gait_planner_node,
         delay_control_node_after_robot_state_publisher,
+        hexapod_ik_gz_node,
     ])

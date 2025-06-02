@@ -38,6 +38,8 @@ find_package(gz-math${GZ_MATH_VER} REQUIRED)
 find_package(gz-transport${GZ_TRANSPORT_VER} REQUIRED)
 find_package(gz-sim${GZ_SIM_VER} REQUIRED)
 find_package(gz-msgs10 REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # === Add include directory for headers ===
 include_directories(include)
@@ -62,6 +64,13 @@ target_link_libraries(ResetListenerSystem
   gz-transport${GZ_TRANSPORT_VER}::gz-transport${GZ_TRANSPORT_VER}
   gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER}
   # gz-msgs10::gz-msgs10
+)
+
+
+ament_target_dependencies(ResetListenerSystem
+  rclcpp
+  std_msgs
+
 )
 
 # === Install target and headers ===

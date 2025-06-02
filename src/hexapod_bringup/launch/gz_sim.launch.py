@@ -59,10 +59,18 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
+    reset_node = Node(
+        package='hexapod_bringup',
+        executable='controller_reset_node.py',
+        name='controller_reset_node',
+        output='screen'
+    )
+
     return LaunchDescription([
         world_arg,
         world_launch,
         spawn_hexapod_launch,
         init_controllers_launch,
         rviz_node,
+        reset_node
     ])

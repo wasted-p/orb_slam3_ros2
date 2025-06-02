@@ -25,6 +25,7 @@ find_package(pluginlib REQUIRED)
 find_package(hexapod_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 
+
 # QT related setup
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -35,17 +36,23 @@ include_directories(
   ${Qt5Widgets_INCLUDE_DIRS}
 )
 
+# Add the qrc file
+qt5_add_resources(RESOURCES_RCC resources.qrc)
+
 # Build the plugin library
 add_library(${PROJECT_NAME} SHARED
   src/control/panel.cpp
   include/hexapod_rviz_plugins/control_panel.hpp  # <-- Add this line
-
 
   src/gait_planner/panel.cpp
   include/hexapod_rviz_plugins/gait_planner.hpp  # <-- Add this line
 
   src/gait_planner/pose_list.cpp
   include/ui/pose_list.hpp  # <-- Add this line
+
+  src/joystick_control/panel.cpp
+  include/joystick_control/rviz_panel.hpp  # <-- Add this line
+  ${RESOURCES_RCC}  # Add the compiled qrc here
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

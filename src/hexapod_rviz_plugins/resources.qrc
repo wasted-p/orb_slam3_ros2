@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/">
+    <file>assets/controller.png</file>
+  </qresource>
+</RCC>

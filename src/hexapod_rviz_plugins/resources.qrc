@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
     <file>assets/controller.png</file>
+    <file>assets/stick.png</file>
   </qresource>
 </RCC>

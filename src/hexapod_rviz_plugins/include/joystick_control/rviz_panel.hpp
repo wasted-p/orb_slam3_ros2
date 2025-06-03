@@ -1,6 +1,7 @@
 #ifndef JOYSTICK_RVIZ_PANEL_HPP
 #define JOYSTICK_RVIZ_PANEL_HPP
 
+#include <qboxlayout.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 #include <sensor_msgs/msg/joy.hpp>
@@ -13,30 +14,9 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <joystick_control/joystick.hpp>
 
-namespace hexapod_rviz_panels {
-
-class JoystickWidget : public QWidget {
-  Q_OBJECT
-public:
-  explicit JoystickWidget(QWidget *parent = nullptr);
-  float axes_values_[6] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  void setInteractive(bool interactive);
-
-Q_SIGNALS:
-  void joystickMoved(const float axes[4]);
-
-protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-
-private:
-  bool dragging_left_ = false;
-  bool dragging_right_ = false;
-  bool is_interactive_ = false;
-};
+namespace hexapod_rviz_plugins {
 
 class JoystickRvizPanel : public rviz_common::Panel {
   Q_OBJECT
@@ -50,28 +30,27 @@ public:
 
 protected Q_SLOTS:
   void updatePanel();
-  void publishJoystickState(const float axes[4]);
+  void publishJoystickState(const float axis_values[6]);
 
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-  QHBoxLayout *main_layout_;
-  QHBoxLayout *buttons_layout_;
-  QLabel *status_label_;
-  JoystickWidget *joystick_left_;
-  JoystickWidget *joystick_right_;
+  QVBoxLayout *main_layout_;
   QTimer *update_timer_;
-  std::string last_status_msg_ = "Waiting for joystick input...";
   pid_t joy_node_pid_ = 0;
+  bool publisher_mode_ = false;
+
+  ControllerWidget *controller_widget;
 
   void setupUi();
   void setupROS();
   void launchJoyNode();
   void publishCommand(const std::string &command);
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg);
+  void setPublishing(bool state);
 };
 
-} // namespace hexapod_rviz_panels
+} // namespace hexapod_rviz_plugins
 
 #endif // JOYSTICK_RVIZ_PANEL_HPP

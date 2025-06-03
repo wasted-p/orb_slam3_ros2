@@ -52,6 +52,8 @@ add_library(${PROJECT_NAME} SHARED
 
   src/joystick_control/panel.cpp
   include/joystick_control/rviz_panel.hpp  # <-- Add this line
+  include/joystick_control/joystick.hpp  # <-- Add this line
+  src/joystick_control/joystick.cpp
   ${RESOURCES_RCC}  # Add the compiled qrc here
 )
 

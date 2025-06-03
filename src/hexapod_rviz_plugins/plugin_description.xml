@@ -5,7 +5,7 @@
   <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/GaitPlannerPanel" type="hexapod_rviz_plugins::GaitPlannerRvizPanel">
     <description>Rviz2 Panel for gait planning for the hexapod robot</description>
   </class>
-  <class base_class_type="rviz_common::Panel" name="hexapod_rviz_panels/JoystickRvizPanel" type="hexapod_rviz_panels::JoystickRvizPanel">
+  <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/JoystickRvizPanel" type="hexapod_rviz_plugins::JoystickRvizPanel">
     <description>Rviz2 Panel for gait planning for the hexapod robot</description>
   </class>
 </library>

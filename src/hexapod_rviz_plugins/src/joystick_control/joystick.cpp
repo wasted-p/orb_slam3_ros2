@@ -26,6 +26,10 @@ Joystick::Joystick(QWidget *parent, int radius, int padding) : QWidget(parent) {
   center_y_ = radius_ + padding_;
 }
 
+void Joystick::setValue(float x, float y) {
+  axis_x = x;
+  axis_y = y;
+};
 double Joystick::radius() { return radius_; };
 double Joystick::padding() { return padding_; };
 
@@ -221,16 +225,22 @@ void ControllerWidget::setupUi() {
   a_button->setGeometry(right_pad_mid_x, right_pad_mid_y + 17, button_radius,
                         button_radius);
 }
-void ControllerWidget::setControllerState(const float axes[8]) {
+
+void ControllerWidget::setValue(std::vector<float> axes) {
   for (int i = 0; i < 8; i++) {
     axes_values_[i] = axes[i];
   }
-  joystick_left_->setX(axes[0]);
-  joystick_left_->setY(axes[1]);
 
-  joystick_right_->setX(axes[3]);
-  joystick_right_->setY(axes[4]);
+  if (joystick_left_) {
+    joystick_left_->setValue(axes_values_[0], axes_values_[1]);
+  }
+
+  if (joystick_right_) {
+    joystick_right_->setValue(axes_values_[3], axes_values_[4]);
+  }
+  update();
 }
+
 ControllerWidget::ControllerWidget() {
   setGeometry(0, 0, 240, 150);
   setupUi();

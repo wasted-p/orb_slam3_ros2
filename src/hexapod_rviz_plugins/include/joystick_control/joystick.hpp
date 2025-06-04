@@ -29,8 +29,7 @@ Q_SIGNALS:
 public:
   double radius();
   double padding();
-  void setX(float val);
-  void setY(float val);
+  void setValue(float x, float y);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -61,7 +60,7 @@ Q_SIGNALS:
   void controllerStateChanged(const float axes_values[8]);
 
 public:
-  void setControllerState(const float axes[8]);
+  void setValue(std::vector<float> axes);
   void setInteractionEnabled(bool enable);
   void setupUi();
   ControllerWidget();

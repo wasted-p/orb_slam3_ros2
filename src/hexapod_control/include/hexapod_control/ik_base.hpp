@@ -18,7 +18,6 @@
 #include "6_dof_marker.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
 #include <cmath>
 #include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_control/planning_group.hpp>
@@ -37,7 +36,6 @@
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/joint_state.hpp>
 #include <string>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -52,15 +50,13 @@ protected:
   hexapod_msgs::msg::Pose last_pose_msg_;
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
-  sensor_msgs::msg::JointState joint_state_msg_;
   KDL::Tree kdl_tree_;
   std::string urdf_string;
   bool robot_description_loaded_ = false;
   PlanningGroup planning_group;
   rclcpp::TimerBase::SharedPtr timer_;
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
-  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
-      joint_state_publisher_;
+
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
@@ -79,15 +75,16 @@ protected:
   virtual void updateJointState(std::vector<std::string> joint_names,
                                 std::vector<double> joint_positions) = 0;
 
+  void setupROS();
+  virtual void timerCallback() = 0;
+
 private:
-  void timer_callback();
   void poseUpdateCallback(const hexapod_msgs::msg::Pose pose);
   void command_callback(const hexapod_msgs::msg::Command command);
   void updatePose(const hexapod_msgs::msg::Pose pose);
   void readRobotDescription();
   void setupControl(std::string leg_name, geometry_msgs::msg::Point pos);
   std_msgs::msg::ColorRGBA makeColor(float r, float g, float b, float a = 1.0f);
-  void setupROS();
   void initInteractiveMarkerServer();
   TranslationMarker add6DofControl();
   void processFeedback(

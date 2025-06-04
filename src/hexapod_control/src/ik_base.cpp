@@ -1,4 +1,4 @@
-#include <hexapod_control/hexapod_ik_base.hpp>
+#include <hexapod_control/ik_base.hpp>
 
 HexapodIKBaseNode::~HexapodIKBaseNode() {}
 
@@ -72,12 +72,6 @@ HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
   pose_pub_->publish(pose_msg_);
 }
 
-void HexapodIKBaseNode::timer_callback() {
-  joint_state_msg_.header.stamp = get_clock()->now();
-
-  joint_state_publisher_->publish(joint_state_msg_);
-}
-
 void HexapodIKBaseNode::poseUpdateCallback(const hexapod_msgs::msg::Pose pose) {
   RCLCPP_DEBUG(get_logger(), "Recieved Pose:");
   for (size_t i = 0; i < pose.names.size(); i++) {
@@ -148,8 +142,6 @@ std_msgs::msg::ColorRGBA HexapodIKBaseNode::makeColor(float r, float g, float b,
 }
 
 void HexapodIKBaseNode::setupROS() {
-  joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
-      "joint_states", rclcpp::QoS(10));
 
   std::string POSE_TOPIC = "/hexapod/pose";
   pose_sub_ = this->create_subscription<hexapod_msgs::msg::Pose>(
@@ -168,7 +160,7 @@ void HexapodIKBaseNode::setupROS() {
 
   timer_ = this->create_wall_timer(
       std::chrono::milliseconds(100),
-      std::bind(&HexapodIKBaseNode::timer_callback, this));
+      std::bind(&HexapodIKBaseNode::timerCallback, this));
 }
 
 void HexapodIKBaseNode::initInteractiveMarkerServer() {

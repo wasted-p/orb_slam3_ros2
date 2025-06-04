@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(hexapod_gait)
+project(hexapod_action)
 
 # Set C++ standard to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -26,36 +26,29 @@ find_package(yaml-cpp REQUIRED)
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Build gait_planner_node executable
-add_executable(gait_planner_node
-src/gait_planner.cpp
+# Build action_server_node executable
+add_executable(action_server_node
+src/action_server_node.cpp
 )
 
-
-# install(DIRECTORY launch/
-#   DESTINATION share/${PROJECT_NAME}/launch)
-#
-# install(DIRECTORY config/
-#   DESTINATION share/${PROJECT_NAME}/config)
-
-target_include_directories(gait_planner_node PUBLIC
+target_include_directories(action_server_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
 
-ament_target_dependencies(gait_planner_node
+ament_target_dependencies(action_server_node
   rclcpp
   std_msgs
   hexapod_msgs
   visualization_msgs
 )
 
-target_link_libraries(gait_planner_node yaml-cpp)
+target_link_libraries(action_server_node yaml-cpp)
 
 
 # Install executables
-install(TARGETS  gait_planner_node
+install(TARGETS  action_server_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

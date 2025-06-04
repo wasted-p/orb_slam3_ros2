@@ -1,3 +1,4 @@
+#include "hexapod_msgs/msg/action.hpp"
 #include "hexapod_rviz_plugins/gait_planner.hpp"
 #include "joystick_control/joystick.hpp"
 #include "joystick_control/rviz_panel.hpp"
@@ -28,7 +29,7 @@ JoystickRvizPanel::JoystickRvizPanel(QWidget *parent)
   setupUi();
   setPublishing(false);
 
-  connect(controller_widget, &ControllerWidget::controllerStateChanged, this,
+  connect(controller, &ControllerWidget::controllerStateChanged, this,
           &JoystickRvizPanel::publishJoystickState);
 }
 
@@ -43,15 +44,23 @@ JoystickRvizPanel::~JoystickRvizPanel() {
 }
 
 void JoystickRvizPanel::onInitialize() {
-  setupROS();
+  rviz_common::DisplayContext *context = getDisplayContext();
+  auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
+  auto ros_node_abstraction = ros_node_abstraction_weak.lock();
+  if (!context) {
+    throw std::runtime_error("RViz context not available");
+  }
+  node_ = ros_node_abstraction->get_raw_node();
+
   launchJoyNode();
+  setupROS();
 }
 
 void JoystickRvizPanel::setupUi() {
   main_layout_ = new QVBoxLayout;
   setLayout(main_layout_);
 
-  // Create a vertical layout for controller_widget
+  // Create a vertical layout for controller
   QWidget *top_widget = new QWidget;
   int toolbar_height = 40;
 
@@ -61,29 +70,23 @@ void JoystickRvizPanel::setupUi() {
   // Create the checkbox
   QCheckBox *mode_checkbox = new QCheckBox("Publishing Mode");
 
-  controller_widget = new ControllerWidget;
-  controller_widget->setGeometry(0, 0, 240, 160);
-  controller_widget->setInteractionEnabled(false);
+  controller = new ControllerWidget;
+  controller->setGeometry(0, 0, 240, 160);
+  controller->setInteractionEnabled(false);
 
   // Add the checkbox to the layout
   top_layout->addWidget(mode_checkbox);
 
   main_layout_->addWidget(top_widget);
 
-  main_layout_->addWidget(controller_widget);
+  main_layout_->addWidget(controller);
 }
 
 void JoystickRvizPanel::setupROS() {
-  rviz_common::DisplayContext *context = getDisplayContext();
-  auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
-  auto ros_node_abstraction = ros_node_abstraction_weak.lock();
-  if (!context) {
-    throw std::runtime_error("RViz context not available");
-  }
-  node_ = ros_node_abstraction->get_raw_node();
-
   // Create publisher for joystick data
   joy_pub_ = node_->create_publisher<sensor_msgs::msg::Joy>("/joy", 10);
+  action_pub_ =
+      node_->create_publisher<hexapod_msgs::msg::Action>("/hexapod/action", 10);
 
   // Create subscription for joystick data
   joy_sub_ = node_->create_subscription<sensor_msgs::msg::Joy>(
@@ -110,15 +113,33 @@ void JoystickRvizPanel::launchJoyNode() {
 
 void JoystickRvizPanel::joyCallback(
     const sensor_msgs::msg::Joy::SharedPtr msg) {
-  // controller_widget->setControllerState(msg->axes);
-  if (publisher_mode_) { // Only update in Subscriber Mode
-    // Update joystick axes (assuming Logitech controller with at least 4 axes)
 
-    // joystick_left_->update(); // Trigger repaint
+  RCLCPP_DEBUG(node_->get_logger(),
+               "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
+               msg->axes[0], msg->axes[1], msg->axes[2], msg->axes[3],
+               msg->axes[4], msg->axes[5], msg->axes[6], msg->axes[7]);
+  // controller->setControllerState(msg->axes);
+  if (publisher_mode_) { // Only update in Subscriber Mode
+  } else {
+    // Invert inverted x axis on both left and right joystick
+    msg->axes[0] = -msg->axes[0];
+    msg->axes[3] = -msg->axes[3];
+    controller->setValue(msg->axes);
+  }
+  hexapod_msgs::msg::Action action_msg;
+  action_msg.name = "walk";
+  action_msg.type = "tripod";
+  action_msg.direction = 0;
+  action_msg.stride = 0;
+
+  const float default_axes[8] = {0, 0, 1, 0, 0, 1, 0, 0};
+  bool idle = std::equal(msg->axes.begin(), msg->axes.end(), default_axes);
+  if (!idle) {
+    action_pub_->publish(action_msg);
   }
 }
 
-void JoystickRvizPanel::setPublishing(bool state) {}
+void JoystickRvizPanel::setPublishing(bool state) { publisher_mode_ = state; }
 
 void JoystickRvizPanel::publishJoystickState(const float axes[6]) {
 

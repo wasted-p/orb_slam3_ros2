@@ -20,6 +20,7 @@
 #include <qobject.h>
 #include <qobjectdefs.h>
 #include <qpushbutton.h>
+#include <qspinbox.h>
 #include <qvariant.h>
 #include <rclcpp/client.hpp>
 #include <rclcpp/logger.hpp>

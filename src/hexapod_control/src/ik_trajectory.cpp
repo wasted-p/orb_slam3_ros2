@@ -1,6 +1,10 @@
-#include "geometry_msgs/msg/point.hpp"
 #include <control_msgs/action/follow_joint_trajectory.hpp>
-#include <hexapod_control/hexapod_ik_base.hpp>
+#include <controller_manager_msgs/srv/configure_controller.hpp>
+#include <controller_manager_msgs/srv/load_controller.hpp>
+#include <controller_manager_msgs/srv/switch_controller.hpp>
+#include <controller_manager_msgs/srv/unload_controller.hpp>
+#include <hexapod_control/ik_base.hpp>
+#include <rclcpp/contexts/default_context.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/client.hpp>
@@ -10,12 +14,15 @@
 
 using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
+using namespace std::chrono_literals;
 
-class HexapodIKGzNode : public HexapodIKBaseNode {
+class IkTrajectoryNode : public HexapodIKBaseNode {
+
 public:
-  HexapodIKGzNode() { setupControllers(); }
+  IkTrajectoryNode() { setupControllers(); }
 
 private:
+  std::vector<std::string> controllers_;
   rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
       trajectory_client_;
   rclcpp::TimerBase::SharedPtr wait_timer_;
@@ -28,10 +35,11 @@ private:
 
   void updateJointState(std::vector<std::string> joint_names,
                         std::vector<double> joint_positions) {
-    RCLCPP_INFO(get_logger(), "Recieved new pose command:");
+    RCLCPP_DEBUG(get_logger(), "Recieved new pose command:");
+
     for (size_t i = 0; i < joint_names.size(); i++) {
-      RCLCPP_INFO(get_logger(), " - %s=[%.4f]", joint_names[i].c_str(),
-                  joint_positions[i]);
+      RCLCPP_DEBUG(get_logger(), " - %s=[%.4f]", joint_names[i].c_str(),
+                   joint_positions[i]);
     }
 
     auto goal_msg = FollowJointTrajectory::Goal();
@@ -44,6 +52,9 @@ private:
 
     trajectory_client_->async_send_goal(goal_msg, send_goal_options);
   }
+
+protected:
+  void timerCallback() {}
 
 public:
   void checkActionServer() {
@@ -88,8 +99,10 @@ public:
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<HexapodIKGzNode>();
+  auto node = std::make_shared<IkTrajectoryNode>();
+
   rclcpp::spin(node);
+  // Register shutdown callback to safely teardown before rclcpp::shutdown
   rclcpp::shutdown();
   return 0;
 }

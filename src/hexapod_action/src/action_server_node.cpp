@@ -1,5 +1,6 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "hexapod_msgs/msg/action.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -23,7 +24,7 @@
 #include <yaml-cpp/yaml.h>
 
 using namespace std::chrono_literals;
-class GaitPlannerNode : public rclcpp::Node {
+class ActionNode : public rclcpp::Node {
 
 private:
   int current_pose = -1;
@@ -33,9 +34,11 @@ private:
   // ROS2 Publishers
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
       markers_pub_;
-  // ROS2 Publishers
+
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
+
+  rclcpp::Subscription<hexapod_msgs::msg::Action>::SharedPtr action_sub_;
 
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
@@ -50,7 +53,7 @@ private:
   };
 
 public:
-  GaitPlannerNode() : Node("gait_planner_node") {
+  ActionNode() : Node("action_server_node") {
     setupROS();
     hexapod_msgs::msg::Pose initial_pose = getInitialPose();
     for (size_t i = 0; i < 6; i++) {
@@ -111,19 +114,26 @@ private:
     pose_sub_ = this->create_subscription<hexapod_msgs::msg::Pose>(
         POSE_TOPIC,
         10, // QoS history depth
-        std::bind(&GaitPlannerNode::onPoseUpdate, this, std::placeholders::_1));
+        std::bind(&ActionNode::onPoseUpdate, this, std::placeholders::_1));
 
-    timer_ =
-        create_wall_timer(std::chrono::milliseconds(100),
-                          std::bind(&GaitPlannerNode::timerCallback, this));
+    action_sub_ = this->create_subscription<hexapod_msgs::msg::Action>(
+        "/hexapod/action",
+        10, // QoS history depth
+        std::bind(&ActionNode::onActionRequested, this, std::placeholders::_1));
+
+    timer_ = create_wall_timer(std::chrono::milliseconds(100),
+                               std::bind(&ActionNode::timerCallback, this));
 
     service_ = create_service<hexapod_msgs::srv::Command>(
-        "command", std::bind(&GaitPlannerNode::handleCommand, this,
+        "command", std::bind(&ActionNode::handleCommand, this,
                              std::placeholders::_1, std::placeholders::_2));
 
     RCLCPP_INFO(this->get_logger(), "Save gait pose service ready.");
   }
 
+  void onActionRequested(hexapod_msgs::msg::Action msg) {
+    RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
+  }
   void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     if (current_pose == -1) {
       return;
@@ -386,7 +396,7 @@ private:
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<GaitPlannerNode>();
+  auto node = std::make_shared<ActionNode>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

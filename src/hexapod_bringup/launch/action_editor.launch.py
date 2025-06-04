@@ -1,19 +1,19 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from launch.conditions import IfCondition
 
 import os
+
 
 def generate_launch_description():
     # Paths
     share_dir = get_package_share_directory('hexapod_bringup')
     default_rviz_config = os.path.join(share_dir, 'rviz', 'gait_planner.rviz')
-    urdf_file = os.path.join(get_package_share_directory('hexapod_description'), 'robots', 'hexapod.urdf')
-    initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
-    
+    urdf_file = os.path.join(get_package_share_directory(
+        'hexapod_description'), 'robots', 'hexapod.urdf')
+
     with open(urdf_file, 'r') as f:
         robot_urdf = f.read()
 
@@ -71,37 +71,17 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         output="screen",
-        arguments=["-d", rviz_config, rviz_args, '--ros-args', '--log-level', log_level],
+        arguments=["-d", rviz_config, rviz_args,
+                   '--ros-args', '--log-level', log_level],
     )
-
-    # Declare the argument
-    ik_backend_arg = DeclareLaunchArgument(
-        'ik_backend',
-        default_value='rviz',
-        description='Choose the IK backend to use: "rviz" or "gz"'
-    )
-
-    # LaunchConfiguration substitution
-    ik_backend = LaunchConfiguration('ik_backend')
 
     # Nodes
-    hexapod_ik_rviz_node = Node(
+    joint_state_node = Node(
         package='hexapod_control',
-        executable='hexapod_ik_rviz_node',
-        name='hexapod_ik_rviz_node',
+        executable='hexapod_joint_state_node',
+        name='joint_state_node',
         output="screen",
         parameters=[{'robot_description': robot_urdf}],
-        condition=IfCondition(PythonExpression(["'", ik_backend, "' == 'rviz'"]))
-    )
-
-
-    hexapod_gait_planner_node = Node(
-        package='hexapod_gait',
-        executable='gait_planner_node',
-        name='gait_planner_node',
-        output="screen",
-        parameters=[initial_pose_path],
-        # arguments=['--ros-args', '--log-level', log_level],
     )
 
     return LaunchDescription([
@@ -111,8 +91,6 @@ def generate_launch_description():
         use_joint_state_gui_arg,
         log_level_arg,
         robot_state_publisher_node,
-        hexapod_gait_planner_node,
         rviz_node,
-        ik_backend_arg,
-        hexapod_ik_rviz_node,
+        joint_state_node,
     ])

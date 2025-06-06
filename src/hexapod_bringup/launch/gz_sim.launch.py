@@ -158,7 +158,7 @@ def generate_launch_description():
         ros_gz_bridge_node,
         # hexapod_gait_planner_node ,
         point_cloud_node,
-        startup_controllers_node,
-        launch_trajectory_on_startup_exit,
+        # startup_controllers_node,
+        # launch_trajectory_on_startup_exit,
         rviz_node
     ])

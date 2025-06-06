@@ -15,6 +15,7 @@
 #include <qdir.h>
 #include <qglobal.h>
 #include <qwidget.h>
+#include <rcl/node.h>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/visibility_control.hpp>
@@ -127,16 +128,18 @@ void JoystickRvizPanel::joyCallback(
     controller->setValue(msg->axes);
   }
   hexapod_msgs::msg::Action action_msg;
-  action_msg.name = "walk";
-  action_msg.type = "tripod";
-  action_msg.direction = 0;
-  action_msg.stride = 0;
-
   const float default_axes[8] = {0, 0, 1, 0, 0, 1, 0, 0};
+
   bool idle = std::equal(msg->axes.begin(), msg->axes.end(), default_axes);
-  if (!idle) {
-    action_pub_->publish(action_msg);
+  if (idle) {
+    action_msg.name = "rest";
+  } else {
+    action_msg.name = "walk";
+    action_msg.type = "tripod";
+    action_msg.direction = 0;
+    action_msg.stride = 0;
   }
+  action_pub_->publish(action_msg);
 }
 
 void JoystickRvizPanel::setPublishing(bool state) { publisher_mode_ = state; }

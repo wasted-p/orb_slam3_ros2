@@ -45,9 +45,10 @@ private:
   // hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait gait_;
   hexapod_msgs::msg::Gait tripod_gait_;
-  int gait_step = 100;
-  bool executing_action = false;
+  size_t gait_index_ = 100;
+  hexapod_msgs::msg::Action executing_action;
 
+  hexapod_msgs::msg::Pose initial_pose;
   rclcpp::TimerBase::SharedPtr timer_;
 
   std::map<std::string, geometry_msgs::msg::Point> buffer;
@@ -59,7 +60,7 @@ private:
 public:
   ActionNode() : Node("action_server_node") {
     setupROS();
-    hexapod_msgs::msg::Pose initial_pose = getInitialPose();
+    initial_pose = getInitialPose();
     for (size_t i = 0; i < 6; i++) {
       buffer[LEG_NAMES[i]].x = initial_pose.positions[i].x;
       buffer[LEG_NAMES[i]].y = initial_pose.positions[i].y;
@@ -139,14 +140,10 @@ private:
   }
 
   void onActionRequested(hexapod_msgs::msg::Action msg) {
-    if (executing_action)
-      return;
-    RCLCPP_INFO(get_logger(), "Requested Action = %s", msg.name.c_str());
-    if (msg.name.compare("walk") == 0) {
-      gait_step = 0;
-      executing_action = true;
-    }
+    RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
+    executing_action = msg;
   }
+
   void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     if (current_pose == -1) {
       return;
@@ -407,17 +404,19 @@ private:
   }
 
   void timerCallback() {
-    if (executing_action) {
-
-      if (gait_step < tripod_gait_.poses.size()) {
-        hexapod_msgs::msg::Pose msg = tripod_gait_.poses[gait_step];
-        msg.duration = rclcpp::Duration::from_seconds(0.001);
-        pose_pub_->publish(msg);
-        gait_step++;
-      } else {
-
-        executing_action = false;
+    hexapod_msgs::msg::Pose pose;
+    if (executing_action.name.compare("walk") == 0) {
+      if (gait_index_ >= tripod_gait_.poses.size()) {
+        gait_index_ = 0;
       }
+      pose = tripod_gait_.poses[gait_index_];
+      pose.duration = rclcpp::Duration::from_seconds(0.001);
+      gait_index_++;
+
+      pose_pub_->publish(pose);
+    } else if (executing_action.name.compare("rest") == 0) {
+
+      pose_pub_->publish(initial_pose);
     }
   }
 };

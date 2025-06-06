@@ -11,7 +11,6 @@ void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
 
   std::vector<std::string> all_joint_names;
   std::vector<double> all_joint_positions;
-  builtin_interfaces::msg::Duration duration;
   for (size_t i = 0; i < pose.names.size(); i++) {
     leg_name = pose.names[i];
     position = pose.positions[i];
@@ -40,7 +39,7 @@ void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
     server_->setPose(leg_name, int_marker_pose);
     server_->applyChanges();
   }
-  updateJointState(all_joint_names, all_joint_positions, duration);
+  updateJointState(all_joint_names, all_joint_positions, pose.duration);
 }
 
 HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {

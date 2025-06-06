@@ -1,3 +1,5 @@
+#include "hexapod_msgs/msg/gait.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/command.hpp"
 #include "hexapod_rviz_plugins/control_panel.hpp"
 #include "hexapod_rviz_plugins/gait_planner.hpp"
@@ -23,6 +25,7 @@
 #include <qspinbox.h>
 #include <qvariant.h>
 #include <rclcpp/client.hpp>
+#include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/display_context.hpp>
@@ -173,26 +176,68 @@ void GaitPlannerRvizPanel::onLoad() {
     return; // User canceled
   }
 
-  auto request = std::make_shared<hexapod_msgs::srv::Command::Request>();
-  request->type = "load_gait";
-  request->filepath = file_path.toStdString();
+  try {
+    RCLCPP_INFO(node_->get_logger(), "File Path: %s",
+                file_path.toStdString().c_str());
+    YAML::Node root = YAML::LoadFile(file_path);
+    auto gait_node = root["gait"];
+    if (!gait_node)
+      throw std::runtime_error("No 'gait' key in YAML.");
 
-  auto future = client_->async_send_request(
-      request, [this](rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture
-                          future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(rclcpp::get_logger("GaitPlanner"), "Load successful: %s",
-                      response->message.c_str());
-          pose_list_widget_->clear();
-          for (std::string pose_name : response->pose_names) {
-            pose_list_widget_->addItem(pose_name.c_str());
-          }
-        } else {
-          RCLCPP_ERROR(rclcpp::get_logger("GaitPlanner"), "Load failed: %s",
-                       response->message.c_str());
+    hexapod_msgs::msg::Gait gait_msg;
+    gait_msg.name = gait_node["name"].as<std::string>();
+    gait_msg.poses = {};
+
+    auto poses_node = gait_node["poses"];
+    if (!poses_node || !poses_node.IsSequence()) {
+      throw std::runtime_error("'poses' is missing or not a sequence");
+    }
+
+    for (const auto &pose_node : poses_node) {
+      hexapod_msgs::msg::Pose pose_msg;
+
+      pose_msg.name = pose_node["name"].as<std::string>();
+
+      // Load names
+      auto names_node = pose_node["names"];
+      if (names_node && names_node.IsSequence()) {
+        for (const auto &name_entry : names_node) {
+          pose_msg.names.push_back(name_entry.as<std::string>());
         }
-      });
+      }
+
+      // Load positions
+      auto pos_node = pose_node["positions"];
+      if (pos_node && pos_node.IsSequence()) {
+        for (const auto &p : pos_node) {
+          geometry_msgs::msg::Point pt;
+          pt.x = p["x"].as<double>();
+          pt.y = p["y"].as<double>();
+          pt.z = p["z"].as<double>();
+          pose_msg.positions.push_back(pt);
+        }
+      }
+
+      gait_msg.poses.push_back(pose_msg);
+    }
+    // FIXME: Add marker editing functionality to action_node as service
+    //  clearMarkers();
+    //  addMarkers(gait_);
+    //
+    pose_pub_->publish(gait_.poses[0]);
+    for (hexapod_msgs::msg::Pose pose : gait_.poses) {
+      response->pose_names.push_back(pose.name);
+    }
+    response->success = true;
+    response->message = "Gait loaded successfully";
+    RCLCPP_INFO(this->get_logger(), "Loaded gait to %s",
+                request->filepath.c_str());
+  } catch (const std::exception &e) {
+    response->success = false;
+    response->message = "Error occurred";
+    RCLCPP_ERROR(this->get_logger(), "Error Loading Gait: %s",
+                 request->filepath.c_str());
+  }
 }
 
 void GaitPlannerRvizPanel::onExport() {
@@ -215,30 +260,35 @@ void GaitPlannerRvizPanel::onExport() {
   std::string path = filename.toStdString();
   RCLCPP_INFO(node_->get_logger(), "Selected export path: %s", path.c_str());
 
-  // Step 2: Send service request with file path
-  auto request = std::make_shared<hexapod_msgs::srv::Command::Request>();
-  request->type = "save_gait";
-  request->filepath = path;
+  std::ofstream file(path);
+  if (!file.is_open())
+    throw std::runtime_error("Failed to open file for writing");
 
-  using FutureResponse =
-      rclcpp::Client<hexapod_msgs::srv::Command>::SharedFuture;
-  client_->async_send_request(request, [this](FutureResponse future) {
-    try {
-      auto response = future.get();
-      if (response->success) {
-        RCLCPP_INFO(node_->get_logger(), "Gait successfully saved.");
-      } else {
-        RCLCPP_WARN(node_->get_logger(), "Gait save failed: %s",
-                    response->message.c_str());
-      }
-    } catch (const std::exception &e) {
-      RCLCPP_ERROR(node_->get_logger(), "Service call exception: %s", e.what());
+  file << "gait:\n";
+  file << "  name: " << gait_.name << "\n";
+  file << "  poses:\n";
+
+  for (const auto &pose : gait_.poses) {
+    file << "    - name: " << pose.name << "\n";
+    file << "      names:\n";
+    for (const auto &leg_name : pose.names) {
+      file << "        - " << leg_name << "\n";
     }
-  });
+    file << "      positions:\n";
+    for (const auto &pos : pose.positions) {
+      file << "        - {x: " << pos.x << ", y: " << pos.y << ", z: " << pos.z
+           << "}\n";
+    }
+  }
+  file.close();
 }
 void GaitPlannerRvizPanel::setupROS() {
   client_ = node_->create_client<hexapod_msgs::srv::Command>("command");
   pose_list_widget_->addPose();
+
+  std::string POSE_TOPIC = "/hexapod/pose";
+  pose_pub_ = node_->create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC,
+                                                               rclcpp::QoS(10));
 }
 
 void GaitPlannerRvizPanel::setCurrentPose(const size_t idx) {
@@ -299,6 +349,70 @@ void GaitPlannerRvizPanel::onDeletePose() {
         }
       });
 }
+
+// void saveGaitToYamlFile(std::string path) {
+// }
+//
+// void loadGaitFromYamlFile(const std::string &filepath,
+//                           hexapod_msgs::msg::Gait &gait_msg) {
+// }
+// void handleCommand(
+//     const std::shared_ptr<hexapod_msgs::srv::Command::Request> request,
+//     std::shared_ptr<hexapod_msgs::srv::Command::Response> response) {
+//
+//   // Do something with request->pose...
+//   RCLCPP_INFO(get_logger(), "Recieved command %s", request->type.c_str());
+//   if (request->type.compare("add_pose") == 0) {
+//     RCLCPP_INFO(get_logger(), "Received Add Pose Request");
+//     hexapod_msgs::msg::Pose new_pose;
+//     for (auto &pair : buffer) {
+//       new_pose.names.push_back(pair.first);
+//       new_pose.positions.push_back(pair.second);
+//     }
+//     gait_.poses.push_back(new_pose);
+//     response->pose_names = {new_pose.name};
+//     response->success = true;
+//     response->message = "Pose added successfully";
+//     addMarkers(gait_);
+//     current_pose = gait_.poses.size() - 1;
+//   } else if (request->type.compare("set_pose") == 0) {
+//     RCLCPP_INFO(get_logger(), "Received Set Pose Request, setting to Pose
+//     %d",
+//                 request->pose_idx);
+//     current_pose = request->pose_idx;
+//     pose_pub_->publish(gait_.poses[current_pose]);
+//     response->success = true;
+//     response->message = "Pose set successfully";
+//   } else if (request->type.compare("delete_pose") == 0) {
+//     RCLCPP_INFO(get_logger(), "Deleting Pose (%d) from Gait %s",
+//                 request->pose_idx, gait_.name.c_str());
+//
+//     gait_.poses.erase(gait_.poses.cbegin() + request->pose_idx);
+//     current_pose = request->pose_idx - 1;
+//     response->success = true;
+//     response->message = "Pose Deleted successfully";
+//     clearMarkers();
+//     if (gait_.poses.empty()) {
+//       return;
+//     }
+//     addMarkers(gait_);
+//     pose_pub_->publish(gait_.poses[gait_.poses.size() - 1]);
+//   } else if (request->type.compare("save_gait") == 0) {
+//     try {
+//       saveGaitToYamlFile(request->filepath);
+//       response->success = true;
+//       response->message = "Gait saved successfully";
+//       RCLCPP_INFO(this->get_logger(), "Saved gait to %s",
+//                   request->filepath.c_str());
+//     } catch (const std::exception &e) {
+//
+//       response->message = e.what();
+//       RCLCPP_ERROR(this->get_logger(), "Failed to open file: %s",
+//                    request->filepath.c_str());
+//     }
+//   } else if (request->type.compare("load_gait") == 0) {
+//   }
+// }
 
 } // namespace hexapod_rviz_plugins
 

@@ -8,10 +8,10 @@
 #include <exception>
 #include <fstream>
 #include <geometry_msgs/msg/point.hpp>
-#include <hexapod_msgs/msg/command.hpp>
+// #include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
-#include <hexapod_msgs/srv/command.hpp>
+// #include <hexapod_msgs/srv/command.hpp>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>
@@ -30,7 +30,7 @@ class ActionNode : public rclcpp::Node {
 private:
   int current_pose = -1;
   // ROS2 Subscriptions
-  rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
+  // rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
 
   // ROS2 Publishers
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
@@ -43,7 +43,6 @@ private:
 
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
-  hexapod_msgs::msg::Gait gait_;
   hexapod_msgs::msg::Gait tripod_gait_;
   size_t gait_index_ = 100;
   hexapod_msgs::msg::Action executing_action;
@@ -68,11 +67,11 @@ public:
     }
     gait_.poses.push_back(initial_pose);
 
-    std::string path = "/home/thurdparty/Code/hexapod-ros/tripod_stable.yaml";
-    loadGaitFromYamlFile(path, tripod_gait_);
+    getTripodGait();
   }
 
 private:
+  hexapod_msgs::msg::Pose getTripodGait() {}
   hexapod_msgs::msg::Pose getInitialPose() {
     hexapod_msgs::msg::Pose initial_pose;
     // Get the list of leg names
@@ -132,9 +131,9 @@ private:
     timer_ = create_wall_timer(std::chrono::milliseconds(200),
                                std::bind(&ActionNode::timerCallback, this));
 
-    service_ = create_service<hexapod_msgs::srv::Command>(
-        "command", std::bind(&ActionNode::handleCommand, this,
-                             std::placeholders::_1, std::placeholders::_2));
+    // service_ = create_service<hexapod_msgs::srv::Command>(
+    //     "command", std::bind(&ActionNode::handleCommand, this,
+    //                          std::placeholders::_1, std::placeholders::_2));
 
     RCLCPP_INFO(this->get_logger(), "Save gait pose service ready.");
   }
@@ -256,151 +255,6 @@ private:
     color.b = b;
     color.a = a;
     return color;
-  }
-
-  void handleCommand(
-      const std::shared_ptr<hexapod_msgs::srv::Command::Request> request,
-      std::shared_ptr<hexapod_msgs::srv::Command::Response> response) {
-
-    // Do something with request->pose...
-    RCLCPP_INFO(get_logger(), "Recieved command %s", request->type.c_str());
-    if (request->type.compare("add_pose") == 0) {
-      RCLCPP_INFO(get_logger(), "Received Add Pose Request");
-      hexapod_msgs::msg::Pose new_pose;
-      for (auto &pair : buffer) {
-        new_pose.names.push_back(pair.first);
-        new_pose.positions.push_back(pair.second);
-      }
-      gait_.poses.push_back(new_pose);
-      response->pose_names = {new_pose.name};
-      response->success = true;
-      response->message = "Pose added successfully";
-      addMarkers(gait_);
-      current_pose = gait_.poses.size() - 1;
-    } else if (request->type.compare("set_pose") == 0) {
-      RCLCPP_INFO(get_logger(), "Received Set Pose Request, setting to Pose %d",
-                  request->pose_idx);
-      current_pose = request->pose_idx;
-      pose_pub_->publish(gait_.poses[current_pose]);
-      response->success = true;
-      response->message = "Pose set successfully";
-    } else if (request->type.compare("delete_pose") == 0) {
-      RCLCPP_INFO(get_logger(), "Deleting Pose (%d) from Gait %s",
-                  request->pose_idx, gait_.name.c_str());
-
-      gait_.poses.erase(gait_.poses.cbegin() + request->pose_idx);
-      current_pose = request->pose_idx - 1;
-      response->success = true;
-      response->message = "Pose Deleted successfully";
-      clearMarkers();
-      if (gait_.poses.empty()) {
-        return;
-      }
-      addMarkers(gait_);
-      pose_pub_->publish(gait_.poses[gait_.poses.size() - 1]);
-    } else if (request->type.compare("save_gait") == 0) {
-      try {
-        saveGaitToYamlFile(request->filepath);
-        response->success = true;
-        response->message = "Gait saved successfully";
-        RCLCPP_INFO(this->get_logger(), "Saved gait to %s",
-                    request->filepath.c_str());
-      } catch (const std::exception &e) {
-
-        response->message = e.what();
-        RCLCPP_ERROR(this->get_logger(), "Failed to open file: %s",
-                     request->filepath.c_str());
-      }
-    } else if (request->type.compare("load_gait") == 0) {
-      try {
-        // RCLCPP_INFO(get_logger(), "File Path: %s",
-        // request->filepath.c_str());
-        loadGaitFromYamlFile(request->filepath, gait_);
-        clearMarkers();
-        addMarkers(gait_);
-        pose_pub_->publish(gait_.poses[0]);
-        for (hexapod_msgs::msg::Pose pose : gait_.poses) {
-          response->pose_names.push_back(pose.name);
-        }
-        response->success = true;
-        response->message = "Gait loaded successfully";
-        RCLCPP_INFO(this->get_logger(), "Loaded gait to %s",
-                    request->filepath.c_str());
-      } catch (const std::exception &e) {
-        response->success = false;
-        response->message = "Error occurred";
-        RCLCPP_ERROR(this->get_logger(), "Error Loading Gait: %s",
-                     request->filepath.c_str());
-      }
-    }
-  }
-
-  void saveGaitToYamlFile(std::string path) {
-    std::ofstream file(path);
-    if (!file.is_open())
-      throw std::runtime_error("Failed to open file for writing");
-
-    file << "gait:\n";
-    file << "  name: " << gait_.name << "\n";
-    file << "  poses:\n";
-
-    for (const auto &pose : gait_.poses) {
-      file << "    - name: " << pose.name << "\n";
-      file << "      names:\n";
-      for (const auto &leg_name : pose.names) {
-        file << "        - " << leg_name << "\n";
-      }
-      file << "      positions:\n";
-      for (const auto &pos : pose.positions) {
-        file << "        - {x: " << pos.x << ", y: " << pos.y
-             << ", z: " << pos.z << "}\n";
-      }
-    }
-    file.close();
-  }
-
-  void loadGaitFromYamlFile(const std::string &filepath,
-                            hexapod_msgs::msg::Gait &gait_msg) {
-    YAML::Node root = YAML::LoadFile(filepath);
-    auto gait_node = root["gait"];
-    if (!gait_node)
-      throw std::runtime_error("No 'gait' key in YAML.");
-
-    gait_msg.name = gait_node["name"].as<std::string>();
-    gait_msg.poses = {};
-
-    auto poses_node = gait_node["poses"];
-    if (!poses_node || !poses_node.IsSequence()) {
-      throw std::runtime_error("'poses' is missing or not a sequence");
-    }
-
-    for (const auto &pose_node : poses_node) {
-      hexapod_msgs::msg::Pose pose_msg;
-
-      pose_msg.name = pose_node["name"].as<std::string>();
-
-      // Load names
-      auto names_node = pose_node["names"];
-      if (names_node && names_node.IsSequence()) {
-        for (const auto &name_entry : names_node) {
-          pose_msg.names.push_back(name_entry.as<std::string>());
-        }
-      }
-
-      // Load positions
-      auto pos_node = pose_node["positions"];
-      if (pos_node && pos_node.IsSequence()) {
-        for (const auto &p : pos_node) {
-          geometry_msgs::msg::Point pt;
-          pt.x = p["x"].as<double>();
-          pt.y = p["y"].as<double>();
-          pt.z = p["z"].as<double>();
-          pose_msg.positions.push_back(pt);
-        }
-      }
-
-      gait_msg.poses.push_back(pose_msg);
-    }
   }
 
   void timerCallback() {

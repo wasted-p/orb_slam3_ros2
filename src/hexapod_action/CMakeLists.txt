@@ -19,7 +19,6 @@ find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(hexapod_msgs REQUIRED)
-find_package(yaml-cpp REQUIRED)
 
 
 
@@ -44,7 +43,6 @@ ament_target_dependencies(action_server_node
   visualization_msgs
 )
 
-target_link_libraries(action_server_node yaml-cpp)
 
 
 # Install executables

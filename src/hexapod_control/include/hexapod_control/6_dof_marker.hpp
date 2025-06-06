@@ -54,26 +54,6 @@ private:
     return controls.back();
   }
 
-  // FIXME: Fix this
-  //  void makeButtonMarker(const Eigen::Vector3d position) {
-  //    InteractiveMarker int_marker;
-  //    header.frame_id = "base_link";
-  //    scale = 1;
-  //
-  //    name = "button";
-  //    description = "Button\n(Left Click)";
-  //
-  //    InteractiveMarkerControl control;
-  //
-  //    control.interaction_mode = InteractiveMarkerControl::BUTTON;
-  //    control.name = "button_control";
-  //
-  //    Marker marker = makeBox(int_marker);
-  //    control.markers.push_back(marker);
-  //    control.always_visible = true;
-  //    controls.push_back(control);
-  //  }
-
   void setup6DofControl() {
     InteractiveMarkerControl control;
 

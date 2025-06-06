@@ -22,8 +22,11 @@ void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
     int status = planning_group.calculateJntArray(chains_.at(leg_name),
                                                   position, joint_positions);
 
-    if (status < 0) {
-      RCLCPP_ERROR(get_logger(), "Error %i", status);
+    if (status < 0 || joint_positions.size() < 3) {
+      RCLCPP_ERROR(get_logger(),
+                   "IK failed or returned insufficient joint positions for leg "
+                   "%s (status: %d, size: %zu)",
+                   leg_name.c_str(), status, joint_positions.size());
       return;
     }
 
@@ -222,11 +225,3 @@ void HexapodIKBaseNode::processFeedback(
     break;
   }
 };
-
-// int main(int argc, char **argv) {
-//   rclcpp::init(argc, argv);
-//   auto node = std::make_shared<HexapodIKBaseNode>();
-//   rclcpp::spin(node);
-//   rclcpp::shutdown();
-//   return 0;
-// }

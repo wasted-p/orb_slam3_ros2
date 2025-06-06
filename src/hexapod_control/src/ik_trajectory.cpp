@@ -72,7 +72,7 @@ public:
         [this](const GoalHandle::WrappedResult &result) {
           switch (result.code) {
           case rclcpp_action::ResultCode::SUCCEEDED:
-            RCLCPP_INFO(this->get_logger(), "Trajectory execution succeeded");
+            RCLCPP_DEBUG(this->get_logger(), "Trajectory execution succeeded");
             break;
           case rclcpp_action::ResultCode::ABORTED:
             RCLCPP_ERROR(this->get_logger(), "Trajectory execution aborted");

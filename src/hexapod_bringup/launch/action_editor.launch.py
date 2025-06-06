@@ -75,6 +75,17 @@ def generate_launch_description():
                    '--ros-args', '--log-level', log_level],
     )
 
+    share_dir = get_package_share_directory('hexapod_bringup')
+    initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
+
+    action_server_node = Node(
+        package='hexapod_action',
+        executable='action_server_node',
+        name='action_server',
+        output="screen",
+        parameters=[initial_pose_path],
+    )
+
     # Nodes
     joint_state_node = Node(
         package='hexapod_control',
@@ -93,4 +104,5 @@ def generate_launch_description():
         robot_state_publisher_node,
         rviz_node,
         joint_state_node,
+        action_server_node
     ])

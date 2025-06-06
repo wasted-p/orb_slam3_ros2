@@ -3,7 +3,7 @@
 
 #include <QListWidget>
 #include <QStringList>
-#include <hexapod_msgs/srv/command.hpp>
+#include <hexapod_msgs/msg/gait.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 #include <ui/pose_list.hpp>
@@ -33,8 +33,11 @@ private:
   void setupROS();
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   PoseList *pose_list_widget_;
   QStringList leg_names_;
+
+  hexapod_msgs::msg::Gait gait_;
   rclcpp::Client<hexapod_msgs::srv::Command>::SharedPtr client_;
   rclcpp::TimerBase::SharedPtr timer_;
   void createLoop(const int from_idx, const int to_idx);

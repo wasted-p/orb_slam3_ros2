@@ -29,7 +29,7 @@ find_package(control_msgs REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 
 # Find Eigen
-find_package(Eigen3 REQUIRED)
+# find_package(Eigen3 REQUIRED)
 
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

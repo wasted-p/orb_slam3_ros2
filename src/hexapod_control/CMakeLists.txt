@@ -17,7 +17,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(std_srvs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(interactive_markers REQUIRED)
 find_package(kdl_parser REQUIRED)
@@ -112,7 +111,6 @@ ament_target_dependencies(shutdown_controllers_node
 ament_target_dependencies(startup_controllers_node
   rclcpp
   std_msgs
-  std_srvs
   controller_manager_msgs
 )
 

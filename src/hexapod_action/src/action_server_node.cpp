@@ -43,6 +43,8 @@ private:
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait gait_;
+  hexapod_msgs::msg::Gait tripod_gait_;
+  int gait_step = 100;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -62,6 +64,9 @@ public:
       buffer[LEG_NAMES[i]].z = initial_pose.positions[i].z;
     }
     gait_.poses.push_back(initial_pose);
+
+    std::string path = "/home/thurdparty/Code/hexapod-ros/tripod_gait.yaml";
+    loadGaitFromYamlFile(path, tripod_gait_);
   }
 
 private:
@@ -121,7 +126,7 @@ private:
         10, // QoS history depth
         std::bind(&ActionNode::onActionRequested, this, std::placeholders::_1));
 
-    timer_ = create_wall_timer(std::chrono::milliseconds(100),
+    timer_ = create_wall_timer(std::chrono::milliseconds(1000),
                                std::bind(&ActionNode::timerCallback, this));
 
     service_ = create_service<hexapod_msgs::srv::Command>(
@@ -132,7 +137,11 @@ private:
   }
 
   void onActionRequested(hexapod_msgs::msg::Action msg) {
-    RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
+    RCLCPP_INFO(get_logger(), "Requested Action = %s", msg.name.c_str());
+    if (msg.name.compare("walk") == 0) {
+      gait_step = 0;
+      // tripod_gait_[gait_step]
+    }
   }
   void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     if (current_pose == -1) {
@@ -303,6 +312,8 @@ private:
       }
     } else if (request->type.compare("load_gait") == 0) {
       try {
+        // RCLCPP_INFO(get_logger(), "File Path: %s",
+        // request->filepath.c_str());
         loadGaitFromYamlFile(request->filepath, gait_);
         clearMarkers();
         addMarkers(gait_);
@@ -391,7 +402,12 @@ private:
     }
   }
 
-  void timerCallback() {}
+  void timerCallback() {
+    if (gait_step < tripod_gait_.poses.size()) {
+      pose_pub_->publish(tripod_gait_.poses[gait_step]);
+      gait_step++;
+    }
+  }
 };
 
 int main(int argc, char **argv) {

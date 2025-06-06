@@ -9,7 +9,6 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/empty.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -98,7 +97,7 @@ public:
     switch_req->strictness =
         controller_manager_msgs::srv::SwitchController::Request::STRICT;
 
-    ii auto switch_result = switch_client_->async_send_request(switch_req);
+    auto switch_result = switch_client_->async_send_request(switch_req);
     if (rclcpp::spin_until_future_complete(this->get_node_base_interface(),
                                            switch_result) !=
             rclcpp::FutureReturnCode::SUCCESS ||
@@ -110,7 +109,6 @@ public:
   }
 
 private:
-  rclcpp::Client<std_srvs::srv::Empty>::SharedPtr unpause_physics_client_;
   std::vector<std::string> controllers_;
   rclcpp::Client<controller_manager_msgs::srv::LoadController>::SharedPtr
       load_client_;

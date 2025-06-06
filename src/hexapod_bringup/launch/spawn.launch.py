@@ -17,7 +17,18 @@ def generate_launch_description():
     ####################################
     # Params
     ####################################
-    use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+    # use_sim_time = LaunchConfiguration('use_sim_time', default=True)
+
+    share_dir = get_package_share_directory('hexapod_bringup')
+    initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
+
+    action_server_node = Node(
+        package='hexapod_action',
+        executable='action_server_node',
+        name='action_server',
+        output="screen",
+        parameters=[initial_pose_path],
+    )
 
     startup_controllers_node = Node(
         package='hexapod_control',
@@ -30,7 +41,9 @@ def generate_launch_description():
         package='hexapod_control',
         executable='hexapod_trajectory_node',
         name='hexapod_trajectory_node',
-        output='screen'
+        output='screen',
+        # Change to 'debug', 'warn', 'error', etc.
+        # arguments=['--ros-args', '--log-level', 'debug'],
     )
 
     # Launch trajectory node after startup controllers exit
@@ -42,7 +55,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        # hexapod_gait_planner_node ,
+        action_server_node,
         startup_controllers_node,
         launch_trajectory_on_startup_exit,
+        # use_sim_time
     ])

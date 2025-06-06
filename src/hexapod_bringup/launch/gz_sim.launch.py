@@ -88,15 +88,6 @@ def generate_launch_description():
         arguments=['--ros-args', '-p', f'config_file:={bridge_params}'],
         # output='screen'
     )
-
-    # hexapod_gait_planner_node = Node(
-    #     package='hexapod_gait',
-    #     executable='gait_planner_node',
-    #     name='gait_planner_node',
-    #     output="screen",
-    #     parameters=[initial_pose_path],
-    # )
-
     # Point cloud node
     point_cloud_node = Node(
         package='depth_image_proc',

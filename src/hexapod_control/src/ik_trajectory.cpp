@@ -1,3 +1,4 @@
+#include "builtin_interfaces/msg/duration.hpp"
 #include <control_msgs/action/follow_joint_trajectory.hpp>
 #include <controller_manager_msgs/srv/configure_controller.hpp>
 #include <controller_manager_msgs/srv/load_controller.hpp>
@@ -34,7 +35,8 @@ private:
   // Action client for joint trajectory controller
 
   void updateJointState(std::vector<std::string> joint_names,
-                        std::vector<double> joint_positions) {
+                        std::vector<double> joint_positions,
+                        builtin_interfaces::msg::Duration duration) {
     RCLCPP_DEBUG(get_logger(), "Recieved new pose command:");
 
     for (size_t i = 0; i < joint_names.size(); i++) {
@@ -47,7 +49,7 @@ private:
 
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions = joint_positions;
-    point.time_from_start = rclcpp::Duration::from_seconds(0.2);
+    point.time_from_start = duration;
     goal_msg.trajectory.points.push_back(point);
 
     trajectory_client_->async_send_goal(goal_msg, send_goal_options);

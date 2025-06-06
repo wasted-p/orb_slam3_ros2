@@ -1,3 +1,4 @@
+#include "builtin_interfaces/msg/duration.hpp"
 #include <hexapod_control/ik_base.hpp>
 #include <rclcpp/logging.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -19,7 +20,8 @@ private:
   }
 
   void updateJointState(std::vector<std::string> joint_names,
-                        std::vector<double> joint_positions) {
+                        std::vector<double> joint_positions,
+                        builtin_interfaces::msg::Duration _) {
     joint_state_msg_.header.frame_id = "base_footprint";
 
     joint_state_msg_.name = {};

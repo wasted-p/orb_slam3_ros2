@@ -16,6 +16,7 @@
 // NOTE: Use most performant and appropriate algorithms
 // #include "hexapod_control/msg/show_marker.hpp"
 #include "6_dof_marker.hpp"
+#include "builtin_interfaces/msg/duration.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include <cmath>
@@ -73,7 +74,8 @@ public:
 
 protected:
   virtual void updateJointState(std::vector<std::string> joint_names,
-                                std::vector<double> joint_positions) = 0;
+                                std::vector<double> joint_positions,
+                                builtin_interfaces::msg::Duration duration) = 0;
 
   void setupROS();
   virtual void timerCallback() = 0;

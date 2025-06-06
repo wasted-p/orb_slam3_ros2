@@ -15,6 +15,7 @@
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>
+#include <rclcpp/duration.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdexcept>
@@ -45,6 +46,7 @@ private:
   hexapod_msgs::msg::Gait gait_;
   hexapod_msgs::msg::Gait tripod_gait_;
   int gait_step = 100;
+  bool executing_action = false;
 
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -65,7 +67,7 @@ public:
     }
     gait_.poses.push_back(initial_pose);
 
-    std::string path = "/home/thurdparty/Code/hexapod-ros/tripod_gait.yaml";
+    std::string path = "/home/thurdparty/Code/hexapod-ros/tripod_stable.yaml";
     loadGaitFromYamlFile(path, tripod_gait_);
   }
 
@@ -126,7 +128,7 @@ private:
         10, // QoS history depth
         std::bind(&ActionNode::onActionRequested, this, std::placeholders::_1));
 
-    timer_ = create_wall_timer(std::chrono::milliseconds(1000),
+    timer_ = create_wall_timer(std::chrono::milliseconds(200),
                                std::bind(&ActionNode::timerCallback, this));
 
     service_ = create_service<hexapod_msgs::srv::Command>(
@@ -137,10 +139,12 @@ private:
   }
 
   void onActionRequested(hexapod_msgs::msg::Action msg) {
+    if (executing_action)
+      return;
     RCLCPP_INFO(get_logger(), "Requested Action = %s", msg.name.c_str());
     if (msg.name.compare("walk") == 0) {
       gait_step = 0;
-      // tripod_gait_[gait_step]
+      executing_action = true;
     }
   }
   void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
@@ -403,9 +407,17 @@ private:
   }
 
   void timerCallback() {
-    if (gait_step < tripod_gait_.poses.size()) {
-      pose_pub_->publish(tripod_gait_.poses[gait_step]);
-      gait_step++;
+    if (executing_action) {
+
+      if (gait_step < tripod_gait_.poses.size()) {
+        hexapod_msgs::msg::Pose msg = tripod_gait_.poses[gait_step];
+        msg.duration = rclcpp::Duration::from_seconds(0.001);
+        pose_pub_->publish(msg);
+        gait_step++;
+      } else {
+
+        executing_action = false;
+      }
     }
   }
 };

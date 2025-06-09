@@ -81,14 +81,27 @@ void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
 
   gait_.poses[current_pose].names = {};
   gait_.poses[current_pose].positions = {};
-  RCLCPP_INFO(node_->get_logger(), "Current Pose:");
   for (auto &entry : buffer) {
     gait_.poses[current_pose].names.push_back(entry.first);
     gait_.poses[current_pose].positions.push_back(entry.second);
-    RCLCPP_INFO(node_->get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
-                entry.first.c_str(), entry.second.x, entry.second.y,
-                entry.second.z);
   }
+
+  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
+  request->command = "update";
+  request->poses = gait_.poses;
+  client_->async_send_request(
+      request,
+      [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+                 future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node_->get_logger(), "Cleared markers successful: %s",
+                      response->message.c_str());
+        } else {
+          RCLCPP_ERROR(node_->get_logger(), "Cleared markers failed: %s",
+                       response->message.c_str());
+        }
+      });
 }
 
 void ActionPlannerRvizPanel::setupUi() {
@@ -248,24 +261,23 @@ void ActionPlannerRvizPanel::onLoad() {
         std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
     request->command = "clear";
 
-    // auto future = client_->async_send_request(
-    //     request,
-    //     [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-    //                future_response) {
-    //       auto response = future_response.get();
-    //       if (response->success) {
-    //         RCLCPP_INFO(node_->get_logger(), "Cleared markers successful:
-    //         %s",
-    //                     response->message.c_str());
-    //       } else {
-    //         RCLCPP_ERROR(node_->get_logger(), "Cleared markers failed: %s",
-    //                      response->message.c_str());
-    //       }
-    //     });
-    //
-    // request->command = "add";
-    // request->poses = {gait_.poses};
     auto future = client_->async_send_request(
+        request,
+        [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+                   future_response) {
+          auto response = future_response.get();
+          if (response->success) {
+            RCLCPP_INFO(node_->get_logger(), "Cleared markers successful: %s ",
+                        response->message.c_str());
+          } else {
+            RCLCPP_ERROR(node_->get_logger(), "Cleared markers failed: %s",
+                         response->message.c_str());
+          }
+        });
+
+    request->command = "add";
+    request->poses = gait_.poses;
+    future = client_->async_send_request(
         request,
         [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
                    future_response) {

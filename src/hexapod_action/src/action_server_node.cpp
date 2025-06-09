@@ -184,14 +184,14 @@ private:
       std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Response> response) {
     if (request->command.compare("clear") == 0) {
       clearMarkers();
-
-      response->message = "Cleared Markers Successfully";
+      response->message = "Updated Markers Successfully";
     } else if (request->command.compare("add") == 0) {
       // FIXME: Update markers instead
       clearMarkers();
-      addMarkers(request->poses);
-
+      publishMarkers(request->poses);
       response->message = "Added Markers Successfully";
+    } else if (request->command.compare("update") == 0) {
+      publishMarkers(request->poses, visualization_msgs::msg::Marker::MODIFY);
     }
     response->success = true;
   }
@@ -205,7 +205,8 @@ private:
     marker_array.markers = {delete_all_marker};
     markers_pub_->publish(marker_array);
   }
-  void addMarkers(std::vector<hexapod_msgs::msg::Pose> poses) {
+  void publishMarkers(std::vector<hexapod_msgs::msg::Pose> poses,
+                      int action = visualization_msgs::msg::Marker::ADD) {
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
@@ -222,7 +223,6 @@ private:
 
     unsigned int idx = 0;
 
-    RCLCPP_INFO(get_logger(), "Adding markers:");
     for (hexapod_msgs::msg::Pose &pose : poses) {
       for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
         const auto &leg_name = pose.names[leg_i];
@@ -234,7 +234,7 @@ private:
         sphere.ns = "leg_spheres";
         sphere.id = marker_id++;
         sphere.type = visualization_msgs::msg::Marker::SPHERE;
-        sphere.action = visualization_msgs::msg::Marker::ADD;
+        sphere.action = action;
         sphere.pose.position = position;
         sphere.pose.orientation.w = 1.0;
         const double size = 0.0075;
@@ -254,7 +254,7 @@ private:
           arrow.ns = "leg_arrows";
           arrow.id = marker_id++;
           arrow.type = visualization_msgs::msg::Marker::ARROW;
-          arrow.action = visualization_msgs::msg::Marker::ADD;
+          arrow.action = action;
           arrow.points.push_back(previous_points[leg_name]);
           arrow.points.push_back(position);
           arrow.scale.x = 0.0025; // shaft diameter

@@ -1,12 +1,14 @@
 #ifndef HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
 #define HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
 
+#include "hexapod_msgs/msg/gait.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
 #include <QListWidget>
 #include <QStringList>
 #include <hexapod_msgs/msg/gait.hpp>
+#include <map>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
 #include <ui/pose_list.hpp>
@@ -49,7 +51,8 @@ private:
   int current_pose = -1;
   int created_poses_count_ = 0;
 
-  hexapod_msgs::msg::Gait gait_;
+  std::map<std::string, hexapod_msgs::msg::Gait> actions_;
+  hexapod_msgs::msg::Gait action_;
 
   rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
   rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_client_;

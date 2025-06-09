@@ -28,8 +28,6 @@ find_package(trajectory_msgs REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 
-# Find Eigen
-# find_package(Eigen3 REQUIRED)
 
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -64,13 +62,11 @@ add_executable(startup_controllers_node
 target_include_directories(hexapod_joint_state_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 target_include_directories(hexapod_trajectory_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  ${EIGEN3_INCLUDE_DIRS}
 )
 
 ament_target_dependencies(hexapod_joint_state_node

@@ -1,0 +1,78 @@
+gait:
+  name: 
+  poses:
+    - name: Pose 1
+      names:
+        - bottom_left
+        - bottom_right
+        - mid_left
+        - mid_right
+        - top_left
+        - top_right
+      positions:
+        - {x: -0.111418, y: 0.101643, z: 0.004333}
+        - {x: -0.112013, y: -0.100388, z: 0.004333}
+        - {x: 0.010626, y: 0.126425, z: 0.005233}
+        - {x: 0.009747, y: -0.124595, z: 0.005233}
+        - {x: 0.128693, y: 0.0911469, z: 0.004333}
+        - {x: 0.12928, y: -0.0916585, z: 0.004333}
+    - name: Pose 2
+      names:
+        - bottom_left
+        - bottom_right
+        - mid_left
+        - mid_right
+        - top_left
+        - top_right
+      positions:
+        - {x: -0.0964, y: 0.1016, z: 0.0243}
+        - {x: -0.127, y: -0.1004, z: 0.0043}
+        - {x: -0.0044, y: 0.1264, z: 0.0052}
+        - {x: 0.0247, y: -0.1246, z: 0.0252}
+        - {x: 0.1437, y: 0.0911, z: 0.0243}
+        - {x: 0.1143, y: -0.0917, z: 0.0043}
+    - name: Pose 3
+      names:
+        - bottom_left
+        - bottom_right
+        - mid_left
+        - mid_right
+        - top_left
+        - top_right
+      positions:
+        - {x: -0.0814, y: 0.1016, z: 0.0043}
+        - {x: -0.142, y: -0.1004, z: 0.0043}
+        - {x: -0.0194, y: 0.1264, z: 0.0052}
+        - {x: 0.0397, y: -0.1246, z: 0.0052}
+        - {x: 0.1587, y: 0.0911, z: 0.0043}
+        - {x: 0.0993, y: -0.0917, z: 0.0043}
+    - name: Pose 4
+      names:
+        - bottom_left
+        - bottom_right
+        - mid_left
+        - mid_right
+        - top_left
+        - top_right
+      positions:
+        - {x: -0.0964, y: 0.1016, z: 0.0043}
+        - {x: -0.127, y: -0.1004, z: 0.0243}
+        - {x: -0.0044, y: 0.1264, z: 0.0252}
+        - {x: 0.0247, y: -0.1246, z: 0.0052}
+        - {x: 0.1437, y: 0.0911, z: 0.0043}
+        - {x: 0.1143, y: -0.0917, z: 0.0243}
+    - name: Pose 5
+      names:
+        - bottom_left
+        - bottom_right
+        - mid_left
+        - mid_right
+        - top_left
+        - top_right
+      positions:
+        - {x: -0.1114, y: 0.1016, z: 0.0043}
+        - {x: -0.112, y: -0.1004, z: 0.0043}
+        - {x: 0.0106, y: 0.1264, z: 0.0052}
+        - {x: 0.0097, y: -0.1246, z: 0.0052}
+        - {x: 0.1287, y: 0.0911, z: 0.0043}
+        - {x: 0.1293, y: -0.0917, z: 0.0043}

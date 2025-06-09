@@ -92,8 +92,7 @@ private:
   void readRobotDescription();
   void setupControl(std::string leg_name, geometry_msgs::msg::Point pos);
   std_msgs::msg::ColorRGBA makeColor(float r, float g, float b, float a = 1.0f);
-  void initInteractiveMarkerServer();
-
+  void setupKDL();
   void handleGetPoseRequest(
       const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
       std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response);

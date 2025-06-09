@@ -56,9 +56,10 @@ HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
   using namespace std::chrono_literals;
 
   readRobotDescription();
-  initInteractiveMarkerServer();
   setupROS();
-
+  setupKDL();
+}
+void HexapodIKBaseNode::setupKDL() {
   hexapod_msgs::msg::Pose pose;
   geometry_msgs::msg::Point pos;
   for (std::string leg_name : LEG_NAMES) {
@@ -76,7 +77,6 @@ HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
     RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
                 leg_name.c_str(), pos.x, pos.y, pos.z);
   };
-
   pose_pub_->publish(pose);
 }
 
@@ -180,6 +180,9 @@ void HexapodIKBaseNode::setupROS() {
                                 std::placeholders::_1, std::placeholders::_2));
 
   joint_state_msg_.header.frame_id = "base_footprint";
+
+  server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
+      "interactive_marker_server", this, rclcpp::QoS(10), rclcpp::QoS(10));
 }
 
 void HexapodIKBaseNode::handleGetPoseRequest(
@@ -201,12 +204,6 @@ void HexapodIKBaseNode::handleGetPoseRequest(
   // Fill response
   response->pose = pose;
   response->joint_state = joint_state_msg_;
-}
-void HexapodIKBaseNode::initInteractiveMarkerServer() {
-  server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
-      "interactive_marker_server", this, rclcpp::QoS(10), rclcpp::QoS(10));
-
-  RCLCPP_INFO(this->get_logger(), "Interactive marker server started");
 }
 
 TranslationMarker HexapodIKBaseNode::add6DofControl() {

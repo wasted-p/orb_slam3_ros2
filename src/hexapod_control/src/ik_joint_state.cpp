@@ -9,7 +9,6 @@ public:
   HexapodIKRvizNode() { setupROS(); }
 
 private:
-  sensor_msgs::msg::JointState joint_state_msg_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
 
@@ -22,17 +21,11 @@ private:
   void updateJointState(std::vector<std::string> joint_names,
                         std::vector<double> joint_positions,
                         builtin_interfaces::msg::Duration _) {
-    joint_state_msg_.header.frame_id = "base_footprint";
-
-    joint_state_msg_.name = {};
-    joint_state_msg_.position = {};
 
     RCLCPP_DEBUG(get_logger(), "Recieved JointState");
     for (size_t i = 0; i < joint_names.size(); i++) {
       RCLCPP_DEBUG(get_logger(), "%s=%.4f", joint_names[i].c_str(),
                    joint_positions[i]);
-      joint_state_msg_.name.push_back(joint_names[i]);
-      joint_state_msg_.position.push_back(joint_positions[i]);
     }
   }
 

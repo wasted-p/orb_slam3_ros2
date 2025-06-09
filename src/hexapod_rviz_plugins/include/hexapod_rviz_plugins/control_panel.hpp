@@ -55,7 +55,7 @@ public:
   void onInitialize() override;
 
 protected Q_SLOTS:
-  void onRelativeToggled(bool checked);
+  void setRelativeMode(bool checked);
   void onStepSizeChanged(double value);
   void onResetClicked();
 

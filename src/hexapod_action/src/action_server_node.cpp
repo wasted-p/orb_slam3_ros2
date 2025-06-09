@@ -2,16 +2,14 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_msgs/msg/action.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/control_markers.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include <cmath>
-#include <exception>
-#include <fstream>
 #include <geometry_msgs/msg/point.hpp>
-// #include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
-// #include <hexapod_msgs/srv/command.hpp>
+#include <hexapod_msgs/srv/control_markers.hpp>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>
@@ -22,15 +20,13 @@
 #include <string>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <yaml-cpp/yaml.h>
 
 using namespace std::chrono_literals;
 class ActionNode : public rclcpp::Node {
 
 private:
-  int current_pose = -1;
   // ROS2 Subscriptions
-  // rclcpp::Service<hexapod_msgs::srv::Command>::SharedPtr service_;
+  rclcpp::Service<hexapod_msgs::srv::ControlMarkers>::SharedPtr service_;
 
   // ROS2 Publishers
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
@@ -59,14 +55,6 @@ private:
 public:
   ActionNode() : Node("action_server_node") {
     setupROS();
-    initial_pose = getInitialPose();
-    for (size_t i = 0; i < 6; i++) {
-      buffer[LEG_NAMES[i]].x = initial_pose.positions[i].x;
-      buffer[LEG_NAMES[i]].y = initial_pose.positions[i].y;
-      buffer[LEG_NAMES[i]].z = initial_pose.positions[i].z;
-    }
-    gait_.poses.push_back(initial_pose);
-
     getTripodGait();
   }
 
@@ -118,11 +106,6 @@ private:
     pose_pub_ =
         create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC, rclcpp::QoS(10));
 
-    pose_sub_ = this->create_subscription<hexapod_msgs::msg::Pose>(
-        POSE_TOPIC,
-        10, // QoS history depth
-        std::bind(&ActionNode::onPoseUpdate, this, std::placeholders::_1));
-
     action_sub_ = this->create_subscription<hexapod_msgs::msg::Action>(
         "/hexapod/action",
         10, // QoS history depth
@@ -131,46 +114,23 @@ private:
     timer_ = create_wall_timer(std::chrono::milliseconds(200),
                                std::bind(&ActionNode::timerCallback, this));
 
-    // service_ = create_service<hexapod_msgs::srv::Command>(
-    //     "command", std::bind(&ActionNode::handleCommand, this,
-    //                          std::placeholders::_1, std::placeholders::_2));
-
-    RCLCPP_INFO(this->get_logger(), "Save gait pose service ready.");
+    service_ = create_service<hexapod_msgs::srv::ControlMarkers>(
+        "command", std::bind(&ActionNode::handleControlMarkersRequest, this,
+                             std::placeholders::_1, std::placeholders::_2));
   }
 
   void onActionRequested(hexapod_msgs::msg::Action msg) {
     RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
     executing_action = msg;
   }
-
-  void onPoseUpdate(hexapod_msgs::msg::Pose pose) {
-    if (current_pose == -1) {
-      return;
+  void handleControlMarkersRequest(
+      const std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Request> request,
+      std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Response> response) {
+    if (request->command.compare("clear") == 0) {
+      clearMarkers();
+    } else if (request->command.compare("add") == 0) {
+      addMarkers(request->poses);
     }
-
-    RCLCPP_DEBUG(get_logger(), "Updating Pose");
-    // Search an element 6
-    RCLCPP_DEBUG(get_logger(), "Incoming Pose:");
-    for (size_t i = 0; i < pose.names.size(); i++) {
-      buffer[pose.names[i]] = pose.positions[i];
-      RCLCPP_DEBUG(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
-                   pose.names[i].c_str(), buffer[pose.names[i]].x,
-                   pose.positions[i].y, pose.positions[i].z);
-    }
-
-    gait_.poses[current_pose].names = {};
-    gait_.poses[current_pose].positions = {};
-    RCLCPP_DEBUG(get_logger(), "Current Pose:");
-    for (size_t i = 0; i < 6; i++) {
-      gait_.poses[current_pose].names.push_back(LEG_NAMES[i]);
-      gait_.poses[current_pose].positions.push_back(buffer.at(LEG_NAMES[i]));
-      RCLCPP_DEBUG(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
-                   gait_.poses[current_pose].names[i].c_str(),
-                   gait_.poses[current_pose].positions[i].x,
-                   gait_.poses[current_pose].positions[i].y,
-                   gait_.poses[current_pose].positions[i].z);
-    }
-    addMarkers(gait_);
   }
 
   void clearMarkers() {
@@ -180,7 +140,7 @@ private:
     marker_array.markers = {delete_all_marker};
     markers_pub_->publish(marker_array);
   }
-  void addMarkers(hexapod_msgs::msg::Gait gait) {
+  void addMarkers(std::vector<hexapod_msgs::msg::Pose> poses) {
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
@@ -196,7 +156,7 @@ private:
     int marker_id = 0;
 
     unsigned int idx = 0;
-    for (hexapod_msgs::msg::Pose pose : gait.poses) {
+    for (hexapod_msgs::msg::Pose pose : poses) {
       for (size_t leg_i = 0; leg_i < pose.names.size(); ++leg_i) {
         const auto &leg_name = pose.names[leg_i];
         const auto &position = pose.positions[leg_i];

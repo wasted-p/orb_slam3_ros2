@@ -37,6 +37,7 @@ private:
   void updateJointState(std::vector<std::string> joint_names,
                         std::vector<double> joint_positions,
                         builtin_interfaces::msg::Duration duration) {
+
     RCLCPP_DEBUG(get_logger(), "Recieved new pose command:");
 
     for (size_t i = 0; i < joint_names.size(); i++) {

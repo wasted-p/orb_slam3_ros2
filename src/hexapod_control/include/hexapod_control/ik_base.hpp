@@ -19,6 +19,8 @@
 #include "builtin_interfaces/msg/duration.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include <cmath>
 #include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_control/planning_group.hpp>
@@ -61,7 +63,9 @@ protected:
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
+  rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr service_;
   hexapod_msgs::msg::Pose pose_msg_;
+  sensor_msgs::msg::JointState joint_state_msg_;
 
   std::string LEG_NAMES[6] = {
       "top_left",  "mid_left",  "bottom_left",
@@ -88,6 +92,10 @@ private:
   void setupControl(std::string leg_name, geometry_msgs::msg::Point pos);
   std_msgs::msg::ColorRGBA makeColor(float r, float g, float b, float a = 1.0f);
   void initInteractiveMarkerServer();
+
+  void handleGetPoseRequest(
+      const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
+      std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response);
   TranslationMarker add6DofControl();
   void processFeedback(
       std::string leg_name,

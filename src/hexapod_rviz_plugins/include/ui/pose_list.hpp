@@ -24,11 +24,11 @@ private:
 public:
   PoseList();
   void removePose(size_t idx);
-  void addPose();
   void moveCurrentPose(int distance = 1);
   void moveCurrentPoseUp();
   void moveCurrentPoseDown();
   void startLoopSelection();
+  void addPose(std::string name);
 
 signals:
   void poseSelected(const size_t idx);

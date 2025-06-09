@@ -1,7 +1,3 @@
-# GetHexapodPose.srv
-
-# Request
 ---
-
-# Response
+sensor_msgs/JointState joint_state
 hexapod_msgs/Pose pose

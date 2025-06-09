@@ -20,23 +20,25 @@ PoseList::PoseList() {
 }
 
 void PoseList::removePose(size_t idx) {
+  // if (idx < 0)
   if (item(idx))
     delete item(idx);
-  setCurrentRow(idx - 1);
+  if (idx > 0)
+    setCurrentRow(idx - 1);
 }
-void PoseList::addPose() {
-  std::string name = "Pose " + std::to_string(count());
+void PoseList::addPose(std::string name) {
   this->addItem(name.c_str());
   this->setCurrentRow(0);
 }
 
 void PoseList::moveCurrentPose(int distance) {
   int row = currentRow();
-  if (row < count() - 1) {
-    QListWidgetItem *item = takeItem(row);
-    insertItem(row + distance, item);
-    setCurrentItem(item);
-  }
+  if (row + distance >= count() || row + distance < 0)
+    return;
+
+  QListWidgetItem *item = takeItem(row);
+  insertItem(row + distance, item);
+  setCurrentItem(item);
   emit poseMoved(row, row + distance);
 }
 

@@ -1,16 +1,18 @@
 #include "builtin_interfaces/msg/duration.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
 #include <hexapod_control/ik_base.hpp>
 
 HexapodIKBaseNode::~HexapodIKBaseNode() {}
 
 void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
-  std::vector<double> joint_positions;
+  std::vector<double> solved;
   std::string leg_name;
   geometry_msgs::msg::Point position;
   geometry_msgs::msg::Pose int_marker_pose;
 
-  std::vector<std::string> all_joint_names;
-  std::vector<double> all_joint_positions;
+  std::vector<std::string> joint_names;
+  std::vector<double> joint_positions;
+  builtin_interfaces::msg::Duration duration = pose.duration;
   for (size_t i = 0; i < pose.names.size(); i++) {
     leg_name = pose.names[i];
     position = pose.positions[i];
@@ -22,27 +24,31 @@ void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
     int status = planning_group.calculateJntArray(chains_.at(leg_name),
                                                   position, joint_positions);
 
-    if (status < 0 || joint_positions.size() < 3) {
+    if (status < 0 || solved.size() < 3) {
       RCLCPP_ERROR(get_logger(),
                    "IK failed or returned insufficient joint positions for leg "
                    "%s (status: %d, size: %zu)",
-                   leg_name.c_str(), status, joint_positions.size());
+                   leg_name.c_str(), status, solved.size());
       return;
     }
 
-    all_joint_names.push_back(leg_name + "_rotate_joint");
-    all_joint_names.push_back(leg_name + "_abduct_joint");
-    all_joint_names.push_back(leg_name + "_retract_joint");
+    joint_names.push_back(leg_name + "_rotate_joint");
+    joint_names.push_back(leg_name + "_abduct_joint");
+    joint_names.push_back(leg_name + "_retract_joint");
 
-    all_joint_positions.push_back(joint_positions[0]);
-    all_joint_positions.push_back(joint_positions[1]);
-    all_joint_positions.push_back(joint_positions[2]);
+    joint_positions.push_back(solved[0]);
+    joint_positions.push_back(solved[1]);
+    joint_positions.push_back(solved[2]);
 
     int_marker_pose.position = position;
     server_->setPose(leg_name, int_marker_pose);
     server_->applyChanges();
   }
-  updateJointState(all_joint_names, all_joint_positions, pose.duration);
+
+  joint_state_msg_.name = joint_names;
+  joint_state_msg_.position = joint_positions;
+
+  updateJointState(joint_names, joint_positions, duration);
 }
 
 HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
@@ -162,8 +168,21 @@ void HexapodIKBaseNode::setupROS() {
   timer_ = this->create_wall_timer(
       std::chrono::milliseconds(100),
       std::bind(&HexapodIKBaseNode::timerCallback, this));
+
+  service_ = create_service<hexapod_msgs::srv::GetPose>(
+      "command", std::bind(&HexapodIKBaseNode::handleGetPoseRequest, this,
+                           std::placeholders::_1, std::placeholders::_2));
+
+  joint_state_msg_.header.frame_id = "base_footprint";
 }
 
+void HexapodIKBaseNode::handleGetPoseRequest(
+    const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
+    std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
+
+  response->pose = pose_msg_;
+  response->joint_state = joint_state_msg_;
+}
 void HexapodIKBaseNode::initInteractiveMarkerServer() {
   server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
       "interactive_marker_server", this, rclcpp::QoS(10), rclcpp::QoS(10));

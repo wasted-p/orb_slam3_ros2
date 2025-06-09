@@ -45,10 +45,10 @@ add_library(${PROJECT_NAME} SHARED
   src/control/panel.cpp
   include/hexapod_rviz_plugins/control_panel.hpp  # <-- Add this line
 
-  src/gait_planner/panel.cpp
-  include/hexapod_rviz_plugins/gait_planner.hpp  # <-- Add this line
+  src/action_planner/panel.cpp
+  include/hexapod_rviz_plugins/action_planner.hpp  # <-- Add this line
 
-  src/gait_planner/pose_list.cpp
+  src/action_planner/pose_list.cpp
   include/ui/pose_list.hpp  # <-- Add this line
 
   src/joystick_control/panel.cpp
@@ -77,7 +77,6 @@ ament_target_dependencies(${PROJECT_NAME}
 
 
 
-target_link_libraries()
 target_link_libraries(${PROJECT_NAME}
   Qt5::Widgets
   yaml-cpp

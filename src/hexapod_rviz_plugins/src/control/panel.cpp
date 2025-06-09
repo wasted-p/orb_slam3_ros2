@@ -138,14 +138,15 @@ HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
   connect(pose_table_, &PoseTable::legPoseUpdated, this,
           &HexapodControlRvizPanel::onLegPoseUpdate);
   connect(relative_checkbox_, &QCheckBox::toggled, this,
-          &HexapodControlRvizPanel::onRelativeToggled);
+          &HexapodControlRvizPanel::setRelativeMode);
   connect(step_spinbox_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
           this, &HexapodControlRvizPanel::onStepSizeChanged);
   connect(reset_button_, &QPushButton::clicked, this,
           &HexapodControlRvizPanel::onResetClicked);
+  setRelativeMode(true);
 }
 
-void HexapodControlRvizPanel::onRelativeToggled(bool checked) {
+void HexapodControlRvizPanel::setRelativeMode(bool checked) {
   RCLCPP_INFO(rclcpp::get_logger("HexapodControl"), "Relative mode: %s",
               checked ? "ON" : "OFF");
   relative = checked;

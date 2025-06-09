@@ -1,6 +1,8 @@
 #ifndef HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
 #define HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
 
+#include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/control_markers.hpp"
 #include <QListWidget>
 #include <QStringList>
 #include <hexapod_msgs/msg/gait.hpp>
@@ -10,12 +12,12 @@
 
 namespace hexapod_rviz_plugins {
 
-class GaitPlannerRvizPanel : public rviz_common::Panel {
+class ActionPlannerRvizPanel : public rviz_common::Panel {
   Q_OBJECT
 
 public:
-  GaitPlannerRvizPanel(QWidget *parent = nullptr);
-  ~GaitPlannerRvizPanel() override;
+  ActionPlannerRvizPanel(QWidget *parent = nullptr);
+  ~ActionPlannerRvizPanel() override;
 
   void onInitialize() override;
 
@@ -31,14 +33,24 @@ private:
   void setCurrentPose(const size_t idx);
   void setupUi();
   void setupROS();
+  hexapod_msgs::msg::Pose getInitialPose();
+
+  void onPoseUpdate(hexapod_msgs::msg::Pose pose);
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
+  rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   PoseList *pose_list_widget_;
   QStringList leg_names_;
 
+  hexapod_msgs::msg::Pose initial_pose;
+
+  int current_pose = -1;
+  int created_poses_count_ = 0;
+
   hexapod_msgs::msg::Gait gait_;
-  rclcpp::Client<hexapod_msgs::srv::Command>::SharedPtr client_;
+
+  rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
   rclcpp::TimerBase::SharedPtr timer_;
   void createLoop(const int from_idx, const int to_idx);
 };

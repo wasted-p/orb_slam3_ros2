@@ -28,6 +28,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /TF1/Tree1
+        - /MarkerArray1
       Splitter Ratio: 0.7492957711219788
     Tree Height: 242
   - Class: rviz_common/Transformation
@@ -269,9 +270,17 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
+        bottom_left_cox:
+          Value: true
+        bottom_left_femur:
+          Value: true
         bottom_left_foot:
           Value: true
         bottom_left_tibia:
+          Value: true
+        bottom_right_cox:
+          Value: true
+        bottom_right_femur:
           Value: true
         bottom_right_foot:
           Value: true
@@ -283,17 +292,33 @@ Visualization Manager:
           Value: true
         depth_camera_optical_frame:
           Value: true
+        mid_left_cox:
+          Value: true
+        mid_left_femur:
+          Value: true
         mid_left_foot:
           Value: true
         mid_left_tibia:
+          Value: true
+        mid_right_cox:
+          Value: true
+        mid_right_femur:
           Value: true
         mid_right_foot:
           Value: true
         mid_right_tibia:
           Value: true
+        top_left_cox:
+          Value: true
+        top_left_femur:
+          Value: true
         top_left_foot:
           Value: true
         top_left_tibia:
+          Value: true
+        top_right_cox:
+          Value: true
+        top_right_femur:
           Value: true
         top_right_foot:
           Value: true
@@ -309,6 +334,36 @@ Visualization Manager:
           base_link:
             arm_base:
               {}
+            bottom_left_cox:
+              bottom_left_femur:
+                bottom_left_tibia:
+                  bottom_left_foot:
+                    {}
+            bottom_right_cox:
+              bottom_right_femur:
+                bottom_right_tibia:
+                  bottom_right_foot:
+                    {}
+            mid_left_cox:
+              mid_left_femur:
+                mid_left_tibia:
+                  mid_left_foot:
+                    {}
+            mid_right_cox:
+              mid_right_femur:
+                mid_right_tibia:
+                  mid_right_foot:
+                    {}
+            top_left_cox:
+              top_left_femur:
+                top_left_tibia:
+                  top_left_foot:
+                    {}
+            top_right_cox:
+              top_right_femur:
+                top_right_tibia:
+                  top_right_foot:
+                    {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/InteractiveMarkers
@@ -330,7 +385,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /visualization_marker_array
+        Value: /hexapod/visualization/leg_pose_markers
       Value: true
   Enabled: true
   Global Options:
@@ -393,10 +448,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.10539913177490234
+      Pitch: 0.32039910554885864
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.4453861713409424
+      Yaw: 0.910386323928833
     Saved: ~
 Window Geometry:
   ActionPlannerPanel:

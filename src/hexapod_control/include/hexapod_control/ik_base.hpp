@@ -50,7 +50,6 @@
 
 class HexapodIKBaseNode : public rclcpp::Node {
 protected:
-  hexapod_msgs::msg::Pose last_pose_msg_;
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
   KDL::Tree kdl_tree_;
@@ -64,7 +63,9 @@ protected:
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
   rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr service_;
-  hexapod_msgs::msg::Pose pose_msg_;
+  hexapod_msgs::msg::Pose current_pose_;
+  // hexapod_msgs::msg::Pose pose_msg_;
+  std::map<std::string, geometry_msgs::msg::Point> pose_msgs_;
   sensor_msgs::msg::JointState joint_state_msg_;
 
   std::string LEG_NAMES[6] = {

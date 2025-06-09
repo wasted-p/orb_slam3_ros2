@@ -42,7 +42,6 @@ private:
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait tripod_gait_;
-  size_t gait_index_ = 100;
   hexapod_msgs::msg::Action executing_action;
 
   hexapod_msgs::msg::Pose initial_pose;
@@ -168,8 +167,10 @@ private:
                                std::bind(&ActionNode::timerCallback, this));
 
     service_ = create_service<hexapod_msgs::srv::ControlMarkers>(
-        "command", std::bind(&ActionNode::handleControlMarkersRequest, this,
-                             std::placeholders::_1, std::placeholders::_2));
+        "action/markers",
+        std::bind(&ActionNode::handleControlMarkersRequest, this,
+                  std::placeholders::_1, std::placeholders::_2));
+
     RCLCPP_INFO(get_logger(), "Created ControlCommand Service");
   }
 
@@ -177,19 +178,27 @@ private:
     RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
     executing_action = msg;
   }
+
   void handleControlMarkersRequest(
       const std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Request> request,
       std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Response> response) {
     if (request->command.compare("clear") == 0) {
       clearMarkers();
+
+      response->message = "Cleared Markers Successfully";
     } else if (request->command.compare("add") == 0) {
+      // FIXME: Update markers instead
+      clearMarkers();
       addMarkers(request->poses);
+
+      response->message = "Added Markers Successfully";
     }
+    response->success = true;
   }
 
   void clearMarkers() {
 
-    RCLCPP_INFO(get_logger(), "Clearning Markers");
+    RCLCPP_INFO(get_logger(), "Cleaning Markers");
     visualization_msgs::msg::Marker delete_all_marker;
     delete_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
     visualization_msgs::msg::MarkerArray marker_array;
@@ -214,15 +223,10 @@ private:
     unsigned int idx = 0;
 
     RCLCPP_INFO(get_logger(), "Adding markers:");
-    for (hexapod_msgs::msg::Pose pose : poses) {
-      RCLCPP_INFO(get_logger(), " - Pose: %s", pose.name.c_str());
-      for (size_t leg_i = 0; leg_i < pose.names.size(); ++leg_i) {
-
+    for (hexapod_msgs::msg::Pose &pose : poses) {
+      for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
         const auto &leg_name = pose.names[leg_i];
         const auto &position = pose.positions[leg_i];
-
-        RCLCPP_INFO(get_logger(), "   - %s = [%.4f,%.4f,%.4f]",
-                    pose.name.c_str(), position.x, position.y, position.z);
         // Create a sphere marker for this leg at this pose
         visualization_msgs::msg::Marker sphere;
         sphere.header.frame_id = "base_footprint"; // Or your TF frame

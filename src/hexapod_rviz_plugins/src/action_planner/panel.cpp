@@ -1,8 +1,10 @@
 // TODO: Rename GaitPlanner -> ActionPlanner
 // TODO: Add markers service to action_server_node
+#include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/gait.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_rviz_plugins/action_planner.hpp"
 #include "ui/pose_list.hpp"
 #include <QApplication>
@@ -26,6 +28,7 @@
 #include <rclcpp/client.hpp>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/panel.hpp>
@@ -59,87 +62,33 @@ void ActionPlannerRvizPanel::onInitialize() {
   }
   node_ = ros_node_abstraction->get_raw_node();
   setupROS();
-
-  initial_pose = getInitialPose();
-  // FIXME: Uncomment this and include in gait
-  // for (size_t i = 0; i < 6; i++) {
-  //   buffer[LEG_NAMES[i]].x = initial_pose.positions[i].x;
-  //   buffer[LEG_NAMES[i]].y = initial_pose.positions[i].y;
-  //   buffer[LEG_NAMES[i]].z = initial_pose.positions[i].z;
-  // }
-  pose_list_widget_->addPose(initial_pose.name);
-  gait_.poses.push_back(initial_pose);
-}
-
-hexapod_msgs::msg::Pose ActionPlannerRvizPanel::getInitialPose() {
-  hexapod_msgs::msg::Pose initial_pose;
-  initial_pose.name = "Rest";
-  return initial_pose;
-  // Get the list of leg names
-  std::vector<std::string> leg_names_ =
-      node_->declare_parameter<std::vector<std::string>>(
-          "names", std::vector<std::string>());
-
-  if (leg_names_.empty()) {
-    throw std::runtime_error("No leg names found in paramaters");
-  }
-
-  // Load position for each leg
-  for (const auto &leg_name : leg_names_) {
-    geometry_msgs::msg::Point position;
-
-    // Read x, y, z coordinates for each leg
-    std::string x_param = "positions." + leg_name + ".x";
-    std::string y_param = "positions." + leg_name + ".y";
-    std::string z_param = "positions." + leg_name + ".z";
-
-    position.x = node_->declare_parameter<double>(x_param, 0.0);
-    position.y = node_->declare_parameter<double>(y_param, 0.0);
-    position.z = node_->declare_parameter<double>(z_param, 0.0);
-
-    // Store the position
-    initial_pose.names.push_back(leg_name);
-    initial_pose.positions.push_back(position);
-
-    RCLCPP_INFO(node_->get_logger(),
-                "Loaded position for %s: [%.4f, %.4f, %.4f]", leg_name.c_str(),
-                position.x, position.y, position.z);
-  }
-
-  RCLCPP_INFO(node_->get_logger(), "Successfully loaded %zu leg positions",
-              leg_names_.size());
-  return initial_pose;
 }
 
 void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   // FIXME: uncomment this and add publisher
-  //    if (current_pose == -1) {
-  //      return;
-  //    }
-  //
-  //    RCLCPP_DEBUG(get_logger(), "Updating Pose");
-  //    // Search an element 6
-  //    RCLCPP_DEBUG(get_logger(), "Incoming Pose:");
-  //    for (size_t i = 0; i < pose.names.size(); i++) {
-  //      buffer[pose.names[i]] = pose.positions[i];
-  //      RCLCPP_DEBUG(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
-  //                   pose.names[i].c_str(), buffer[pose.names[i]].x,
-  //                   pose.positions[i].y, pose.positions[i].z);
-  //    }
-  //
-  //    gait_.poses[current_pose].names = {};
-  //    gait_.poses[current_pose].positions = {};
-  //    RCLCPP_DEBUG(get_logger(), "Current Pose:");
-  //    for (size_t i = 0; i < 6; i++) {
-  //      gait_.poses[current_pose].names.push_back(LEG_NAMES[i]);
-  //      gait_.poses[current_pose].positions.push_back(buffer.at(LEG_NAMES[i]));
-  //      RCLCPP_DEBUG(get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
-  //                   gait_.poses[current_pose].names[i].c_str(),
-  //                   gait_.poses[current_pose].positions[i].x,
-  //                   gait_.poses[current_pose].positions[i].y,
-  //                   gait_.poses[current_pose].positions[i].z);
-  //    }
-  //    addMarkers(gait_);
+  if (current_pose < 0 || current_pose >= gait_.poses.size()) {
+    return;
+  }
+  std::map<std::string, geometry_msgs::msg::Point> buffer;
+
+  for (size_t i = 0; i < gait_.poses[current_pose].names.size(); i++) {
+    hexapod_msgs::msg::Pose &pose = gait_.poses[current_pose];
+    buffer[pose.names[i]] = pose.positions[i];
+  }
+
+  for (size_t i = 0; i < pose.names.size(); i++)
+    buffer[pose.names[i]] = pose.positions[i];
+
+  gait_.poses[current_pose].names = {};
+  gait_.poses[current_pose].positions = {};
+  RCLCPP_INFO(node_->get_logger(), "Current Pose:");
+  for (auto &entry : buffer) {
+    gait_.poses[current_pose].names.push_back(entry.first);
+    gait_.poses[current_pose].positions.push_back(entry.second);
+    RCLCPP_INFO(node_->get_logger(), " - leg: %s = [%0.4f,%0.4f,%0.4f]",
+                entry.first.c_str(), entry.second.x, entry.second.y,
+                entry.second.z);
+  }
 }
 
 void ActionPlannerRvizPanel::setupUi() {
@@ -299,23 +248,24 @@ void ActionPlannerRvizPanel::onLoad() {
         std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
     request->command = "clear";
 
+    // auto future = client_->async_send_request(
+    //     request,
+    //     [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+    //                future_response) {
+    //       auto response = future_response.get();
+    //       if (response->success) {
+    //         RCLCPP_INFO(node_->get_logger(), "Cleared markers successful:
+    //         %s",
+    //                     response->message.c_str());
+    //       } else {
+    //         RCLCPP_ERROR(node_->get_logger(), "Cleared markers failed: %s",
+    //                      response->message.c_str());
+    //       }
+    //     });
+    //
+    // request->command = "add";
+    // request->poses = {gait_.poses};
     auto future = client_->async_send_request(
-        request,
-        [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-                   future_response) {
-          auto response = future_response.get();
-          if (response->success) {
-            RCLCPP_INFO(node_->get_logger(), "Cleared markers successful: %s",
-                        response->message.c_str());
-          } else {
-            RCLCPP_ERROR(node_->get_logger(), "Cleared markers failed: %s",
-                         response->message.c_str());
-          }
-        });
-
-    request->command = "add";
-    request->poses = {gait_.poses};
-    future = client_->async_send_request(
         request,
         [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
                    future_response) {
@@ -380,7 +330,11 @@ void ActionPlannerRvizPanel::onExport() {
   file.close();
 }
 void ActionPlannerRvizPanel::setupROS() {
-  client_ = node_->create_client<hexapod_msgs::srv::ControlMarkers>("command");
+  client_ =
+      node_->create_client<hexapod_msgs::srv::ControlMarkers>("action/markers");
+
+  get_pose_client_ =
+      node_->create_client<hexapod_msgs::srv::GetPose>("control/pose");
 
   std::string POSE_TOPIC = "/hexapod/pose";
   pose_pub_ = node_->create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC,
@@ -406,38 +360,52 @@ void ActionPlannerRvizPanel::setCurrentPose(const size_t idx) {
 
 void ActionPlannerRvizPanel::onAddPose() {
   RCLCPP_INFO(node_->get_logger(), "Received Add Pose Request");
-  hexapod_msgs::msg::Pose new_pose;
-  new_pose.name = "Pose " + std::to_string(created_poses_count_ + 1);
-  gait_.poses.push_back(new_pose);
-  created_poses_count_++;
+  // auto new_pose = std::make_shared<hexapod_msgs::msg::Pose>();
 
-  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-  request->command = "add";
-  request->poses = {new_pose};
+  auto get_pose_request =
+      std::make_shared<hexapod_msgs::srv::GetPose::Request>();
 
-  auto future = client_->async_send_request(
-      request,
-      [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+  get_pose_client_->async_send_request(
+      get_pose_request,
+      [this](rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedFuture
                  future_response) {
         auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node_->get_logger(), "Added markers successful: %s",
-                      response->message.c_str());
-        } else {
-          RCLCPP_ERROR(node_->get_logger(), "Adding markers failed: %s",
-                       response->message.c_str());
+        hexapod_msgs::msg::Pose pose = response->pose;
+        pose.name = "Pose " + std::to_string(created_poses_count_ + 1);
+        RCLCPP_INFO(node_->get_logger(), "Number of poses: %lu ",
+                    pose.names.size());
+
+        auto request =
+            std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
+        request->command = "add";
+
+        gait_.poses.push_back(pose);
+        created_poses_count_++;
+        request->poses = gait_.poses;
+
+        client_->async_send_request(
+            request,
+            [this](
+                rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+                    future_response) {
+              auto response = future_response.get();
+              if (response->success) {
+                RCLCPP_INFO(node_->get_logger(), "%s",
+                            response->message.c_str());
+              } else {
+                RCLCPP_ERROR(node_->get_logger(), "Adding markers failed: %s",
+                             response->message.c_str());
+              }
+            });
+
+        current_pose = gait_.poses.size() - 1;
+        pose_list_widget_->addPose("Pose");
+        RCLCPP_INFO(node_->get_logger(), "Added Pose %s", "Pose");
+        RCLCPP_INFO(node_->get_logger(), "Current Gait");
+        for (hexapod_msgs::msg::Pose &pose : gait_.poses) {
+          RCLCPP_INFO(node_->get_logger(), "Pose: %s", pose.name.c_str());
         }
       });
-
-  current_pose = gait_.poses.size() - 1;
-
-  pose_list_widget_->addPose("Pose");
-
-  RCLCPP_INFO(node_->get_logger(), "Added Pose %s", "Pose");
-  RCLCPP_INFO(node_->get_logger(), "Current Gait");
-  for (hexapod_msgs::msg::Pose &pose : gait_.poses) {
-    RCLCPP_INFO(node_->get_logger(), "Pose: %s", pose.name.c_str());
-  }
 }
 
 void ActionPlannerRvizPanel::onDeletePose() {

@@ -3,6 +3,7 @@
 
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
 #include <QListWidget>
 #include <QStringList>
 #include <hexapod_msgs/msg/gait.hpp>
@@ -51,6 +52,7 @@ private:
   hexapod_msgs::msg::Gait gait_;
 
   rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
+  rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_client_;
   rclcpp::TimerBase::SharedPtr timer_;
   void createLoop(const int from_idx, const int to_idx);
 };

@@ -1,4 +1,5 @@
 #include "builtin_interfaces/msg/duration.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
 #include <hexapod_control/ik_base.hpp>
 
@@ -58,32 +59,37 @@ HexapodIKBaseNode::HexapodIKBaseNode() : Node("leg_control_node") {
   initInteractiveMarkerServer();
   setupROS();
 
-  geometry_msgs::msg::Point rest_pos;
+  hexapod_msgs::msg::Pose pose;
+  geometry_msgs::msg::Point pos;
   for (std::string leg_name : LEG_NAMES) {
     KDL::Chain chain;
     kdl_tree_.getChain("base_footprint", leg_name + "_foot", chain);
     chains_.insert({leg_name, chain});
 
-    rest_pos =
-        planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
+    pos = planning_group.calculatePosition(chains_.at(leg_name), {0, 0, 0});
 
-    setupControl(leg_name, rest_pos);
+    setupControl(leg_name, pos);
 
-    pose_msg_.names.push_back(leg_name);
-    pose_msg_.positions.push_back(rest_pos);
+    pose.names.push_back(leg_name);
+    pose.positions.push_back(pos);
 
-    RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
-                 leg_name.c_str(), rest_pos.x, rest_pos.y, rest_pos.z);
+    RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
+                leg_name.c_str(), pos.x, pos.y, pos.z);
   };
 
-  pose_pub_->publish(pose_msg_);
+  pose_pub_->publish(pose);
 }
 
 void HexapodIKBaseNode::poseUpdateCallback(const hexapod_msgs::msg::Pose pose) {
   RCLCPP_DEBUG(get_logger(), "Recieved Pose:");
-  for (size_t i = 0; i < pose.names.size(); i++) {
-    RCLCPP_DEBUG(get_logger(), " - [%.4f,%.4f,%.4f]", pose.positions[i].x,
-                 pose.positions[i].y, pose.positions[i].z);
+  for (size_t i = 0; i < pose.names.size(); ++i) {
+    const std::string &leg_name = pose.names[i];
+    const auto &position = pose.positions[i];
+
+    RCLCPP_DEBUG(get_logger(), " - [%s]: [%.4f, %.4f, %.4f]", leg_name.c_str(),
+                 position.x, position.y, position.z);
+
+    pose_msgs_[leg_name] = position; // Update or insert
   }
   updatePose(pose);
 }
@@ -170,8 +176,8 @@ void HexapodIKBaseNode::setupROS() {
       std::bind(&HexapodIKBaseNode::timerCallback, this));
 
   service_ = create_service<hexapod_msgs::srv::GetPose>(
-      "command", std::bind(&HexapodIKBaseNode::handleGetPoseRequest, this,
-                           std::placeholders::_1, std::placeholders::_2));
+      "control/pose", std::bind(&HexapodIKBaseNode::handleGetPoseRequest, this,
+                                std::placeholders::_1, std::placeholders::_2));
 
   joint_state_msg_.header.frame_id = "base_footprint";
 }
@@ -179,8 +185,21 @@ void HexapodIKBaseNode::setupROS() {
 void HexapodIKBaseNode::handleGetPoseRequest(
     const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
     std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
+  RCLCPP_INFO(get_logger(), "GetPose Request received");
 
-  response->pose = pose_msg_;
+  hexapod_msgs::msg::Pose pose;
+
+  for (const auto &entry : pose_msgs_) {
+    pose.names.push_back(entry.first);
+    pose.positions.push_back(entry.second);
+
+    RCLCPP_DEBUG(get_logger(), " - Leg '%s' = [%.2f, %.2f, %.2f]",
+                 entry.first.c_str(), entry.second.x, entry.second.y,
+                 entry.second.z);
+  }
+
+  // Fill response
+  response->pose = pose;
   response->joint_state = joint_state_msg_;
 }
 void HexapodIKBaseNode::initInteractiveMarkerServer() {
@@ -236,11 +255,12 @@ void HexapodIKBaseNode::processFeedback(
     break;
 
   case InteractiveMarkerFeedback::MOUSE_UP:
-    RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
+    RCLCPP_INFO(this->get_logger(), ": mouse up .");
 
-    pose_msg_.names = {leg_name};
-    pose_msg_.positions = {feedback->pose.position};
-    pose_pub_->publish(pose_msg_);
+    hexapod_msgs::msg::Pose pose;
+    pose.names = {leg_name};
+    pose.positions = {feedback->pose.position};
+    pose_pub_->publish(pose);
     break;
   }
 };

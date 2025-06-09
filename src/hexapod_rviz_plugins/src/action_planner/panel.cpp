@@ -11,8 +11,6 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <yaml-cpp/yaml.h>
-
 #include <exception>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <pluginlib/class_list_macros.hpp>
@@ -32,6 +30,7 @@
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/panel.hpp>
 #include <rviz_common/ros_integration/ros_node_abstraction.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include <string>
 

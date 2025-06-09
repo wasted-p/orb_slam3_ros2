@@ -3,7 +3,6 @@
 
 #include <QListWidget>
 #include <QStringList>
-#include <hexapod_msgs/srv/command.hpp>
 #include <qapplication.h>
 #include <qinputdialog.h>
 #include <rclcpp/rclcpp.hpp>

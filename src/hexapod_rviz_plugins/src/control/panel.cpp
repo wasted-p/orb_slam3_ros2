@@ -134,6 +134,7 @@ QDoubleSpinBox *PoseTable::createSpinBox() {
 HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
     : rviz_common::Panel(parent) {
   setupUi();
+  setRelativeMode(true);
   // Connect value changes
   connect(pose_table_, &PoseTable::legPoseUpdated, this,
           &HexapodControlRvizPanel::onLegPoseUpdate);
@@ -143,7 +144,6 @@ HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
           this, &HexapodControlRvizPanel::onStepSizeChanged);
   connect(reset_button_, &QPushButton::clicked, this,
           &HexapodControlRvizPanel::onResetClicked);
-  setRelativeMode(true);
 }
 
 void HexapodControlRvizPanel::setRelativeMode(bool checked) {
@@ -249,6 +249,8 @@ void HexapodControlRvizPanel::setupUi() {
   step_spinbox_->setRange(0.001, 1.0); // adjust as needed
   step_spinbox_->setSingleStep(0.005);
   step_spinbox_->setDecimals(3);
+
+  relative_checkbox_->toggled(true);
 
   top_controls_layout->addWidget(relative_checkbox_);
   top_controls_layout->addWidget(step_spinbox_);

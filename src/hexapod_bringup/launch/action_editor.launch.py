@@ -78,13 +78,14 @@ def generate_launch_description():
 
     share_dir = get_package_share_directory('hexapod_bringup')
     initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
+    actions_path = os.path.join(share_dir, 'config', 'actions.yml')
 
     action_server_node = Node(
         package='hexapod_action',
         executable='action_server_node',
         name='action_server',
         output="screen",
-        parameters=[initial_pose_path],
+        parameters=[initial_pose_path, actions_path],
     )
 
     # Nodes

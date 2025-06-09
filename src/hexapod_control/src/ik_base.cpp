@@ -22,7 +22,7 @@ void HexapodIKBaseNode::updatePose(const hexapod_msgs::msg::Pose pose) {
                  leg_name.c_str(), position.x, position.y, position.z);
 
     int status = planning_group.calculateJntArray(chains_.at(leg_name),
-                                                  position, joint_positions);
+                                                  position, solved);
 
     if (status < 0 || solved.size() < 3) {
       RCLCPP_ERROR(get_logger(),

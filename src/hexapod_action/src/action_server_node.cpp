@@ -1,6 +1,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_msgs/msg/action.hpp"
+#include "hexapod_msgs/msg/gait.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include "visualization_msgs/msg/marker.hpp"
@@ -20,6 +21,7 @@
 #include <string>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <yaml-cpp/yaml.h>
 
 using namespace std::chrono_literals;
 class ActionNode : public rclcpp::Node {
@@ -51,15 +53,66 @@ private:
       "top_left",  "mid_left",  "bottom_left",
       "top_right", "mid_right", "bottom_right",
   };
+  std::map<std::string, hexapod_msgs::msg::Gait> actions_;
 
 public:
   ActionNode() : Node("action_server_node") {
     setupROS();
-    getTripodGait();
+    loadActions();
   }
 
 private:
-  hexapod_msgs::msg::Pose getTripodGait() {}
+  void loadActions() {
+    std::string yaml_file;
+    hexapod_msgs::msg::Pose pose_msg;
+    this->get_parameter("actions_file", yaml_file);
+
+    if (yaml_file.empty()) {
+      RCLCPP_ERROR(this->get_logger(),
+                   "No 'actions_file' parameter specified.");
+      return;
+    }
+
+    YAML::Node root = YAML::LoadFile(yaml_file);
+    if (!root["actions"]) {
+      RCLCPP_ERROR(this->get_logger(),
+                   "YAML file does not contain 'actions' field.");
+      return;
+    }
+
+    for (const auto &item : root["actions"]) {
+      for (const auto &gait_pair : item) {
+        std::string gait_id = gait_pair.first.as<std::string>();
+        const YAML::Node &gait_node = gait_pair.second;
+
+        hexapod_msgs::msg::Gait gait_msg;
+        gait_msg.name = gait_node["name"].as<std::string>();
+
+        for (const auto &pose_node : gait_node["poses"]) {
+          pose_msg.name = pose_node["name"].as<std::string>();
+
+          for (const auto &n : pose_node["names"]) {
+            pose_msg.names.push_back(n.as<std::string>());
+          }
+
+          for (const auto &pos : pose_node["positions"]) {
+            geometry_msgs::msg::Point p;
+            p.x = pos["x"].as<double>();
+            p.y = pos["y"].as<double>();
+            p.z = pos["z"].as<double>();
+            pose_msg.positions.push_back(p);
+          }
+
+          gait_msg.poses.push_back(pose_msg);
+        }
+
+        actions_[gait_id] = gait_msg;
+      }
+    }
+
+    RCLCPP_INFO(this->get_logger(), "Loaded %lu actions.", actions_.size());
+  }
+
   hexapod_msgs::msg::Pose getInitialPose() {
     hexapod_msgs::msg::Pose initial_pose;
     // Get the list of leg names
@@ -98,11 +151,11 @@ private:
   }
 
   void setupROS() {
+    std::string POSE_TOPIC = "/hexapod/pose";
 
     markers_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
         "/hexapod/visualization/leg_pose_markers", rclcpp::QoS(10));
 
-    std::string POSE_TOPIC = "/hexapod/pose";
     pose_pub_ =
         create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC, rclcpp::QoS(10));
 
@@ -117,6 +170,7 @@ private:
     service_ = create_service<hexapod_msgs::srv::ControlMarkers>(
         "command", std::bind(&ActionNode::handleControlMarkersRequest, this,
                              std::placeholders::_1, std::placeholders::_2));
+    RCLCPP_INFO(get_logger(), "Created ControlCommand Service");
   }
 
   void onActionRequested(hexapod_msgs::msg::Action msg) {
@@ -134,6 +188,8 @@ private:
   }
 
   void clearMarkers() {
+
+    RCLCPP_INFO(get_logger(), "Clearning Markers");
     visualization_msgs::msg::Marker delete_all_marker;
     delete_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
     visualization_msgs::msg::MarkerArray marker_array;
@@ -156,11 +212,17 @@ private:
     int marker_id = 0;
 
     unsigned int idx = 0;
+
+    RCLCPP_INFO(get_logger(), "Adding markers:");
     for (hexapod_msgs::msg::Pose pose : poses) {
+      RCLCPP_INFO(get_logger(), " - Pose: %s", pose.name.c_str());
       for (size_t leg_i = 0; leg_i < pose.names.size(); ++leg_i) {
+
         const auto &leg_name = pose.names[leg_i];
         const auto &position = pose.positions[leg_i];
 
+        RCLCPP_INFO(get_logger(), "   - %s = [%.4f,%.4f,%.4f]",
+                    pose.name.c_str(), position.x, position.y, position.z);
         // Create a sphere marker for this leg at this pose
         visualization_msgs::msg::Marker sphere;
         sphere.header.frame_id = "base_footprint"; // Or your TF frame
@@ -219,19 +281,19 @@ private:
 
   void timerCallback() {
     hexapod_msgs::msg::Pose pose;
-    if (executing_action.name.compare("walk") == 0) {
-      if (gait_index_ >= tripod_gait_.poses.size()) {
-        gait_index_ = 0;
-      }
-      pose = tripod_gait_.poses[gait_index_];
-      pose.duration = rclcpp::Duration::from_seconds(0.001);
-      gait_index_++;
-
-      pose_pub_->publish(pose);
-    } else if (executing_action.name.compare("rest") == 0) {
-
-      pose_pub_->publish(initial_pose);
-    }
+    //   if (executing_action.name.compare("walk") == 0) {
+    //     if (gait_index_ >= tripod_gait_.poses.size()) {
+    //       gait_index_ = 0;
+    //     }
+    //     pose = tripod_gait_.poses[gait_index_];
+    //     pose.duration = rclcpp::Duration::from_seconds(0.001);
+    //     gait_index_++;
+    //
+    //     pose_pub_->publish(pose);
+    //   } else if (executing_action.name.compare("rest") == 0) {
+    //
+    //     pose_pub_->publish(initial_pose);
+    //   }
   }
 };
 

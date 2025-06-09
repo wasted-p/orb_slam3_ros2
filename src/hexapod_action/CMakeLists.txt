@@ -19,6 +19,8 @@ find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(hexapod_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
+
 
 
 
@@ -30,11 +32,13 @@ add_executable(action_server_node
 src/action_server_node.cpp
 )
 
+
 target_include_directories(action_server_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
+target_link_libraries(action_server_node yaml-cpp)
 
 ament_target_dependencies(action_server_node
   rclcpp

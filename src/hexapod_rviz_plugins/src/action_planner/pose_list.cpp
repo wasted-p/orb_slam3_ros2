@@ -6,8 +6,6 @@
 using namespace hexapod_rviz_plugins;
 
 PoseList::PoseList() {
-  loop_start_icon_ = QIcon(":/icons/loop_start.png");
-  loop_end_icon_ = QIcon(":/icons/loop_end.png");
 
   connect(this, &QListWidget::itemDoubleClicked, this, &PoseList::onRenamePose);
   connect(this, &QListWidget::itemClicked, this, &PoseList::onItemClicked);
@@ -16,7 +14,6 @@ PoseList::PoseList() {
       this->setCurrentRow(0); // or reselect previous item
     }
   });
-  qApp->installEventFilter(this);
 }
 
 void PoseList::removePose(size_t idx) {
@@ -56,52 +53,8 @@ void PoseList::onRenamePose(QListWidgetItem *item) {
   }
 }
 
-void PoseList::startLoopSelection() {
-  selecting_loop_ = true;
-  loop_start_item_ = nullptr;
-  loop_end_item_ = nullptr;
-  this->setCursor(loop_cursor_);
-}
 void PoseList::onItemClicked(QListWidgetItem *item) {
-  if (!selecting_loop_) {
-    size_t idx = currentRow();
-    emit poseSelected(idx);
-    return;
-  }
-
-  if (!loop_start_item_) {
-    loop_start_item_ = item;
-    item->setIcon(loop_start_icon_);
-  } else if (!loop_end_item_ && item != loop_start_item_) {
-    loop_end_item_ = item;
-    item->setIcon(loop_end_icon_);
-    selecting_loop_ = false;
-    this->unsetCursor();
-    const int from_idx = this->row(loop_start_item_);
-    const int to_idx = this->row(loop_end_item_);
-    emit loopCreated(from_idx, to_idx);
-    // Optional: emit signal or callback with loop range
-  }
-}
-
-bool PoseList::eventFilter(QObject *obj, QEvent *event) {
-  if (selecting_loop_ && event->type() == QEvent::MouseButtonPress) {
-    QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-    if (!this->rect().contains(this->mapFromGlobal(mouseEvent->globalPos()))) {
-      cancelLoopSelection();
-    }
-  }
-  return QWidget::eventFilter(obj, event);
-}
-void PoseList::cancelLoopSelection() {
-  selecting_loop_ = false;
-  this->unsetCursor();
-
-  if (loop_start_item_)
-    loop_start_item_->setIcon(QIcon());
-  if (loop_end_item_)
-    loop_end_item_->setIcon(QIcon());
-
-  loop_start_item_ = nullptr;
-  loop_end_item_ = nullptr;
+  size_t idx = currentRow();
+  emit poseSelected(idx);
+  return;
 }

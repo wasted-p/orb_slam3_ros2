@@ -57,7 +57,6 @@ private:
   rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
   rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_client_;
   rclcpp::TimerBase::SharedPtr timer_;
-  void createLoop(const int from_idx, const int to_idx);
 };
 
 } // namespace hexapod_rviz_plugins

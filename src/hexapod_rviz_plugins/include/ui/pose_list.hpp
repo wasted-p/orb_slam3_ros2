@@ -13,33 +13,22 @@ class PoseList : public QListWidget {
   Q_OBJECT
   // In your class header
 private:
-  bool selecting_loop_ = false;
-  QListWidgetItem *loop_start_item_ = nullptr;
-  QListWidgetItem *loop_end_item_ = nullptr;
-  QCursor loop_cursor_ = QCursor(Qt::CrossCursor); // customize as needed
-  QIcon loop_start_icon_;
-  QIcon loop_end_icon_;
-
 public:
   PoseList();
   void removePose(size_t idx);
   void moveCurrentPose(int distance = 1);
   void moveCurrentPoseUp();
   void moveCurrentPoseDown();
-  void startLoopSelection();
   void addPose(std::string name);
 
 signals:
   void poseSelected(const size_t idx);
   void poseMoved(const int from_idx, const int to_idx);
-  void loopCreated(const int from_idx, const int to_idx);
 
 private:
   void onPoseSelected();
   void onRenamePose(QListWidgetItem *item);
   void onItemClicked(QListWidgetItem *item);
-  bool eventFilter(QObject *obj, QEvent *event);
-  void cancelLoopSelection();
 };
 } // namespace hexapod_rviz_plugins
 #endif

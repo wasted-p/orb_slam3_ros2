@@ -113,19 +113,16 @@ void ActionPlannerRvizPanel::setupUi() {
   QPushButton *btn_down = new QPushButton("⬇");
   QPushButton *btn_add = new QPushButton("+");
   QPushButton *btn_delete = new QPushButton("🗑");
-  QPushButton *btn_loop = new QPushButton("⟳");
 
   btn_up->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
   btn_down->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
   btn_add->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
   btn_delete->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-  btn_loop->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
 
   btn_up->setMaximumWidth(35);
   btn_down->setMaximumWidth(35);
   btn_add->setMaximumWidth(35);
   btn_delete->setMaximumWidth(35);
-  btn_loop->setMaximumWidth(35);
 
   btn_up->setFixedHeight(30);
 
@@ -134,7 +131,6 @@ void ActionPlannerRvizPanel::setupUi() {
   top_buttons->addWidget(btn_up);
   top_buttons->addWidget(btn_down);
   top_buttons->addWidget(btn_add);
-  top_buttons->addWidget(btn_loop);
   top_buttons->addWidget(btn_delete);
 
   // === Pose List ===
@@ -181,16 +177,7 @@ void ActionPlannerRvizPanel::setupUi() {
   connect(pose_list_widget_, &PoseList::poseMoved, this,
           &ActionPlannerRvizPanel::onPoseMoved);
 
-  connect(pose_list_widget_, &PoseList::loopCreated, this,
-          &ActionPlannerRvizPanel::createLoop);
-  connect(btn_loop, &QPushButton::clicked, this,
-          [this]() { pose_list_widget_->startLoopSelection(); });
   // Connect a signal to re-select if nothing is selected
-}
-
-void ActionPlannerRvizPanel::createLoop(const int from_idx, const int to_idx) {
-  RCLCPP_INFO(node_->get_logger(), "%d to %d", from_idx, to_idx);
-  // pose_list_widget_->addPose();
 }
 
 void ActionPlannerRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {

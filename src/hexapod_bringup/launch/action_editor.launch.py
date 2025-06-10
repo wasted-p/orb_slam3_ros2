@@ -53,7 +53,7 @@ def generate_launch_description():
     rviz_config = LaunchConfiguration('rviz_config')
     use_sim_time = LaunchConfiguration('use_sim_time')
     rviz_args = LaunchConfiguration('rviz_args')
-    log_level = LaunchConfiguration('log_level')
+    # log_level = LaunchConfiguration('log_level')
 
     # Nodes
     robot_state_publisher_node = Node(
@@ -72,20 +72,21 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         output="screen",
-        arguments=["-d", rviz_config, rviz_args,
-                   '--ros-args', '--log-level', log_level],
+        arguments=["-d", rviz_config, rviz_args],
     )
 
     share_dir = get_package_share_directory('hexapod_bringup')
     initial_pose_path = os.path.join(share_dir, 'config', 'initial_pose.yml')
-    actions_path = os.path.join(share_dir, 'config', 'actions.yml')
+    # actions_path = os.path.join(share_dir, 'config', 'actions.yml')
+    # motion_definitions_path = os.path.join(
+    #     share_dir, 'config', 'motion_definitions.yml')
 
     action_server_node = Node(
         package='hexapod_action',
         executable='action_server_node',
         name='action_server',
         output="screen",
-        parameters=[initial_pose_path, actions_path],
+        parameters=[initial_pose_path]
     )
 
     # Nodes

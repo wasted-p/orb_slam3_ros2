@@ -57,7 +57,9 @@ private:
 public:
   ActionNode() : Node("action_server_node") {
     setupROS();
-    loadActions();
+
+    // FIXME: Pass these params in config file successfully
+    // loadActions();
   }
 
 private:
@@ -184,7 +186,8 @@ private:
       std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Response> response) {
     if (request->command.compare("clear") == 0) {
       clearMarkers();
-      response->message = "Updated Markers Successfully";
+
+      response->message = "Cleared Markers Successfully";
     } else if (request->command.compare("add") == 0) {
       // FIXME: Update markers instead
       clearMarkers();

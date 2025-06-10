@@ -74,8 +74,8 @@ void HexapodIKBaseNode::setupKDL() {
     pose.names.push_back(leg_name);
     pose.positions.push_back(pos);
 
-    RCLCPP_INFO(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
-                leg_name.c_str(), pos.x, pos.y, pos.z);
+    RCLCPP_DEBUG(get_logger(), "Setting %s to [%.4f,%.4f,%.4f]",
+                 leg_name.c_str(), pos.x, pos.y, pos.z);
   };
   pose_pub_->publish(pose);
 }
@@ -112,11 +112,11 @@ void HexapodIKBaseNode::readRobotDescription() {
     auto parameters = future.get();
     if (!parameters.empty() && !parameters[0].as_string().empty()) {
       urdf_string = parameters[0].as_string();
-      RCLCPP_INFO(this->get_logger(),
-                  "Robot description obtained from robot_state_publisher");
+      RCLCPP_DEBUG(this->get_logger(),
+                   "Robot description obtained from robot_state_publisher");
       if (kdl_parser::treeFromString(urdf_string, kdl_tree_)) {
         robot_description_loaded_ = true;
-        RCLCPP_INFO(this->get_logger(), "Parsed KDL Tree from URDF");
+        RCLCPP_DEBUG(this->get_logger(), "Parsed KDL Tree from URDF");
       }
     }
   }
@@ -188,7 +188,7 @@ void HexapodIKBaseNode::setupROS() {
 void HexapodIKBaseNode::handleGetPoseRequest(
     const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
     std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
-  RCLCPP_INFO(get_logger(), "GetPose Request received");
+  RCLCPP_DEBUG(get_logger(), "GetPose Request received");
 
   hexapod_msgs::msg::Pose pose;
 
@@ -252,8 +252,7 @@ void HexapodIKBaseNode::processFeedback(
     break;
 
   case InteractiveMarkerFeedback::MOUSE_UP:
-    RCLCPP_INFO(this->get_logger(), ": mouse up .");
-
+    RCLCPP_DEBUG(this->get_logger(), ": mouse up .");
     hexapod_msgs::msg::Pose pose;
     pose.names = {leg_name};
     pose.positions = {feedback->pose.position};

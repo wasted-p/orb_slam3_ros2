@@ -1,0 +1,6 @@
+# actions.yml
+actions:
+  tripod_phase_1:
+    file: "tripod_phase_1.npz"
+    type: "cyclic"
+    duration: 2.0

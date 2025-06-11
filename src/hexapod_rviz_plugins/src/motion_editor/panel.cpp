@@ -3,7 +3,7 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include <cmath>
-#include <hexapod_rviz_plugins/action_planner.hpp>
+#include <hexapod_rviz_plugins/motion_editor.hpp>
 #include <qcombobox.h>
 #include <qglobal.h>
 #include <qpushbutton.h>
@@ -47,7 +47,7 @@ void sendSetMarkersRequest(
       });
 };
 // Gait planner
-ActionPlannerRvizPanel::ActionPlannerRvizPanel(QWidget *parent)
+MotionEditorRvizPanel::MotionEditorRvizPanel(QWidget *parent)
 
     : rviz_common::Panel(parent) {
   leg_names_ = QStringList{"top_left",  "mid_left",  "bottom_left",
@@ -55,9 +55,9 @@ ActionPlannerRvizPanel::ActionPlannerRvizPanel(QWidget *parent)
   setupUi();
 }
 
-ActionPlannerRvizPanel::~ActionPlannerRvizPanel() {}
+MotionEditorRvizPanel::~MotionEditorRvizPanel() {}
 
-void ActionPlannerRvizPanel::onInitialize() {
+void MotionEditorRvizPanel::onInitialize() {
   DisplayContext *context = getDisplayContext();
   auto ros_node_abstraction_weak = context->getRosNodeAbstraction();
   auto ros_node_abstraction = ros_node_abstraction_weak.lock();
@@ -72,7 +72,7 @@ void ActionPlannerRvizPanel::onInitialize() {
   }
 }
 
-hexapod_msgs::msg::Pose &ActionPlannerRvizPanel::selectedPose() {
+hexapod_msgs::msg::Pose &MotionEditorRvizPanel::selectedPose() {
   return selectedMotion().poses[current_pose];
 }
 
@@ -129,18 +129,31 @@ void rotate(std::vector<hexapod_msgs::msg::Pose> &poses, double roll,
   }
 }
 
-Motion &ActionPlannerRvizPanel::selectedMotion() {
+void scale(std::vector<hexapod_msgs::msg::Pose> &poses, double x, double y,
+           double z) {
+  if (poses.empty())
+    return;
+
+  // Rotate all points in all poses
+  for (auto &pose : poses) {
+    for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
+      const auto &leg_name = pose.names[leg_i];
+      auto &position = pose.positions[leg_i];
+    }
+  }
+}
+
+Motion &MotionEditorRvizPanel::selectedMotion() {
   return motions_[selected_motion_];
 }
 
-void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
+void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   if (current_pose < 0)
     return;
 
   std::map<std::string, geometry_msgs::msg::Point> buffer;
 
-  for (size_t i = 0; i < selectedMotion().poses[current_pose].names.size();
-       i++) {
+  for (size_t i = 0; i < selectedPose().names.size(); i++) {
     buffer[selectedPose().names[i]] = selectedPose().positions[i];
   }
 
@@ -154,10 +167,17 @@ void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     selectedPose().positions.push_back(entry.second);
   }
 
-  sendSetMarkersRequest(node_, client_, selectedMotion().rotated_poses, true);
+  sendSetMarkersRequest(node_, client_, transformedMotion().poses, true);
 }
 
-void ActionPlannerRvizPanel::setupUi() {
+Motion MotionEditorRvizPanel::transformedMotion() {
+  Motion transformed_motion = selectedMotion();
+  rotate(transformed_motion.poses, 0, 0, yaw_);
+  scale(transformed_motion.poses, effort, 1, 1);
+  return transformed_motion;
+}
+
+void MotionEditorRvizPanel::setupUi() {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   motion_combo_box_ = new QComboBox;
@@ -197,14 +217,12 @@ void ActionPlannerRvizPanel::setupUi() {
 
   QPushButton *save_button = new QPushButton("🗑");
 
-  connect(direction_spinner,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
-          [this](double direction) {
-            selectedMotion().rotated_poses = selectedMotion().poses;
-            rotate(selectedMotion().rotated_poses, 0, 0, direction);
-            sendSetMarkersRequest(node_, client_,
-                                  selectedMotion().rotated_poses, true);
-          });
+  connect(
+      direction_spinner, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+      this, [this](double yaw) {
+        yaw_ = yaw;
+        sendSetMarkersRequest(node_, client_, transformedMotion().poses, true);
+      });
   connect(save_button, &QPushButton::pressed, [this]() { saveMotions(); });
 
   bottom_buttons->addWidget(save_button);
@@ -218,19 +236,19 @@ void ActionPlannerRvizPanel::setupUi() {
 
   // === Connect Signals ===
   connect(btn_add, &QPushButton::clicked, this,
-          &ActionPlannerRvizPanel::onAddPose);
+          &MotionEditorRvizPanel::onAddPose);
   connect(btn_delete, &QPushButton::clicked, this,
-          &ActionPlannerRvizPanel::onDeletePose);
+          &MotionEditorRvizPanel::onDeletePose);
   connect(btn_up, &QPushButton::clicked, pose_list_widget_,
           &PoseList::moveCurrentPoseUp);
   connect(btn_down, &QPushButton::clicked, pose_list_widget_,
           &PoseList::moveCurrentPoseDown);
   // Connect a signal to re-select if nothing is selected
   connect(pose_list_widget_, &PoseList::poseSelected, this,
-          &ActionPlannerRvizPanel::setCurrentPose);
+          &MotionEditorRvizPanel::setCurrentPose);
 
   connect(pose_list_widget_, &PoseList::poseMoved, this,
-          &ActionPlannerRvizPanel::onPoseMoved);
+          &MotionEditorRvizPanel::onPoseMoved);
 
   connect(motion_combo_box_, &QComboBox::currentTextChanged, this,
           [this](const QString &name) {
@@ -239,7 +257,7 @@ void ActionPlannerRvizPanel::setupUi() {
   // Connect a signal to re-select if nothing is selected
 }
 
-void ActionPlannerRvizPanel::setSelectedMotion(std::string name) {
+void MotionEditorRvizPanel::setSelectedMotion(std::string name) {
   selected_motion_ = name.c_str();
   pose_list_widget_->clear();
   for (hexapod_msgs::msg::Pose &pose : selectedMotion().poses) {
@@ -249,7 +267,7 @@ void ActionPlannerRvizPanel::setSelectedMotion(std::string name) {
   setCurrentPose(0);
   sendSetMarkersRequest(node_, client_, selectedMotion().poses);
 }
-void ActionPlannerRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
+void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
   RCLCPP_INFO(node_->get_logger(), "Moved Poses from: %i, to:%i", from_idx,
               to_idx);
   hexapod_msgs::msg::Pose tmp = selectedMotion().poses[to_idx];
@@ -277,7 +295,7 @@ void saveAction(const std::vector<hexapod_msgs::msg::Pose> &poses,
   file.close();
 }
 
-void ActionPlannerRvizPanel::saveMotions() {
+void MotionEditorRvizPanel::saveMotions() {
   std::string filename = "/home/thurdparty/Code/hexapod-ros/src/"
                          "hexapod_bringup/config/motion_definitions.yml";
   // node_->get_parameter("motion_definitions_path", filename);
@@ -362,7 +380,7 @@ void ActionPlannerRvizPanel::saveMotions() {
   }
 }
 
-void ActionPlannerRvizPanel::loadMotions() {
+void MotionEditorRvizPanel::loadMotions() {
 
   std::string filename = "/home/thurdparty/Code/hexapod-ros/src/"
                          "hexapod_bringup/config/motion_definitions.yml";
@@ -410,7 +428,6 @@ void ActionPlannerRvizPanel::loadMotions() {
 
       motion.poses.push_back(pose_msg);
     }
-    motion.rotated_poses = motion.poses;
     motions_[motion_id] = motion;
   }
 
@@ -418,7 +435,7 @@ void ActionPlannerRvizPanel::loadMotions() {
 }
 
 void publishPose() {}
-void ActionPlannerRvizPanel::setupROS() {
+void MotionEditorRvizPanel::setupROS() {
   client_ =
       node_->create_client<hexapod_msgs::srv::ControlMarkers>("action/markers");
 
@@ -433,17 +450,17 @@ void ActionPlannerRvizPanel::setupROS() {
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
       POSE_TOPIC,
       10, // QoS history depth
-      std::bind(&ActionPlannerRvizPanel::onPoseUpdate, this,
+      std::bind(&MotionEditorRvizPanel::onPoseUpdate, this,
                 std::placeholders::_1));
 }
 
-void ActionPlannerRvizPanel::setCurrentPose(const size_t idx) {
+void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  pose_pub_->publish(selectedMotion().rotated_poses[idx]);
+  pose_pub_->publish(transformedMotion().poses[idx]);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 
-void ActionPlannerRvizPanel::onAddPose() {
+void MotionEditorRvizPanel::onAddPose() {
   auto get_pose_request =
       std::make_shared<hexapod_msgs::srv::GetPose::Request>();
 
@@ -467,7 +484,7 @@ void ActionPlannerRvizPanel::onAddPose() {
       });
 }
 
-void ActionPlannerRvizPanel::onDeletePose() {
+void MotionEditorRvizPanel::onDeletePose() {
   size_t idx = pose_list_widget_->currentRow();
 
   if (idx < 0 || idx >= selectedMotion().poses.size()) {
@@ -515,5 +532,5 @@ void ActionPlannerRvizPanel::onDeletePose() {
 
 } // namespace hexapod_rviz_plugins
 
-PLUGINLIB_EXPORT_CLASS(hexapod_rviz_plugins::ActionPlannerRvizPanel,
+PLUGINLIB_EXPORT_CLASS(hexapod_rviz_plugins::MotionEditorRvizPanel,
                        rviz_common::Panel)

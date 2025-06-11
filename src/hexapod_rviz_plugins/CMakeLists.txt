@@ -45,10 +45,10 @@ add_library(${PROJECT_NAME} SHARED
   src/control/panel.cpp
   include/hexapod_rviz_plugins/control_panel.hpp  # <-- Add this line
 
-  src/action_planner/panel.cpp
-  include/hexapod_rviz_plugins/action_planner.hpp  # <-- Add this line
+  src/motion_editor/panel.cpp
+  include/hexapod_rviz_plugins/motion_editor.hpp  # <-- Add this line
 
-  src/action_planner/pose_list.cpp
+  src/motion_editor/pose_list.cpp
   include/ui/pose_list.hpp  # <-- Add this line
 
   src/joystick_control/panel.cpp

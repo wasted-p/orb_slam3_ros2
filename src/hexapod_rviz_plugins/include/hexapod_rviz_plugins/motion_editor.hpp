@@ -1,5 +1,5 @@
-#ifndef HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
-#define HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
+#ifndef HEXAPOD_RVIZ_PLUGINS_MOTION_EDITOR_HPP
+#define HEXAPOD_RVIZ_PLUGINS_MOTION_EDITOR_HPP
 
 #include "hexapod_msgs/msg/gait.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
@@ -16,7 +16,6 @@
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
-// TODO: Rename GaitPlanner -> ActionEditor
 // TODO: Edit multiple actinos in same file
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
@@ -58,15 +57,14 @@ struct Motion {
   std::string type;
   double duration;
   std::vector<hexapod_msgs::msg::Pose> poses;
-  std::vector<hexapod_msgs::msg::Pose> rotated_poses;
 };
 
-class ActionPlannerRvizPanel : public rviz_common::Panel {
+class MotionEditorRvizPanel : public rviz_common::Panel {
   Q_OBJECT
 
 public:
-  ActionPlannerRvizPanel(QWidget *parent = nullptr);
-  ~ActionPlannerRvizPanel() override;
+  MotionEditorRvizPanel(QWidget *parent = nullptr);
+  ~MotionEditorRvizPanel() override;
 
   void onInitialize() override;
 
@@ -92,6 +90,8 @@ private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
+  double yaw_ = 0.0;
+  double effort = 1;
 
   QComboBox *motion_combo_box_;
   PoseList *pose_list_widget_;
@@ -107,9 +107,10 @@ private:
   std::string selected_motion_;
   rclcpp::TimerBase::SharedPtr timer_;
   Motion &selectedMotion();
+  Motion transformedMotion();
   hexapod_msgs::msg::Pose &selectedPose();
 };
 
 } // namespace hexapod_rviz_plugins
 
-#endif // HEXAPOD_RVIZ_PLUGINS_GAIT_PLANNER_HPP
+#endif // HEXAPOD_RVIZ_PLUGINS_MOTION_EDITOR_HPP

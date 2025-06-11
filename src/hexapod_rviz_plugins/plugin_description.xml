@@ -2,8 +2,8 @@
   <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/HexapodControlPanel" type="hexapod_rviz_plugins::HexapodControlRvizPanel">
     <description>An RViz2 panel providing custom controls for robot interaction.</description>
   </class>
-  <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/ActionPlannerPanel" type="hexapod_rviz_plugins::ActionPlannerRvizPanel">
-    <description>Rviz2 Panel for gait planning for the hexapod robot</description>
+  <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/MotionEditorPanel" type="hexapod_rviz_plugins::MotionEditorRvizPanel">
+    <description>Rviz2 Panel for motion planning and editing for the hexapod robot</description>
   </class>
   <class base_class_type="rviz_common::Panel" name="hexapod_rviz_plugins/JoystickRvizPanel" type="hexapod_rviz_plugins::JoystickRvizPanel">
     <description>Rviz2 Panel for gait planning for the hexapod robot</description>

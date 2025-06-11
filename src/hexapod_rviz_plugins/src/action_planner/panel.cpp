@@ -1,6 +1,8 @@
 
+#include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
+#include <cmath>
 #include <hexapod_rviz_plugins/action_planner.hpp>
 #include <qcombobox.h>
 #include <qglobal.h>
@@ -10,6 +12,7 @@
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <string>
+#include <sys/types.h>
 #include <vector>
 
 using namespace rviz_common;
@@ -17,6 +20,32 @@ using namespace rclcpp;
 
 namespace hexapod_rviz_plugins {
 
+void sendSetMarkersRequest(
+    rclcpp::Node::SharedPtr node,
+    rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client,
+    const std::vector<hexapod_msgs::msg::Pose> &poses, bool update = false) {
+  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
+  if (update) {
+    request->command = "update";
+  } else {
+    request->command = "add";
+  }
+
+  request->poses = {poses};
+
+  client->async_send_request(
+      request,
+      [node](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
+                 future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node->get_logger(), "%s", response->message.c_str());
+        } else {
+          RCLCPP_ERROR(node->get_logger(), "Adding markers failed: %s",
+                       response->message.c_str());
+        }
+      });
+};
 // Gait planner
 ActionPlannerRvizPanel::ActionPlannerRvizPanel(QWidget *parent)
 
@@ -47,12 +76,63 @@ hexapod_msgs::msg::Pose &ActionPlannerRvizPanel::selectedPose() {
   return selectedMotion().poses[current_pose];
 }
 
+void rotate(std::vector<hexapod_msgs::msg::Pose> &poses, double roll,
+            double pitch, double yaw) {
+  if (poses.empty())
+    return;
+
+  // Store first points for each leg as pivot points
+  std::map<std::string, geometry_msgs::msg::Point> pivot_points;
+
+  // First pass: collect first points for each leg
+  const auto &first_pose = poses[0];
+  for (size_t leg_i = 0; leg_i < first_pose.names.size(); leg_i++) {
+    const auto &leg_name = first_pose.names[leg_i];
+    const auto &position = first_pose.positions[leg_i];
+    pivot_points[leg_name] = position;
+  }
+
+  // Create rotation transform
+  tf2::Transform rotation_transform;
+  tf2::Quaternion q;
+  q.setRPY(roll, pitch, yaw);
+  rotation_transform.setRotation(q);
+  rotation_transform.setOrigin(tf2::Vector3(0, 0, 0));
+
+  // Rotate all points in all poses
+  for (auto &pose : poses) {
+    for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
+      const auto &leg_name = pose.names[leg_i];
+      auto &position = pose.positions[leg_i];
+
+      // Get pivot point for this leg
+      const auto &pivot = pivot_points[leg_name];
+      tf2::Vector3 pivot_vec(pivot.x, pivot.y, pivot.z);
+
+      // Convert to tf2::Vector3
+      tf2::Vector3 tf_point(position.x, position.y, position.z);
+
+      // Translate to pivot
+      tf_point -= pivot_vec;
+
+      // Apply rotation
+      tf_point = rotation_transform * tf_point;
+
+      // Translate back
+      tf_point += pivot_vec;
+
+      // Convert back to geometry_msgs::Point
+      position.x = tf_point.x();
+      position.y = tf_point.y();
+      position.z = tf_point.z();
+    }
+  }
+}
+
 Motion &ActionPlannerRvizPanel::selectedMotion() {
   return motions_[selected_motion_];
 }
 
-// FIXME: Make the ik_base_node send full pose by default, only execute ik when
-// needed
 void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   if (current_pose < 0)
     return;
@@ -74,22 +154,7 @@ void ActionPlannerRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     selectedPose().positions.push_back(entry.second);
   }
 
-  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-  request->command = "update";
-  request->poses = selectedMotion().poses;
-  client_->async_send_request(
-      request,
-      [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-                 future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_DEBUG(node_->get_logger(), "Updated markers successful: %s",
-                       response->message.c_str());
-        } else {
-          RCLCPP_ERROR(node_->get_logger(), "Updated markers failed: %s",
-                       response->message.c_str());
-        }
-      });
+  sendSetMarkersRequest(node_, client_, selectedMotion().rotated_poses, true);
 }
 
 void ActionPlannerRvizPanel::setupUi() {
@@ -114,7 +179,8 @@ void ActionPlannerRvizPanel::setupUi() {
   QHBoxLayout *param_inputs_layout = new QHBoxLayout();
   QDoubleSpinBox *direction_spinner = new QDoubleSpinBox;
   direction_spinner->setSuffix(" rad");
-  direction_spinner->setMaximum(1.57);
+  direction_spinner->setMaximum(M_PI);
+  direction_spinner->setMinimum(0);
   direction_spinner->setSingleStep(0.1);
   param_inputs_layout->addWidget(direction_spinner);
 
@@ -131,6 +197,14 @@ void ActionPlannerRvizPanel::setupUi() {
 
   QPushButton *save_button = new QPushButton("🗑");
 
+  connect(direction_spinner,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          [this](double direction) {
+            selectedMotion().rotated_poses = selectedMotion().poses;
+            rotate(selectedMotion().rotated_poses, 0, 0, direction);
+            sendSetMarkersRequest(node_, client_,
+                                  selectedMotion().rotated_poses, true);
+          });
   connect(save_button, &QPushButton::pressed, [this]() { saveMotions(); });
 
   bottom_buttons->addWidget(save_button);
@@ -164,29 +238,6 @@ void ActionPlannerRvizPanel::setupUi() {
           });
   // Connect a signal to re-select if nothing is selected
 }
-
-void sendSetMarkersRequest(
-    rclcpp::Node::SharedPtr node,
-    rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client,
-    const std::vector<hexapod_msgs::msg::Pose> &poses) {
-  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-  request->command = "add";
-
-  request->poses = {poses};
-
-  client->async_send_request(
-      request,
-      [node](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-                 future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "%s", response->message.c_str());
-        } else {
-          RCLCPP_ERROR(node->get_logger(), "Adding markers failed: %s",
-                       response->message.c_str());
-        }
-      });
-};
 
 void ActionPlannerRvizPanel::setSelectedMotion(std::string name) {
   selected_motion_ = name.c_str();
@@ -359,12 +410,14 @@ void ActionPlannerRvizPanel::loadMotions() {
 
       motion.poses.push_back(pose_msg);
     }
-
+    motion.rotated_poses = motion.poses;
     motions_[motion_id] = motion;
   }
 
   RCLCPP_INFO(node_->get_logger(), "Loaded %lu motions.", motions_.size());
 }
+
+void publishPose() {}
 void ActionPlannerRvizPanel::setupROS() {
   client_ =
       node_->create_client<hexapod_msgs::srv::ControlMarkers>("action/markers");
@@ -386,7 +439,7 @@ void ActionPlannerRvizPanel::setupROS() {
 
 void ActionPlannerRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  pose_pub_->publish(selectedPose());
+  pose_pub_->publish(selectedMotion().rotated_poses[idx]);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 
@@ -403,10 +456,6 @@ void ActionPlannerRvizPanel::onAddPose() {
         pose.name = "Pose " + std::to_string(created_poses_count_ + 1);
         RCLCPP_INFO(node_->get_logger(), "Number of poses: %lu ",
                     pose.names.size());
-
-        auto request =
-            std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-        request->command = "add";
 
         selectedMotion().poses.push_back(pose);
         sendSetMarkersRequest(node_, client_, selectedMotion().poses);

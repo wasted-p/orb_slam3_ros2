@@ -58,6 +58,7 @@ struct Motion {
   std::string type;
   double duration;
   std::vector<hexapod_msgs::msg::Pose> poses;
+  std::vector<hexapod_msgs::msg::Pose> rotated_poses;
 };
 
 class ActionPlannerRvizPanel : public rviz_common::Panel {

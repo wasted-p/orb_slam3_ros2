@@ -1,7 +1,10 @@
 #include "builtin_interfaces/msg/duration.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
+#include "hexapod_msgs/srv/set_pose.hpp"
 #include <hexapod_control/ik_base.hpp>
+#include <rclcpp/logging.hpp>
 
 HexapodIKBaseNode::~HexapodIKBaseNode() {}
 
@@ -175,9 +178,25 @@ void HexapodIKBaseNode::setupROS() {
       std::chrono::milliseconds(100),
       std::bind(&HexapodIKBaseNode::timerCallback, this));
 
-  service_ = create_service<hexapod_msgs::srv::GetPose>(
+  get_pose_service_ = create_service<hexapod_msgs::srv::GetPose>(
       "control/pose", std::bind(&HexapodIKBaseNode::handleGetPoseRequest, this,
                                 std::placeholders::_1, std::placeholders::_2));
+
+  set_pose_service_ = create_service<hexapod_msgs::srv::SetPose>(
+      "control/pose/set",
+      [this](const std::shared_ptr<hexapod_msgs::srv::SetPose::Request> request,
+             std::shared_ptr<hexapod_msgs::srv::SetPose::Response> response) {
+        hexapod_msgs::msg::Pose &pose = request->pose;
+
+        for (size_t i = 0; i < pose.names.size(); i++) {
+          RCLCPP_INFO(get_logger(), " - %s = [%.4f,%.4f,%.4f]",
+                      pose.names[i].c_str(), pose.positions[i].x,
+                      pose.positions[i].y, pose.positions[i].z);
+        }
+        updatePose(request->pose);
+        response->success = true;
+        response->message = "Successfully set pose";
+      });
 
   joint_state_msg_.header.frame_id = "base_footprint";
 

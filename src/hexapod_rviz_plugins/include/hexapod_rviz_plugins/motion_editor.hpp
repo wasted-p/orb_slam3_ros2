@@ -20,6 +20,7 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
+#include "hexapod_msgs/srv/set_pose.hpp"
 #include "ui/pose_list.hpp"
 #include <QApplication>
 #include <QHBoxLayout>
@@ -88,7 +89,6 @@ private:
   void onPoseUpdate(hexapod_msgs::msg::Pose pose);
 
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   double yaw_ = 0.0;
   double effort = 1;
@@ -104,6 +104,8 @@ private:
 
   rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
   rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_client_;
+  rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_client_;
+
   std::string selected_motion_;
   rclcpp::TimerBase::SharedPtr timer_;
   Motion &selectedMotion();

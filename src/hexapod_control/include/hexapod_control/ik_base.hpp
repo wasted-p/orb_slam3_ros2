@@ -27,6 +27,7 @@
 #include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
+#include <hexapod_msgs/srv/set_pose.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
 #include <kdl/chain.hpp>
 #include <kdl/chainfksolver.hpp>
@@ -39,6 +40,7 @@
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/service.hpp>
 #include <string>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -62,7 +64,8 @@ protected:
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<hexapod_msgs::msg::Command>::SharedPtr command_sub_;
-  rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr service_;
+  rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_service_;
+  rclcpp::Service<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_service_;
   hexapod_msgs::msg::Pose current_pose_;
   // hexapod_msgs::msg::Pose pose_msg_;
   std::map<std::string, geometry_msgs::msg::Point> pose_msgs_;

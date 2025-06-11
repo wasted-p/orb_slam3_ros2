@@ -2,6 +2,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
+#include "hexapod_msgs/srv/set_pose.hpp"
 #include <cmath>
 #include <hexapod_rviz_plugins/motion_editor.hpp>
 #include <qcombobox.h>
@@ -442,10 +443,10 @@ void MotionEditorRvizPanel::setupROS() {
   get_pose_client_ =
       node_->create_client<hexapod_msgs::srv::GetPose>("control/pose");
 
-  std::string POSE_TOPIC = "/hexapod/pose";
-  pose_pub_ = node_->create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC,
+  set_pose_client_ =
+      node_->create_client<hexapod_msgs::srv::SetPose>("control/pose/set");
 
-                                                               rclcpp::QoS(10));
+  std::string POSE_TOPIC = "/hexapod/pose";
 
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
       POSE_TOPIC,
@@ -454,9 +455,29 @@ void MotionEditorRvizPanel::setupROS() {
                 std::placeholders::_1));
 }
 
+void sendSetPoseRequest(
+    rclcpp::Node::SharedPtr node,
+    rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
+    const hexapod_msgs::msg::Pose &pose) {
+  auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
+  request->pose = pose;
+
+  client->async_send_request(
+      request, [node](rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedFuture
+                          future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
+        } else {
+
+          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
+        }
+      });
+}
+
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  pose_pub_->publish(transformedMotion().poses[idx]);
+  sendSetPoseRequest(node_, set_pose_client_, transformedMotion().poses[idx]);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 
@@ -499,8 +520,7 @@ void MotionEditorRvizPanel::onDeletePose() {
   current_pose = selectedMotion().poses.size() - 1;
   if (current_pose >= 0 && current_pose <= selectedMotion().poses.size()) {
 
-    pose_pub_->publish(
-        selectedMotion().poses[selectedMotion().poses.size() - 1]);
+    sendSetPoseRequest(node_, set_pose_client_, transformedMotion().poses[0]);
     RCLCPP_INFO(node_->get_logger(), "Deleting Pose (%lu) from Gait %s", idx,
                 selectedMotion().name.c_str());
   }

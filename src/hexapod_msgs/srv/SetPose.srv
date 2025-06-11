@@ -1,0 +1,5 @@
+# SetPose.srv  
+hexapod_msgs/Pose pose
+---
+bool success
+string message

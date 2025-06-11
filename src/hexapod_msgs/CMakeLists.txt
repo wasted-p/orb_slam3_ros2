@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Action.msg"
   "srv/ControlMarkers.srv"
   "srv/GetPose.srv"
+  "srv/SetPose.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces
 )
 

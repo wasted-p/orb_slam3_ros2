@@ -14,16 +14,18 @@ find_package(geometry_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-#FIXME: Remove all unused interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
+# Messages
   "msg/Pose.msg"
-  "msg/LegPose.msg"
-  "msg/Gait.msg"
-  "msg/Command.msg"
-  "msg/Action.msg"
-  "srv/ControlMarkers.srv"
+  "msg/Motion.msg"
+
+# Services
+  "srv/SetMarkerArray.srv"
   "srv/GetPose.srv"
   "srv/SetPose.srv"
+  "srv/SolveIK.srv"
+  "srv/SolveFK.srv"
+  "srv/SetJointState.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces
 )
 

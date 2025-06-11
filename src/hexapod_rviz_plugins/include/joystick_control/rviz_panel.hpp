@@ -14,7 +14,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <hexapod_msgs/msg/action.hpp>
+#include <hexapod_msgs/msg/motion.hpp>
 #include <joystick_control/joystick.hpp>
 
 namespace hexapod_rviz_plugins {
@@ -36,7 +36,7 @@ protected Q_SLOTS:
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
-  rclcpp::Publisher<hexapod_msgs::msg::Action>::SharedPtr action_pub_;
+  rclcpp::Publisher<hexapod_msgs::msg::Motion>::SharedPtr motion_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   QVBoxLayout *main_layout_;
   QTimer *update_timer_;

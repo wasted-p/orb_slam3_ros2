@@ -1,0 +1,10 @@
+# Request
+string[] leg_names
+float64[] joint_positions
+float64 timeout
+---
+# Response
+string[] leg_names
+geometry_msgs/Point[] position
+bool success
+string error_message

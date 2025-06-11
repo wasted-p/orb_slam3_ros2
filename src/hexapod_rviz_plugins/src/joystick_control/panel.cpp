@@ -1,4 +1,5 @@
 #include "hexapod_msgs/msg/action.hpp"
+#include "hexapod_msgs/msg/motion.hpp"
 #include "joystick_control/joystick.hpp"
 #include "joystick_control/rviz_panel.hpp"
 #include <QCheckBox>
@@ -85,8 +86,8 @@ void JoystickRvizPanel::setupUi() {
 void JoystickRvizPanel::setupROS() {
   // Create publisher for joystick data
   joy_pub_ = node_->create_publisher<sensor_msgs::msg::Joy>("/joy", 10);
-  action_pub_ =
-      node_->create_publisher<hexapod_msgs::msg::Action>("/hexapod/action", 10);
+  motion_pub_ =
+      node_->create_publisher<hexapod_msgs::msg::Motion>("/hexapod/action", 10);
 
   // Create subscription for joystick data
   joy_sub_ = node_->create_subscription<sensor_msgs::msg::Joy>(
@@ -126,7 +127,7 @@ void JoystickRvizPanel::joyCallback(
     msg->axes[3] = -msg->axes[3];
     controller->setValue(msg->axes);
   }
-  hexapod_msgs::msg::Action action_msg;
+  hexapod_msgs::msg::Motion action_msg;
   const float default_axes[8] = {0, 0, 1, 0, 0, 1, 0, 0};
 
   bool idle = std::equal(msg->axes.begin(), msg->axes.end(), default_axes);
@@ -138,7 +139,7 @@ void JoystickRvizPanel::joyCallback(
     action_msg.direction = 0;
     action_msg.stride = 0;
   }
-  action_pub_->publish(action_msg);
+  motion_pub_->publish(action_msg);
 }
 
 void JoystickRvizPanel::setPublishing(bool state) { publisher_mode_ = state; }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(hexapod_action)
+project(hexapod_motion)
 
 # Set C++ standard to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -27,12 +27,12 @@ find_package(yaml-cpp REQUIRED)
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Build action_server_node executable
-add_executable(action_server_node
-src/action_server_node.cpp
+# Build motion_server executable
+add_executable(motion_server
+src/motion_server.cpp
 )
 
-ament_target_dependencies(action_server_node
+ament_target_dependencies(motion_server
   rclcpp
   std_msgs
   hexapod_msgs
@@ -44,7 +44,7 @@ ament_target_dependencies(action_server_node
 
 
 # Install executables
-install(TARGETS  action_server_node
+install(TARGETS  motion_server
   DESTINATION lib/${PROJECT_NAME}
 )
 

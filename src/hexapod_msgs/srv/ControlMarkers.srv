@@ -1,6 +1,0 @@
-string command
-hexapod_msgs/Pose[] poses
-int32 idx
----
-bool success
-string message

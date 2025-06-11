@@ -3,8 +3,13 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
+#include "utils.cpp"
 #include <cmath>
+#include <filesystem>
 #include <hexapod_rviz_plugins/motion_editor.hpp>
+#include <iostream>
+#include <map>
+#include <ostream>
 #include <qcombobox.h>
 #include <qglobal.h>
 #include <qpushbutton.h>
@@ -12,6 +17,7 @@
 #include <rclcpp/client.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
+#include <stdexcept>
 #include <string>
 #include <sys/types.h>
 #include <vector>
@@ -21,6 +27,157 @@ using namespace rclcpp;
 
 namespace hexapod_rviz_plugins {
 
+void loadFromYaml(std::map<std::string, Motion> &motions) {
+  std::string base_path = "/home/thurdparty/Code/hexapod-ros/src/"
+                          "hexapod_bringup/config/";
+  std::string definitions_dir = base_path + "definitions/";
+  std::string main_filename = base_path + "motions.yml";
+
+  // node_->get_parameter("motion_definitions_path", main_filename);
+  if (main_filename.empty())
+    throw std::runtime_error("No 'motions' parameter specified.");
+
+  YAML::Node root = YAML::LoadFile(main_filename);
+
+  for (const auto &motion_pair : root["motions"]) {
+    Motion motion;
+    std::string motion_id = motion_pair.first.as<std::string>();
+    const YAML::Node &motion_node = motion_pair.second;
+
+    motion.name = motion_node["name"].as<std::string>();
+    motion.category = motion_node["category"].as<std::string>("gait");
+    motion.duration = motion_node["duration"].as<std::float_t>(1.0);
+    motion.type = motion_node["type"].as<std::string>("cyclic");
+    motion.poses = {};
+
+    // Load poses from separate file
+    std::string pose_filename = motion_node["definition"].as<std::string>();
+    YAML::Node poses_root = YAML::LoadFile(pose_filename);
+
+    for (const auto &pose_node : poses_root["poses"]) {
+      hexapod_msgs::msg::Pose pose_msg;
+      pose_msg.name = pose_node["name"].as<std::string>();
+
+      for (const auto &n : pose_node["names"]) {
+        pose_msg.names.push_back(n.as<std::string>());
+      }
+
+      for (const auto &pos : pose_node["positions"]) {
+        geometry_msgs::msg::Point p;
+        p.x = pos["x"].as<double>();
+        p.y = pos["y"].as<double>();
+        p.z = pos["z"].as<double>();
+        pose_msg.positions.push_back(p);
+      }
+
+      motion.poses.push_back(pose_msg);
+    }
+
+    motions[motion_id] = motion;
+  }
+}
+
+void saveToYaml(std::map<std::string, Motion> &motions) {
+  std::string base_path = "/home/thurdparty/Code/hexapod-ros/src/"
+                          "hexapod_bringup/config/";
+  std::string definitions_dir = base_path + "definitions/";
+  std::string main_filename = base_path + "motions.yml";
+
+  if (motions.empty()) {
+    throw std::invalid_argument("Motions is empty");
+    return;
+  }
+
+  // Create definitions directory if it doesn't exist
+  std::filesystem::create_directory(definitions_dir);
+
+  YAML::Node root;
+  YAML::Node motionsnode;
+
+  for (const auto &motion_pair : motions) {
+    const std::string &motion_id = motion_pair.first;
+    const Motion &motion = motion_pair.second;
+
+    // Create main motion entry (without poses)
+    YAML::Node motion_node;
+
+    std::string pose_filename = definitions_dir + motion_id + ".yml";
+    motion_node["name"] = motion.name;
+    motion_node["category"] = motion.category;
+    motion_node["duration"] = motion.duration;
+    motion_node["type"] = motion.type;
+    motion_node["definition"] = pose_filename;
+    // motion_node[""] = motion.type;
+    motionsnode[motion_id] = motion_node;
+
+    // Save poses to separate file
+    YAML::Node poses_root;
+    YAML::Node poses_node;
+
+    for (const auto &pose_msg : motion.poses) {
+      YAML::Node pose_node;
+      pose_node["name"] = pose_msg.name;
+
+      YAML::Node names_node;
+      for (const auto &name : pose_msg.names) {
+        names_node.push_back(name);
+      }
+      pose_node["names"] = names_node;
+
+      YAML::Node positions_node;
+      for (const auto &position : pose_msg.positions) {
+        YAML::Node pos_node;
+        pos_node["x"] = position.x;
+        pos_node["y"] = position.y;
+        pos_node["z"] = position.z;
+        positions_node.push_back(pos_node);
+      }
+      pose_node["positions"] = positions_node;
+      poses_node.push_back(pose_node);
+    }
+
+    poses_root["poses"] = poses_node;
+
+    // Write poses file
+    std::ofstream pose_file(pose_filename);
+    if (!pose_file.is_open()) {
+      throw std::runtime_error("Failed to open pose file for writing: " +
+                               pose_filename);
+    }
+    pose_file << poses_root;
+    pose_file.close();
+  }
+
+  root["motions"] = motionsnode;
+
+  // Write main motion definitions file
+  std::ofstream file(main_filename);
+  if (!file.is_open()) {
+    throw std::runtime_error("Failed to open file for writing: " +
+                             main_filename);
+  }
+  file << root;
+  file.close();
+}
+void sendSetPoseRequest(
+    rclcpp::Node::SharedPtr node,
+    rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
+    const hexapod_msgs::msg::Pose &pose) {
+  auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
+  request->pose = pose;
+
+  client->async_send_request(
+      request, [node](rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedFuture
+                          future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
+        } else {
+
+          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
+        }
+      });
+}
 void sendSetMarkersRequest(
     rclcpp::Node::SharedPtr node,
     rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client,
@@ -67,7 +224,7 @@ void MotionEditorRvizPanel::onInitialize() {
   }
   node_ = ros_node_abstraction->get_raw_node();
   setupROS();
-  loadMotions();
+  loadFromYaml(motions_);
   for (auto &entry : motions_) {
     motion_combo_box_->addItem(entry.first.c_str());
   }
@@ -222,9 +379,12 @@ void MotionEditorRvizPanel::setupUi() {
       direction_spinner, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
       this, [this](double yaw) {
         yaw_ = yaw;
+        sendSetPoseRequest(node_, set_pose_client_,
+                           transformedMotion().poses[current_pose]);
         sendSetMarkersRequest(node_, client_, transformedMotion().poses, true);
       });
-  connect(save_button, &QPushButton::pressed, [this]() { saveMotions(); });
+  connect(save_button, &QPushButton::pressed,
+          [this]() { saveToYaml(motions_); });
 
   bottom_buttons->addWidget(save_button);
   // === Assemble Layout ===
@@ -276,166 +436,6 @@ void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
   selectedMotion().poses[from_idx] = tmp;
 };
 
-void saveAction(const std::vector<hexapod_msgs::msg::Pose> &poses,
-                const std::string &filename) {
-  std::ofstream file(filename, std::ios::binary);
-
-  // Write header
-  size_t num_points = poses.size();
-  size_t num_joints = poses[0].names.size();
-
-  file.write(reinterpret_cast<const char *>(&num_points), sizeof(num_points));
-  file.write(reinterpret_cast<const char *>(&num_joints), sizeof(num_joints));
-
-  // Write trajectory data
-  for (const auto &pose : poses) {
-    file.write(reinterpret_cast<const char *>(&pose.name), sizeof(double));
-    file.write(reinterpret_cast<const char *>(pose.positions.data()),
-               num_joints * sizeof(double));
-  }
-  file.close();
-}
-
-void MotionEditorRvizPanel::saveMotions() {
-  std::string filename = "/home/thurdparty/Code/hexapod-ros/src/"
-                         "hexapod_bringup/config/motion_definitions.yml";
-  // node_->get_parameter("motion_definitions_path", filename);
-
-  if (filename.empty()) {
-    RCLCPP_ERROR(node_->get_logger(), "No 'motions' parameter specified.");
-    return;
-  }
-
-  if (motions_.empty()) {
-    RCLCPP_WARN(node_->get_logger(), "No motions to save.");
-    return;
-  }
-
-  try {
-    YAML::Node root;
-    YAML::Node motions_node;
-
-    RCLCPP_INFO(node_->get_logger(), "Saving motions:");
-
-    for (const auto &motion_pair : motions_) {
-      const std::string &motion_id = motion_pair.first;
-      const Motion &motion = motion_pair.second;
-
-      RCLCPP_INFO(node_->get_logger(), " - Motion : %s", motion_id.c_str());
-
-      YAML::Node motion_node;
-      motion_node["name"] = motion.name;
-      motion_node["category"] = motion.category;
-      motion_node["duration"] = motion.duration;
-      motion_node["type"] = motion.type;
-
-      YAML::Node poses_node;
-      for (const auto &pose_msg : motion.poses) {
-        YAML::Node pose_node;
-        pose_node["name"] = pose_msg.name;
-
-        YAML::Node names_node;
-        for (const auto &name : pose_msg.names) {
-          names_node.push_back(name);
-        }
-        pose_node["names"] = names_node;
-
-        YAML::Node positions_node;
-        for (const auto &position : pose_msg.positions) {
-          YAML::Node pos_node;
-          pos_node["x"] = position.x;
-          pos_node["y"] = position.y;
-          pos_node["z"] = position.z;
-          positions_node.push_back(pos_node);
-        }
-        pose_node["positions"] = positions_node;
-
-        poses_node.push_back(pose_node);
-      }
-      motion_node["poses"] = poses_node;
-
-      motions_node[motion_id] = motion_node;
-    }
-
-    root["motions"] = motions_node;
-
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to open file for writing: %s",
-                   filename.c_str());
-      return;
-    }
-
-    file << root;
-    file.close();
-
-    RCLCPP_INFO(node_->get_logger(), "Successfully saved %lu motions to %s",
-                motions_.size(), filename.c_str());
-
-  } catch (const YAML::Exception &e) {
-    RCLCPP_ERROR(node_->get_logger(), "YAML error while saving motions: %s",
-                 e.what());
-  } catch (const std::exception &e) {
-    RCLCPP_ERROR(node_->get_logger(), "Error while saving motions: %s",
-                 e.what());
-  }
-}
-
-void MotionEditorRvizPanel::loadMotions() {
-
-  std::string filename = "/home/thurdparty/Code/hexapod-ros/src/"
-                         "hexapod_bringup/config/motion_definitions.yml";
-
-  // node_->get_parameter("motion_definitions_path", filename);
-
-  if (filename.empty()) {
-    RCLCPP_ERROR(node_->get_logger(), "No 'motions' parameter specified.");
-    return;
-  }
-
-  YAML::Node root = YAML::LoadFile(filename);
-
-  RCLCPP_INFO(node_->get_logger(), "Motions:");
-
-  for (const auto &motion_pair : root["motions"]) {
-    Motion motion;
-    std::string motion_id = motion_pair.first.as<std::string>();
-    const YAML::Node &motion_node = motion_pair.second;
-
-    RCLCPP_INFO(node_->get_logger(), " - Motion : %s", motion_id.c_str());
-
-    motion.name = motion_node["name"].as<std::string>();
-    motion.category = motion_node["category"].as<std::string>("gait");
-    motion.duration = motion_node["duration"].as<std::float_t>(1.0);
-    motion.type = motion_node["type"].as<std::string>("cyclic");
-
-    motion.poses = {};
-
-    for (const auto &pose_node : motion_node["poses"]) {
-      hexapod_msgs::msg::Pose pose_msg;
-      pose_msg.name = pose_node["name"].as<std::string>();
-
-      for (const auto &n : pose_node["names"]) {
-        pose_msg.names.push_back(n.as<std::string>());
-      }
-
-      for (const auto &pos : pose_node["positions"]) {
-        geometry_msgs::msg::Point p;
-        p.x = pos["x"].as<double>();
-        p.y = pos["y"].as<double>();
-        p.z = pos["z"].as<double>();
-        pose_msg.positions.push_back(p);
-      }
-
-      motion.poses.push_back(pose_msg);
-    }
-    motions_[motion_id] = motion;
-  }
-
-  RCLCPP_INFO(node_->get_logger(), "Loaded %lu motions.", motions_.size());
-}
-
-void publishPose() {}
 void MotionEditorRvizPanel::setupROS() {
   client_ =
       node_->create_client<hexapod_msgs::srv::ControlMarkers>("action/markers");
@@ -453,26 +453,6 @@ void MotionEditorRvizPanel::setupROS() {
       10, // QoS history depth
       std::bind(&MotionEditorRvizPanel::onPoseUpdate, this,
                 std::placeholders::_1));
-}
-
-void sendSetPoseRequest(
-    rclcpp::Node::SharedPtr node,
-    rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
-    const hexapod_msgs::msg::Pose &pose) {
-  auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
-  request->pose = pose;
-
-  client->async_send_request(
-      request, [node](rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedFuture
-                          future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
-        } else {
-
-          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
-        }
-      });
 }
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {

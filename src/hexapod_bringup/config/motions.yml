@@ -1,0 +1,13 @@
+motions:
+  tripod_2:
+    name: Tripod 2
+    category: gait
+    duration: 2
+    type: cyclic
+    definition: /home/thurdparty/Code/hexapod-ros/src/hexapod_bringup/config/definitions/tripod_2.yml
+  tripod_phase_1:
+    name: Tripod Phase 1
+    category: gait
+    duration: 2
+    type: cyclic
+    definition: /home/thurdparty/Code/hexapod-ros/src/hexapod_bringup/config/definitions/tripod_phase_1.yml

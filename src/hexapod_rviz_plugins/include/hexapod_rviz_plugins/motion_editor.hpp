@@ -72,7 +72,6 @@ public:
 private Q_SLOTS:
   void onAddPose();
   void onDeletePose();
-  void loadMotions();
 
   void onRenamePose(QListWidgetItem *item);
   void onPoseMoved(const int from_idx, const int to_idx);
@@ -83,7 +82,6 @@ private:
   void setupUi();
   void setupROS();
 
-  void saveMotions();
   hexapod_msgs::msg::Pose getInitialPose();
 
   void onPoseUpdate(hexapod_msgs::msg::Pose pose);

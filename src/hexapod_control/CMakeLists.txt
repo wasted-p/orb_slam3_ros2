@@ -27,106 +27,148 @@ find_package(hexapod_msgs REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# RViz Node
-add_executable(hexapod_joint_state_node
-  src/ik_joint_state.cpp
-  src/ik_base.cpp
-  src/planning_group.cpp
-  src/6_dof_marker.cpp
+
+set(EXECUTABLES "")
+
+# JointStatePublisher
+# ====================
+add_executable(joint_state_publisher
+  src/joint_state_publisher.cpp
 )
 
-# GZ Node
-add_executable(hexapod_trajectory_node
-  src/ik_trajectory.cpp
-  src/ik_base.cpp
-  src/planning_group.cpp
-  src/6_dof_marker.cpp
+ament_target_dependencies(joint_state_publisher
+  rclcpp
+  std_msgs
+  sensor_msgs
+  hexapod_msgs
 )
 
-# GZ Node
-add_executable(shutdown_controllers_node
-  src/shutdown_controllers.cpp
+target_link_libraries(joint_state_publisher
+  yaml-cpp
 )
 
-# GZ Node
-add_executable(startup_controllers_node
-  src/startup_controllers.cpp
+list(APPEND EXECUTABLES joint_state_publisher)
+
+# KinematicsService
+# ====================
+add_executable(kinematics_service
+  src/kinematics_service.cpp
 )
 
-
-target_include_directories(hexapod_joint_state_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
-
-target_include_directories(hexapod_trajectory_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-)
-
-ament_target_dependencies(hexapod_joint_state_node
+ament_target_dependencies(kinematics_service
   rclcpp
   std_msgs
   sensor_msgs
   urdf
   kdl_parser
   orocos_kdl
-  tf2
-  tf2_ros
   hexapod_msgs
-  interactive_markers
 )
 
-ament_target_dependencies(hexapod_trajectory_node
+list(APPEND EXECUTABLES kinematics_service)
+
+# PosePublisher
+# ====================
+add_executable(pose_publisher
+  src/pose_publisher.cpp
+)
+
+ament_target_dependencies(pose_publisher
+  rclcpp
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  hexapod_msgs
+)
+
+list(APPEND EXECUTABLES pose_publisher)
+
+# TrajectoryPublisher
+# ====================
+add_executable(trajectory_publisher
+  src/trajectory_publisher.cpp
+)
+
+ament_target_dependencies(trajectory_publisher
   rclcpp
   std_msgs
   trajectory_msgs
+  rclcpp_action
   control_msgs
-  urdf
-  kdl_parser
-  orocos_kdl
-  tf2
-  tf2_ros
   hexapod_msgs
+  controller_manager_msgs
+)
+
+list(APPEND EXECUTABLES trajectory_publisher)
+
+# VisualizationServer
+# ====================
+add_executable(visualization_server
+  src/visualization_server.cpp
+  src/6_dof_marker.cpp
+)
+
+ament_target_dependencies(visualization_server
+  rclcpp
+  std_msgs
+  geometry_msgs
+  hexapod_msgs
+  visualization_msgs
   interactive_markers
-  controller_manager_msgs
 )
 
+list(APPEND EXECUTABLES visualization_server)
 
+# ShutdownControllers
+# ====================
+add_executable(shutdown_controllers
+  src/shutdown_controllers.cpp
+)
 
-ament_target_dependencies(shutdown_controllers_node
+ament_target_dependencies(shutdown_controllers
   rclcpp
   std_msgs
   controller_manager_msgs
 )
-ament_target_dependencies(startup_controllers_node
+
+list(APPEND EXECUTABLES shutdown_controllers)
+
+# StartupControllers
+# ====================
+add_executable(startup_controllers
+  src/startup_controllers.cpp
+)
+
+ament_target_dependencies(startup_controllers
   rclcpp
   std_msgs
   controller_manager_msgs
 )
 
-# Install executables
-install(TARGETS  hexapod_joint_state_node
-  DESTINATION lib/${PROJECT_NAME}
-)
+list(APPEND EXECUTABLES shutdown_controllers)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+#
+# target_include_directories(hexapod_trajectory_node PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+# )
+#
+# target_include_directories(kinematics_service PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+# )
+#
+
 
 # Install executables
-install(TARGETS  hexapod_trajectory_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-# Install executables
-install(TARGETS  shutdown_controllers_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-# Install executables
-install(TARGETS  startup_controllers_node
+install(TARGETS  ${EXECUTABLES}
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -1,0 +1,5 @@
+# SetPose.srv  
+sensor_msgs/JointState joint_state
+---
+bool success
+string message

@@ -1,0 +1,6 @@
+string[] leg_names
+geometry_msgs/Point[] positions
+bool update
+---
+bool success
+string message

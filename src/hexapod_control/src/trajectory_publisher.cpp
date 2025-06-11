@@ -4,9 +4,9 @@
 #include <controller_manager_msgs/srv/load_controller.hpp>
 #include <controller_manager_msgs/srv/switch_controller.hpp>
 #include <controller_manager_msgs/srv/unload_controller.hpp>
-#include <hexapod_control/ik_base.hpp>
 #include <rclcpp/contexts/default_context.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/client.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -17,10 +17,10 @@ using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 using namespace std::chrono_literals;
 
-class IkTrajectoryNode : public HexapodIKBaseNode {
+class TrajectoryPublisher : public rclcpp::Node {
 
 public:
-  IkTrajectoryNode() { setupControllers(); }
+  TrajectoryPublisher() : Node("trajectory_publisher") { setupControllers(); }
 
 private:
   std::vector<std::string> controllers_;
@@ -102,10 +102,9 @@ public:
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<IkTrajectoryNode>();
+  auto node = std::make_shared<TrajectoryPublisher>();
 
   rclcpp::spin(node);
-  // Register shutdown callback to safely teardown before rclcpp::shutdown
   rclcpp::shutdown();
   return 0;
 }

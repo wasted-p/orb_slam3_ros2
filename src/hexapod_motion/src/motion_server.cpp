@@ -1,16 +1,16 @@
 #include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/pose.hpp"
-#include "hexapod_msgs/msg/action.hpp"
 #include "hexapod_msgs/msg/gait.hpp"
+#include "hexapod_msgs/msg/motion.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/control_markers.hpp"
+#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include <cmath>
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
-#include <hexapod_msgs/srv/control_markers.hpp>
+#include <hexapod_msgs/srv/set_marker_array.hpp>
 #include <memory>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/create_subscription.hpp>
@@ -19,16 +19,26 @@
 #include <rclcpp/rclcpp.hpp>
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <yaml-cpp/yaml.h>
 
+std_msgs::msg::ColorRGBA makeColor(float r, float g, float b, float a = 1.0f) {
+  std_msgs::msg::ColorRGBA color;
+  color.r = r;
+  color.g = g;
+  color.b = b;
+  color.a = a;
+  return color;
+}
+
 using namespace std::chrono_literals;
-class ActionNode : public rclcpp::Node {
+class MotionServer : public rclcpp::Node {
 
 private:
   // ROS2 Subscriptions
-  rclcpp::Service<hexapod_msgs::srv::ControlMarkers>::SharedPtr service_;
+  rclcpp::Service<hexapod_msgs::srv::SetMarkerArray>::SharedPtr service_;
 
   // ROS2 Publishers
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr
@@ -37,12 +47,12 @@ private:
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
 
-  rclcpp::Subscription<hexapod_msgs::msg::Action>::SharedPtr action_sub_;
+  rclcpp::Subscription<hexapod_msgs::msg::Motion>::SharedPtr action_sub_;
 
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
   hexapod_msgs::msg::Gait tripod_gait_;
-  hexapod_msgs::msg::Action executing_action;
+  hexapod_msgs::msg::Motion executing_action;
 
   hexapod_msgs::msg::Pose initial_pose;
   rclcpp::TimerBase::SharedPtr timer_;
@@ -55,15 +65,15 @@ private:
   std::map<std::string, hexapod_msgs::msg::Gait> actions_;
 
 public:
-  ActionNode() : Node("action_server_node") {
+  MotionServer() : Node("action_server_node") {
     setupROS();
 
     // FIXME: Pass these params in config file successfully
-    // loadActions();
+    // loadMotions();
   }
 
 private:
-  void loadActions() {
+  void loadMotions() {
     std::string yaml_file;
     hexapod_msgs::msg::Pose pose_msg;
     this->get_parameter("actions_file", yaml_file);
@@ -160,47 +170,45 @@ private:
     pose_pub_ =
         create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC, rclcpp::QoS(10));
 
-    action_sub_ = this->create_subscription<hexapod_msgs::msg::Action>(
+    action_sub_ = this->create_subscription<hexapod_msgs::msg::Motion>(
         "/hexapod/action",
         10, // QoS history depth
-        std::bind(&ActionNode::onActionRequested, this, std::placeholders::_1));
+        std::bind(&MotionServer::onMotionRequested, this,
+                  std::placeholders::_1));
 
     timer_ = create_wall_timer(std::chrono::milliseconds(200),
-                               std::bind(&ActionNode::timerCallback, this));
+                               std::bind(&MotionServer::timerCallback, this));
 
-    service_ = create_service<hexapod_msgs::srv::ControlMarkers>(
+    service_ = create_service<hexapod_msgs::srv::SetMarkerArray>(
         "action/markers",
-        std::bind(&ActionNode::handleControlMarkersRequest, this,
+        std::bind(&MotionServer::handleSetMarkerArrayRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
 
     RCLCPP_INFO(get_logger(), "Created ControlCommand Service");
   }
 
-  void onActionRequested(hexapod_msgs::msg::Action msg) {
-    RCLCPP_DEBUG(get_logger(), "Requested Action = %s", msg.name.c_str());
+  void onMotionRequested(hexapod_msgs::msg::Motion msg) {
+    RCLCPP_DEBUG(get_logger(), "Requested Motion = %s", msg.name.c_str());
     executing_action = msg;
   }
 
-  void handleControlMarkersRequest(
-      const std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Request> request,
-      std::shared_ptr<hexapod_msgs::srv::ControlMarkers::Response> response) {
-    if (request->command.compare("clear") == 0) {
-      clearMarkers();
+  void handleSetMarkerArrayRequest(
+      const std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Request> request,
+      std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Response> response) {
 
-      response->message = "Cleared Markers Successfully";
-    } else if (request->command.compare("add") == 0) {
-      // FIXME: Update markers instead
-      clearMarkers();
-      publishMarkers(request->poses);
-      response->message = "Added Markers Successfully";
-    } else if (request->command.compare("update") == 0) {
-      publishMarkers(request->poses, visualization_msgs::msg::Marker::MODIFY);
+    if (request->update) {
+
+      publishMarkers("top_left", request->positions);
+      response->message = "Set MarkerArray Successfully";
+    } else {
+      publishMarkers("top_left", request->positions,
+                     visualization_msgs::msg::Marker::MODIFY);
+      response->message = "Updated MarkerArray Successfully";
     }
     response->success = true;
   }
 
   void clearMarkers() {
-
     RCLCPP_INFO(get_logger(), "Cleaning Markers");
     visualization_msgs::msg::Marker delete_all_marker;
     delete_all_marker.action = visualization_msgs::msg::Marker::DELETEALL;
@@ -208,7 +216,9 @@ private:
     marker_array.markers = {delete_all_marker};
     markers_pub_->publish(marker_array);
   }
-  void publishMarkers(std::vector<hexapod_msgs::msg::Pose> poses,
+
+  void publishMarkers(const std::string &leg_name,
+                      const std::vector<geometry_msgs::msg::Point> &positions,
                       int action = visualization_msgs::msg::Marker::ADD) {
     visualization_msgs::msg::MarkerArray marker_array;
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
@@ -219,71 +229,56 @@ private:
         {"mid_right", makeColor(0.0, 1.0, 1.0)},
         {"bottom_right", makeColor(1.0, 0.0, 1.0)}};
 
-    // Store previous pose per leg to draw arrows
-    std::map<std::string, geometry_msgs::msg::Point> previous_points;
+    // Method 2: Get index directly
+    auto it = std::find(LEG_NAMES.begin(), LEG_NAMES.end(), leg_name);
+    int leg_idx = (it != LEG_NAMES.end()) ? (it - LEG_NAMES.begin()) : -1;
 
-    int marker_id = 0;
+    int span = 1000;
 
-    unsigned int idx = 0;
+    int marker_id = leg_idx * span;
 
-    for (hexapod_msgs::msg::Pose &pose : poses) {
-      for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
-        const auto &leg_name = pose.names[leg_i];
-        const auto &position = pose.positions[leg_i];
-        // Create a sphere marker for this leg at this pose
-        visualization_msgs::msg::Marker sphere;
-        sphere.header.frame_id = "base_footprint"; // Or your TF frame
-        sphere.header.stamp = rclcpp::Clock().now();
-        sphere.ns = "leg_spheres";
-        sphere.id = marker_id++;
-        sphere.type = visualization_msgs::msg::Marker::SPHERE;
-        sphere.action = action;
-        sphere.pose.position = position;
-        sphere.pose.orientation.w = 1.0;
-        const double size = 0.0075;
-        sphere.scale.x = size;
-        sphere.scale.y = size;
-        sphere.scale.z = size;
-        sphere.color = leg_colors[leg_name];
-        sphere.lifetime = rclcpp::Duration::from_seconds(0); // forever
+    for (size_t i = 0; i < positions.size(); i++) {
+      const auto &position = positions[i];
+      // Create a sphere marker for this leg at this pose
+      visualization_msgs::msg::Marker sphere;
+      sphere.header.frame_id = "base_footprint"; // Or your TF frame
+      sphere.header.stamp = rclcpp::Clock().now();
+      sphere.ns = "leg_spheres";
+      sphere.id = marker_id++;
+      sphere.type = visualization_msgs::msg::Marker::SPHERE;
+      sphere.action = action;
+      sphere.pose.position = position;
+      sphere.pose.orientation.w = 1.0;
+      const double size = 0.0075;
+      sphere.scale.x = size;
+      sphere.scale.y = size;
+      sphere.scale.z = size;
+      sphere.color = leg_colors[leg_name];
+      sphere.lifetime = rclcpp::Duration::from_seconds(0); // forever
 
-        marker_array.markers.push_back(sphere);
+      marker_array.markers.push_back(sphere);
 
-        // If this isn't the first pose, draw an arrow from previous to
-        // current
-        if (idx > 0 && previous_points.count(leg_name)) {
-          visualization_msgs::msg::Marker arrow;
-          arrow.header = sphere.header;
-          arrow.ns = "leg_arrows";
-          arrow.id = marker_id++;
-          arrow.type = visualization_msgs::msg::Marker::ARROW;
-          arrow.action = action;
-          arrow.points.push_back(previous_points[leg_name]);
-          arrow.points.push_back(position);
-          arrow.scale.x = 0.0025; // shaft diameter
-          arrow.scale.y = 0.01;   // head diameter
-          arrow.scale.z = 0.01;   // head length
-          arrow.color = sphere.color;
-          arrow.pose.orientation.w = 1.0;
-          arrow.lifetime = rclcpp::Duration::from_seconds(0);
-          marker_array.markers.push_back(arrow);
-        }
-
-        previous_points[leg_name] = position;
+      // If this isn't the first pose, draw an arrow from previous to
+      // current
+      if (i > 0) {
+        visualization_msgs::msg::Marker arrow;
+        arrow.header = sphere.header;
+        arrow.ns = "leg_arrows";
+        arrow.id = marker_id++;
+        arrow.type = visualization_msgs::msg::Marker::ARROW;
+        arrow.action = action;
+        arrow.points.push_back(positions[i - 1]);
+        arrow.points.push_back(position);
+        arrow.scale.x = 0.0025; // shaft diameter
+        arrow.scale.y = 0.01;   // head diameter
+        arrow.scale.z = 0.01;   // head length
+        arrow.color = sphere.color;
+        arrow.pose.orientation.w = 1.0;
+        arrow.lifetime = rclcpp::Duration::from_seconds(0);
+        marker_array.markers.push_back(arrow);
       }
-      idx++;
     }
     markers_pub_->publish(marker_array);
-  }
-
-  std_msgs::msg::ColorRGBA makeColor(float r, float g, float b,
-                                     float a = 1.0f) {
-    std_msgs::msg::ColorRGBA color;
-    color.r = r;
-    color.g = g;
-    color.b = b;
-    color.a = a;
-    return color;
   }
 
   void timerCallback() {
@@ -306,7 +301,7 @@ private:
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<ActionNode>();
+  auto node = std::make_shared<MotionServer>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

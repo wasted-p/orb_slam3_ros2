@@ -40,20 +40,17 @@ public:
   ~PosePublisher() {}
 
 private:
-  void setPose(const hexapod_msgs::msg::Pose pose) {
+  void setPose(const hexapod_msgs::msg::Pose &pose) {
     std::vector<std::string> joint_names;
     std::vector<double> joint_positions;
     std::vector<geometry_msgs::msg::Point> positions = pose.positions;
     solveIK(shared_from_this(), solve_ik_client_, pose.names, pose.positions,
-            [this](const JointNames &joint_names,
-                   const JointPositions &joint_positions) {
+            [this, pose](const JointNames &joint_names,
+                         const JointPositions &joint_positions) {
               setJointPositions(shared_from_this(), set_joint_state_client_,
                                 joint_names, joint_positions);
+              pose_pub_->publish(pose);
             });
-
-    // setJointPositions(shared_from_this(), set_joint_state_client_,
-    // joint_names,
-    //                   joint_positions);
   }
 
   void setupROS() {

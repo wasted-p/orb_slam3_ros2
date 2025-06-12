@@ -179,7 +179,8 @@ void HexapodControlRvizPanel::onResetClicked() {
     pose.names.push_back(LEG_NAMES[i]);
     pose.positions.push_back(position);
   }
-  pose_pub_->publish(pose);
+  // pose_pub_->publish(pose);
+  setPose(this->node_->shared_from_this(), set_pose_client_, pose);
 }
 
 HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
@@ -204,7 +205,8 @@ void HexapodControlRvizPanel::onLegPoseUpdate(std::string leg_name, double x,
   }
   pose.positions = {position};
   pose.names = {leg_name};
-  pose_pub_->publish(pose);
+  // pose_pub_->publish(pose);
+  setPose(this->node_->shared_from_this(), set_pose_client_, pose);
 }
 
 void HexapodControlRvizPanel::onInitialize() {
@@ -269,8 +271,9 @@ void HexapodControlRvizPanel::setupUi() {
 }
 
 void HexapodControlRvizPanel::setupROS() {
-  std::string POSE_TOPIC = "/hexapod/pose";
-  pose_pub_ = node_->create_publisher<hexapod_msgs::msg::Pose>(POSE_TOPIC, 10);
+  set_pose_client_ =
+      node_->create_client<hexapod_msgs::srv::SetPose>(SET_POSE_SERVICE_NAME);
+  // std::string POSE_TOPIC = "/hexapod/pose";
 
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
       POSE_TOPIC,

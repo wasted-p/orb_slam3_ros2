@@ -2,6 +2,9 @@
 #define MY_RVIZ_PANEL_HPP
 
 #include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/srv/set_pose.hpp"
+#include <hexapod_control/requests.hpp>
+#include <hexapod_control/ros_constants.hpp>
 #include <qcheckbox.h>
 #include <qlist.h>
 #include <rclcpp/client.hpp>
@@ -58,8 +61,8 @@ protected Q_SLOTS:
 
 private:
   rclcpp::Node::SharedPtr node_;
-  rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
+  rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_client_;
 
   bool relative = false;
   std::string LEG_NAMES[6] = {"top_left",  "mid_left",  "bottom_left",

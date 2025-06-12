@@ -3,6 +3,7 @@
 
 #define POSE_TOPIC "/hexapod/pose"
 #define JOINT_STATE_TOPIC "/joint_states"
+#define MARKER_ARRAY_TOPIC "/hexapod/visualization/leg_pose_markers"
 #define SET_POSE_SERVICE_NAME "/hexapod/pose/set"
 #define GET_POSE_SERVICE_NAME "/hexapod/pose/get"
 #define SOLVE_IK_SERVICE_NAME "/kinematics/solve_ik"

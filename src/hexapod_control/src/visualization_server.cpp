@@ -13,6 +13,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_control/requests.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include <hexapod_control/hexapod.hpp>
 #include <hexapod_control/requests.hpp>
@@ -21,6 +22,7 @@
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <hexapod_msgs/srv/set_pose.hpp>
 #include <interactive_markers/interactive_marker_server.hpp>
+#include <iterator>
 #include <map>
 #include <rclcpp/client.hpp>
 #include <rclcpp/create_client.hpp>
@@ -29,6 +31,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/service.hpp>
 #include <string>
+#include <vector>
 #include <visualization_msgs/msg/interactive_marker.hpp>
 #include <visualization_msgs/msg/interactive_marker_control.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -103,6 +106,8 @@ private:
   std::shared_ptr<interactive_markers::InteractiveMarkerServer> server_;
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_client_;
+  rclcpp::Service<hexapod_msgs::srv::SetMarkerArray>::SharedPtr
+      set_marker_array_service_;
 
 private:
   void poseUpdateCallback(const hexapod_msgs::msg::Pose msg) {
@@ -150,15 +155,33 @@ private:
     server_ = std::make_shared<interactive_markers::InteractiveMarkerServer>(
         INTERACTIVE_MARKERS_SERVER_NAME, this, rclcpp::QoS(10),
         rclcpp::QoS(10));
+
+    set_marker_array_service_ = create_service<
+        hexapod_msgs::srv::SetMarkerArray>(
+        SET_MARKER_ARRAY_SERVICE_NAME,
+        [this](const std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Request>
+                   request,
+               std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Response>
+                   response) {
+          for (size_t i = 0; i < request->leg_names.size(); i++) {
+            const std::string &leg_name = request->leg_names[i];
+            const std::vector<geometry_msgs::msg::Point> &positions =
+                request->trajectories[i].points;
+            publishMarkers(leg_name, positions);
+          }
+        });
     markers_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
         MARKER_ARRAY_TOPIC, rclcpp::QoS(10));
   }
 
-  void publishMarkers(const std::string &leg_name,
+  void publishMarkers(const std::string leg_name,
                       const std::vector<geometry_msgs::msg::Point> &positions,
                       int action = visualization_msgs::msg::Marker::ADD) {
     visualization_msgs::msg::MarkerArray marker_array;
-    // FIXME: Store this in YAML file
+    std::map<std::string, size_t> leg_indices{
+        {"top_left", 1000},  {"mid_left", 2000},  {"bottom_left", 3000},
+        {"top_right", 4000}, {"mid_right", 5000}, {"bottom_right", 6000}};
+    // FIXME: Store this in YAML Config file
     std::map<std::string, std_msgs::msg::ColorRGBA> leg_colors = {
         {"top_left", makeColor(1.0, 0.0, 0.0)},
         {"mid_left", makeColor(0.0, 1.0, 0.0)},
@@ -167,16 +190,7 @@ private:
         {"mid_right", makeColor(0.0, 1.0, 1.0)},
         {"bottom_right", makeColor(1.0, 0.0, 1.0)}};
 
-    // Method 2: Get index directly
-    return;
-    // auto it = std::find(LEG_NAMES->cbegin(), LEG_NAMES->cend(), leg_name);
-    // int leg_idx = (it != LEG_NAMES->cend()) ? (it - LEG_NAMES->cbegin()) :
-    // -1;
-
-    int leg_idx = 0;
-    int span = 1000;
-
-    int marker_id = leg_idx * span;
+    int marker_id = leg_indices[leg_name];
 
     for (size_t i = 0; i < positions.size(); i++) {
       const auto &position = positions[i];

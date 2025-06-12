@@ -410,7 +410,7 @@ void MotionEditorRvizPanel::setupROS() {
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  setPose(node_, set_pose_client_, transformedMotion().poses[idx]);
+  setPose(node_, set_pose_client_, selectedMotion().poses[idx]);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 

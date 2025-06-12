@@ -114,6 +114,7 @@ ament_target_dependencies(pose_publisher
 
 target_link_libraries(pose_publisher
   ${PROJECT_NAME}_lib  # Your utility library
+  yaml-cpp
 )
 
 list(APPEND EXECUTABLES pose_publisher)

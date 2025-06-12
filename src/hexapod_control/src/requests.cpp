@@ -81,7 +81,7 @@ void getPose(rclcpp::Node::SharedPtr node,
 // void RCLCPP_INFO(rclcpp::Logger logger, )
 void setPose(const rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
-             const hexapod_msgs::msg::Pose &pose) {
+             const hexapod_msgs::msg::Pose &pose, const bool relative) {
   auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
   request->pose = pose;
 

@@ -270,12 +270,12 @@ void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   for (size_t i = 0; i < pose.names.size(); i++)
     buffer[pose.names[i]] = pose.positions[i];
 
-  selectedPose().names = {};
-  selectedPose().positions = {};
-  for (auto &entry : buffer) {
-    selectedPose().names.push_back(entry.first);
-    selectedPose().positions.push_back(entry.second);
-  }
+  // selectedPose().names = {};
+  // selectedPose().positions = {};
+  // for (auto &entry : buffer) {
+  //   selectedPose().names.push_back(entry.first);
+  //   selectedPose().positions.push_back(entry.second);
+  // }
 
   setMarkerArray(node_, set_marker_array_client_, transformedMotion().poses,
                  true);
@@ -380,7 +380,7 @@ void MotionEditorRvizPanel::setSelectedMotion(std::string name) {
   }
   selected_motion_ = name;
   setCurrentPose(0);
-  setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses);
+  setMarkerArray(node_, set_marker_array_client_, transformedMotion().poses);
 }
 void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
   RCLCPP_INFO(node_->get_logger(), "Moved Poses from: %i, to:%i", from_idx,
@@ -410,7 +410,7 @@ void MotionEditorRvizPanel::setupROS() {
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  setPose(node_, set_pose_client_, selectedMotion().poses[idx]);
+  setPose(node_, set_pose_client_, transformedMotion().poses[idx], true);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 

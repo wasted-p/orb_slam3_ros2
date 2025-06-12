@@ -29,6 +29,9 @@ def generate_launch_description():
     with open(initial_positions_path, 'r') as f:
         initial_positions = f.read()
 
+    with open(initial_pose_path, 'r') as f:
+        initial_pose = f.read()
+
     # Launch arguments
     rviz_config_arg = DeclareLaunchArgument(
         'rviz_config',
@@ -91,7 +94,7 @@ def generate_launch_description():
         executable='motion_server',
         name='motion_server',
         output="screen",
-        parameters=[initial_pose_path]
+        # parameters=[initial_pose_path]
     )
 
     # Nodes
@@ -116,6 +119,7 @@ def generate_launch_description():
         executable='pose_publisher',
         name='pose_publisher',
         output="screen",
+        parameters=[{'initial_pose': initial_pose}],
     )
 
     visualization_server = Node(

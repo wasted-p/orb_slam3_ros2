@@ -34,8 +34,9 @@ void solveIK(rclcpp::Node::SharedPtr node,
              const std::vector<geometry_msgs::msg::Point> &positions,
              SolveIKSuccessCallback result_callback);
 
+// void RCLCPP_INFO(rclcpp::Logger logger, )
 void setPose(const rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
-             const hexapod_msgs::msg::Pose &pose);
+             const hexapod_msgs::msg::Pose &pose, const bool relative = false);
 
 #endif // !HEXAPOD_CONTROL_REQUESTS_HPP

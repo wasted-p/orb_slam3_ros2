@@ -1,43 +1,32 @@
-/**:
-  ros__parameters:
-    name: initial_pose
-    names:
-      - top_left
-      - mid_left
-      - bottom_left
-      - top_right
-      - mid_right
-      - bottom_right
+initial_pose:
+  top_left:
+    x: 0.1287
+    y: 0.0911
+    z: 0.0043
 
-    positions:
-      top_left:
-        x: 0.1287
-        y: 0.0911
-        z: 0.0043
+  mid_left:
+    x: 0.0106
+    y: 0.1264
+    z: 0.0052
 
-      mid_left:
-        x: 0.0106
-        y: 0.1264
-        z: 0.0052
-
-      bottom_left:
-        x: -0.1114
-        y: 0.1016
-        z: 0.0043
+  bottom_left:
+    x: -0.1114
+    y: 0.1016
+    z: 0.0043
 
 
-      top_right:
-        x: 0.1293
-        y: -0.0917
-        z: 0.0043
+  top_right:
+    x: 0.1293
+    y: -0.0917
+    z: 0.0043
 
-      mid_right:
-        x: 0.0097
-        y: -0.1246
-        z: 0.0052
+  mid_right:
+    x: 0.0097
+    y: -0.1246
+    z: 0.0052
 
-      bottom_right:
-        x: -0.1120
-        y: -0.1004
-        z: 0.0043
+  bottom_right:
+    x: -0.1120
+    y: -0.1004
+    z: 0.0043
 

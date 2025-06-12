@@ -11,9 +11,11 @@
 #include "6_dof_marker.cpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "hexapod_control/requests.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include <hexapod_control/hexapod.hpp>
+#include <hexapod_control/requests.hpp>
 #include <hexapod_control/ros_constants.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
@@ -34,6 +36,7 @@
 
 void processFeedback(
     rclcpp::Node::SharedPtr node,
+    rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
     const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr
         &feedback) {
 
@@ -70,7 +73,7 @@ void processFeedback(
     hexapod_msgs::msg::Pose pose;
     pose.names = {feedback->marker_name};
     pose.positions = {feedback->pose.position};
-    // pose_pub_->publish(pose);
+    setPose(node, client, pose);
     break;
   }
 };
@@ -129,7 +132,7 @@ private:
           leg_name,
           [this](const visualization_msgs::msg::InteractiveMarkerFeedback::
                      ConstSharedPtr &feedback) {
-            processFeedback(shared_from_this(), feedback);
+            processFeedback(shared_from_this(), set_pose_client_, feedback);
           });
     }
     // Apply changes to server

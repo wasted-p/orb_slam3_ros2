@@ -154,6 +154,11 @@ ament_target_dependencies(visualization_server
 
 list(APPEND EXECUTABLES visualization_server)
 
+
+target_link_libraries(visualization_server
+  ${PROJECT_NAME}_lib  # Your utility library
+)
+
 # ShutdownControllers
 # ====================
 add_executable(shutdown_controllers

@@ -36,11 +36,36 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(EXECUTABLES "")
 
-# JointStatePublisher
+
+# Library
 # ====================
+# Create the library
+add_library(${PROJECT_NAME}_lib SHARED
+  src/requests.cpp
+)
+
+# Link dependencies to the library
+ament_target_dependencies(${PROJECT_NAME}_lib
+  rclcpp
+  geometry_msgs
+  hexapod_msgs
+  # Add other dependencies
+)
+
+
+# Specify include directories for the library
+target_include_directories(${PROJECT_NAME}_lib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+
 add_executable(joint_state_publisher
   src/joint_state_publisher.cpp
 )
+
+# Link the library to your executabes
+# target_link_libraries( ${PROJECT_NAME}_lib)
 
 ament_target_dependencies(joint_state_publisher
   rclcpp
@@ -85,6 +110,10 @@ ament_target_dependencies(pose_publisher
   sensor_msgs
   geometry_msgs
   hexapod_msgs
+)
+
+target_link_libraries(pose_publisher
+  ${PROJECT_NAME}_lib  # Your utility library
 )
 
 list(APPEND EXECUTABLES pose_publisher)
@@ -154,23 +183,31 @@ ament_target_dependencies(startup_controllers
 list(APPEND EXECUTABLES shutdown_controllers)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-#
-# target_include_directories(hexapod_trajectory_node PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-# )
-#
-# target_include_directories(kinematics_service PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-# )
-#
 
 
-# Install executables
-install(TARGETS  ${EXECUTABLES}
+# Install executables (nodes)
+install(TARGETS
+  ${EXECUTABLES}
   DESTINATION lib/${PROJECT_NAME}
 )
+# Install executables
+install(TARGETS
+  ${PROJECT_NAME}_lib
+  DESTINATION lib/${PROJECT_NAME}
+
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}  # Note: ROS2 convention
+)
+# Install headers so other packages can include them
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Export the targets (creates find_package support)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(rclcpp hexapod_msgs)
 
 # Testing
 if(BUILD_TESTING)

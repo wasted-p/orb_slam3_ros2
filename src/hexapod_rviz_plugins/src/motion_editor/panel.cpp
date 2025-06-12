@@ -1,15 +1,15 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/control_markers.hpp"
+#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "utils.cpp"
 #include <cmath>
 #include <filesystem>
+#include <hexapod_control/requests.hpp>
+#include <hexapod_control/ros_constants.hpp>
 #include <hexapod_rviz_plugins/motion_editor.hpp>
-#include <iostream>
 #include <map>
-#include <ostream>
 #include <qcombobox.h>
 #include <qglobal.h>
 #include <qpushbutton.h>
@@ -159,51 +159,6 @@ void saveToYaml(std::map<std::string, Motion> &motions) {
   file << root;
   file.close();
 }
-void sendSetPoseRequest(
-    rclcpp::Node::SharedPtr node,
-    rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
-    const hexapod_msgs::msg::Pose &pose) {
-  auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
-  request->pose = pose;
-
-  client->async_send_request(
-      request, [node](rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedFuture
-                          future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
-        } else {
-
-          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
-        }
-      });
-}
-void sendSetMarkersRequest(
-    rclcpp::Node::SharedPtr node,
-    rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client,
-    const std::vector<hexapod_msgs::msg::Pose> &poses, bool update = false) {
-  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-  if (update) {
-    request->command = "update";
-  } else {
-    request->command = "add";
-  }
-
-  request->poses = {poses};
-
-  client->async_send_request(
-      request,
-      [node](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-                 future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "%s", response->message.c_str());
-        } else {
-          RCLCPP_ERROR(node->get_logger(), "Adding markers failed: %s",
-                       response->message.c_str());
-        }
-      });
-};
 // Gait planner
 MotionEditorRvizPanel::MotionEditorRvizPanel(QWidget *parent)
 
@@ -325,7 +280,8 @@ void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
     selectedPose().positions.push_back(entry.second);
   }
 
-  sendSetMarkersRequest(node_, client_, transformedMotion().poses, true);
+  setMarkerArray(node_, set_marker_array_client_, transformedMotion().poses,
+                 true);
 }
 
 Motion MotionEditorRvizPanel::transformedMotion() {
@@ -375,14 +331,15 @@ void MotionEditorRvizPanel::setupUi() {
 
   QPushButton *save_button = new QPushButton("🗑");
 
-  connect(
-      direction_spinner, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-      this, [this](double yaw) {
-        yaw_ = yaw;
-        sendSetPoseRequest(node_, set_pose_client_,
-                           transformedMotion().poses[current_pose]);
-        sendSetMarkersRequest(node_, client_, transformedMotion().poses, true);
-      });
+  connect(direction_spinner,
+          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          [this](double yaw) {
+            yaw_ = yaw;
+            setPose(node_, set_pose_client_,
+                    transformedMotion().poses[current_pose]);
+            setMarkerArray(node_, set_marker_array_client_,
+                           transformedMotion().poses, true);
+          });
   connect(save_button, &QPushButton::pressed,
           [this]() { saveToYaml(motions_); });
 
@@ -426,7 +383,7 @@ void MotionEditorRvizPanel::setSelectedMotion(std::string name) {
   }
   selected_motion_ = name;
   setCurrentPose(0);
-  sendSetMarkersRequest(node_, client_, selectedMotion().poses);
+  setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses);
 }
 void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
   RCLCPP_INFO(node_->get_logger(), "Moved Poses from: %i, to:%i", from_idx,
@@ -437,16 +394,15 @@ void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
 };
 
 void MotionEditorRvizPanel::setupROS() {
-  client_ =
-      node_->create_client<hexapod_msgs::srv::ControlMarkers>("action/markers");
+  set_marker_array_client_ =
+      node_->create_client<hexapod_msgs::srv::SetMarkerArray>(
+          SET_MARKER_ARRAY_SERVICE_NAME);
 
   get_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::GetPose>("control/pose");
+      node_->create_client<hexapod_msgs::srv::GetPose>(GET_POSE_SERVICE_NAME);
 
   set_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::SetPose>("control/pose/set");
-
-  std::string POSE_TOPIC = "/hexapod/pose";
+      node_->create_client<hexapod_msgs::srv::SetPose>(SET_POSE_SERVICE_NAME);
 
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
       POSE_TOPIC,
@@ -457,7 +413,7 @@ void MotionEditorRvizPanel::setupROS() {
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  sendSetPoseRequest(node_, set_pose_client_, transformedMotion().poses[idx]);
+  setPose(node_, set_pose_client_, transformedMotion().poses[idx]);
   RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
 }
 
@@ -476,7 +432,7 @@ void MotionEditorRvizPanel::onAddPose() {
                     pose.names.size());
 
         selectedMotion().poses.push_back(pose);
-        sendSetMarkersRequest(node_, client_, selectedMotion().poses);
+        setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses);
         created_poses_count_++;
         setCurrentPose(selectedMotion().poses.size() - 1);
         current_pose = selectedMotion().poses.size() - 1;
@@ -499,31 +455,12 @@ void MotionEditorRvizPanel::onDeletePose() {
   selectedMotion().poses.erase(selectedMotion().poses.cbegin() + idx);
   current_pose = selectedMotion().poses.size() - 1;
   if (current_pose >= 0 && current_pose <= selectedMotion().poses.size()) {
-
-    sendSetPoseRequest(node_, set_pose_client_, transformedMotion().poses[0]);
+    setPose(node_, set_pose_client_, transformedMotion().poses[0]);
     RCLCPP_INFO(node_->get_logger(), "Deleting Pose (%lu) from Gait %s", idx,
                 selectedMotion().name.c_str());
   }
 
-  auto request = std::make_shared<hexapod_msgs::srv::ControlMarkers::Request>();
-
-  request->command = "delete";
-  request->idx = idx;
-
-  auto future = client_->async_send_request(
-      request,
-      [this](rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedFuture
-                 future_response) {
-        auto response = future_response.get();
-        if (response->success) {
-          RCLCPP_INFO(node_->get_logger(), "Deleted markers successful: %s",
-                      response->message.c_str());
-        } else {
-          RCLCPP_ERROR(node_->get_logger(), "Deleted markers failed: %s",
-                       response->message.c_str());
-        }
-      });
-
+  setMarkerArray(node_, set_marker_array_client_, {});
   RCLCPP_INFO(node_->get_logger(), "Current Gait");
   for (hexapod_msgs::msg::Pose &pose : selectedMotion().poses) {
     RCLCPP_INFO(node_->get_logger(), "Pose: %s", pose.name.c_str());

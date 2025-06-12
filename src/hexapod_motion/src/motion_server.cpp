@@ -179,33 +179,12 @@ private:
     timer_ = create_wall_timer(std::chrono::milliseconds(200),
                                std::bind(&MotionServer::timerCallback, this));
 
-    service_ = create_service<hexapod_msgs::srv::SetMarkerArray>(
-        "action/markers",
-        std::bind(&MotionServer::handleSetMarkerArrayRequest, this,
-                  std::placeholders::_1, std::placeholders::_2));
-
     RCLCPP_INFO(get_logger(), "Created ControlCommand Service");
   }
 
   void onMotionRequested(hexapod_msgs::msg::Motion msg) {
     RCLCPP_DEBUG(get_logger(), "Requested Motion = %s", msg.name.c_str());
     executing_action = msg;
-  }
-
-  void handleSetMarkerArrayRequest(
-      const std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Request> request,
-      std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Response> response) {
-
-    if (request->update) {
-
-      publishMarkers("top_left", request->positions);
-      response->message = "Set MarkerArray Successfully";
-    } else {
-      publishMarkers("top_left", request->positions,
-                     visualization_msgs::msg::Marker::MODIFY);
-      response->message = "Updated MarkerArray Successfully";
-    }
-    response->success = true;
   }
 
   void clearMarkers() {

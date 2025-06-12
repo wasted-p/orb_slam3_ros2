@@ -20,6 +20,7 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/control_markers.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
+#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "ui/pose_list.hpp"
 #include <QApplication>
@@ -100,7 +101,8 @@ private:
   size_t current_pose = -1;
   int created_poses_count_ = 0;
 
-  rclcpp::Client<hexapod_msgs::srv::ControlMarkers>::SharedPtr client_;
+  rclcpp::Client<hexapod_msgs::srv::SetMarkerArray>::SharedPtr
+      set_marker_array_client_;
   rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_client_;
   rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_client_;
 

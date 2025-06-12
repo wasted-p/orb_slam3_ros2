@@ -9,5 +9,6 @@
 #define SOLVE_FK_SERVICE_NAME "/kinematics/solve_fk"
 #define SET_JOINT_STATE_SERVICE_NAME "/joint_state/set"
 #define INTERACTIVE_MARKERS_SERVER_NAME "interactive_marker_server"
+#define SET_MARKER_ARRAY_SERVICE_NAME "/set_marker_array"
 
 #endif // !ROS_CONSTANTS_HPP

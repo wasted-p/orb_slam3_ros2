@@ -25,6 +25,7 @@ find_package(pluginlib REQUIRED)
 find_package(hexapod_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 find_package(yaml-cpp REQUIRED)
+find_package(hexapod_control REQUIRED)
 
 
 # QT related setup
@@ -72,14 +73,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rviz_rendering
   pluginlib
   hexapod_msgs
-
-)
-
-
-
-target_link_libraries(${PROJECT_NAME}
-  Qt5::Widgets
-  yaml-cpp
+  hexapod_control
 )
 
 # Export plugin description file

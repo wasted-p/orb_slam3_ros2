@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 # Messages
   "msg/Pose.msg"
   "msg/Motion.msg"
+  "msg/PointArray.msg"
 
 # Services
   "srv/SetMarkerArray.srv"

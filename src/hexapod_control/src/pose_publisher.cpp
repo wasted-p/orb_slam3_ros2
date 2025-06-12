@@ -1,19 +1,14 @@
-#include "builtin_interfaces/msg/duration.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "geometry_msgs/msg/pose.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_msgs/srv/set_joint_state.hpp"
-#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "hexapod_msgs/srv/solve_fk.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_control/hexapod.hpp>
 #include <hexapod_control/requests.hpp>
 #include <hexapod_control/ros_constants.hpp>
-#include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <hexapod_msgs/srv/set_pose.hpp>
@@ -46,14 +41,19 @@ public:
 
 private:
   void setPose(const hexapod_msgs::msg::Pose pose) {
-    RCLCPP_INFO(get_logger(), "Updating Pose=%s", pose.name.c_str());
-
-    std::vector<std::vector<double>> joint_positions;
+    std::vector<std::string> joint_names;
+    std::vector<double> joint_positions;
     std::vector<geometry_msgs::msg::Point> positions = pose.positions;
-    // solveIK(shared_from_this(), solve_ik_client_, pose.names, pose.positions,
-    //         joint_positions);
-    setJointState(shared_from_this(), set_joint_state_client_, pose.names,
-                  joint_positions);
+    solveIK(shared_from_this(), solve_ik_client_, pose.names, pose.positions,
+            [this](const JointNames &joint_names,
+                   const JointPositions &joint_positions) {
+              setJointPositions(shared_from_this(), set_joint_state_client_,
+                                joint_names, joint_positions);
+            });
+
+    // setJointPositions(shared_from_this(), set_joint_state_client_,
+    // joint_names,
+    //                   joint_positions);
   }
 
   void setupROS() {
@@ -74,7 +74,7 @@ private:
         [this](
             const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
-          // getPose(shared_from_this(), request, response);
+          getPose(shared_from_this(), request, response);
         });
 
     set_pose_service_ = create_service<hexapod_msgs::srv::SetPose>(
@@ -82,13 +82,6 @@ private:
         [this](
             const std::shared_ptr<hexapod_msgs::srv::SetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::SetPose::Response> response) {
-          hexapod_msgs::msg::Pose &pose = request->pose;
-
-          for (size_t i = 0; i < pose.names.size(); i++) {
-            RCLCPP_INFO(get_logger(), " - %s = [%.4f,%.4f,%.4f]",
-                        pose.names[i].c_str(), pose.positions[i].x,
-                        pose.positions[i].y, pose.positions[i].z);
-          }
           setPose(request->pose);
           response->success = true;
           response->message = "Successfully set pose";

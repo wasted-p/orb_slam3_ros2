@@ -1,13 +1,10 @@
 #ifndef HEXAPOD_RVIZ_PLUGINS_MOTION_EDITOR_HPP
 #define HEXAPOD_RVIZ_PLUGINS_MOTION_EDITOR_HPP
 
-#include "hexapod_msgs/msg/gait.hpp"
-#include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/control_markers.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
+#include "hexapod_msgs/srv/set_marker_array.hpp"
 #include <QListWidget>
 #include <QStringList>
-#include <hexapod_msgs/msg/gait.hpp>
 #include <map>
 #include <qcombobox.h>
 #include <rclcpp/rclcpp.hpp>
@@ -18,8 +15,6 @@
 
 // TODO: Edit multiple actinos in same file
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/control_markers.hpp"
-#include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "ui/pose_list.hpp"
@@ -30,7 +25,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <cmath>
-#include <hexapod_msgs/msg/gait.hpp>
 #include <pluginlib/class_list_macros.hpp>
 #include <qevent.h>
 #include <qfiledialog.h>

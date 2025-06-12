@@ -7,4 +7,4 @@ float64 timeout
 string[] leg_names
 geometry_msgs/Point[] position
 bool success
-string error_message
+string message

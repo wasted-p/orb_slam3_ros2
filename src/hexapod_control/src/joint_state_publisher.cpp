@@ -3,9 +3,7 @@
 #include <cmath>
 #include <hexapod_control/hexapod.hpp>
 #include <hexapod_control/ros_constants.hpp>
-#include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/srv/set_joint_state.hpp>
-#include <iostream>
 #include <map>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logging.hpp>
@@ -41,7 +39,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
   rclcpp::Service<hexapod_msgs::srv::SetJointState>::SharedPtr
-      set_pose_service_;
+      set_joint_state_service_;
   sensor_msgs::msg::JointState joint_state_msg_;
   std::map<std::string, double> initial_positions_;
 
@@ -58,6 +56,11 @@ private:
         std::chrono::milliseconds(100),
         std::bind(&JointStatePublisher::timerCallback, this));
     joint_state_msg_.header.frame_id = "base_footprint";
+
+    set_joint_state_service_ = create_service<hexapod_msgs::srv::SetJointState>(
+        SET_JOINT_STATE_SERVICE_NAME,
+        std::bind(&JointStatePublisher::handleSetJointStateRequest, this,
+                  std::placeholders::_1, std::placeholders::_2));
 
     // Declare and get the YAML string parameter
     std::string yaml_string = this->declare_parameter(

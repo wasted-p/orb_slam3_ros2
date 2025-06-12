@@ -1,9 +1,6 @@
 
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/set_marker_array.hpp"
-#include "hexapod_msgs/srv/set_pose.hpp"
-#include "utils.cpp"
 #include <cmath>
 #include <filesystem>
 #include <hexapod_control/requests.hpp>

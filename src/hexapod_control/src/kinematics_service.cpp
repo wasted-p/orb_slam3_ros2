@@ -1,7 +1,9 @@
 
 #include "geometry_msgs/msg/point.hpp"
+#include "hexapod_control/ros_constants.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/point.hpp>
 #include <hexapod_control/hexapod.hpp>
 #include <hexapod_msgs/srv/solve_fk.hpp>
@@ -84,6 +86,7 @@ public:
     using namespace std::chrono_literals;
     readRobotDescription();
     setupROS();
+    setupKDL();
   }
   ~KinematicsService() {}
 
@@ -115,8 +118,8 @@ public:
       //       "IK failed or returned insufficient joint positions for leg "
       //       "%s (status: %d)",
       //       leg_name.c_str(), status);
-      //   response->success = false;
-      //   response->error_message = "Error Occurred";
+      response->success = false;
+      response->message = "Error Occurred";
       // }
     }
   }
@@ -124,12 +127,11 @@ public:
   void handleSolveIKRequest(
       const std::shared_ptr<hexapod_msgs::srv::SolveIK::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SolveIK::Response> response) {
-
-    std::vector<double> joint_positions;
-
+    RCLCPP_INFO(get_logger(), "Solving IK Request...");
     for (size_t i = 0; i < request->leg_names.size(); i++) {
       std::string &leg_name = request->leg_names[i];
       geometry_msgs::msg::Point &pos = request->positions[i];
+      std::vector<double> joint_positions;
 
       int status = planning_group.calculateJntArray(chains_.at(leg_name), pos,
                                                     joint_positions);
@@ -140,16 +142,42 @@ public:
             "IK failed or returned insufficient joint positions for leg "
             "%s (status: %d)",
             leg_name.c_str(), status);
+
         response->success = false;
-        response->error_message = "Error Occurred";
+        response->message = "Error Occurred";
       } else {
         response->success = true;
-        response->joint_positions = joint_positions;
+        response->joint_names.insert(response->joint_names.cbegin(),
+                                     {
+                                         leg_name + "_rotate_joint",
+                                         leg_name + "_abduct_joint",
+                                         leg_name + "_retract_joint",
+                                     });
+        for (const double &x : joint_positions)
+          response->joint_positions.push_back(x);
       }
     }
   }
 
+#define ROBOT_DESCRIPTION "robot_description"
   void readRobotDescription() {
+    // Declare and get the YAML string parameter
+    std::string urdf_string =
+        this->declare_parameter(ROBOT_DESCRIPTION, std::string(""));
+    RCLCPP_INFO(this->get_logger(),
+                "Reading robot_description from paramater (%s)",
+                ROBOT_DESCRIPTION);
+    parseURDF(urdf_string);
+  }
+
+  void parseURDF(const std::string &urdf_string) {
+    if (kdl_parser::treeFromString(urdf_string, kdl_tree_)) {
+      robot_description_loaded_ = true;
+      RCLCPP_INFO(this->get_logger(), "Parsed KDL Tree from urdf_string");
+    }
+  }
+
+  void readRobotDescriptionFromTopic() {
     auto parameters_client = std::make_shared<rclcpp::AsyncParametersClient>(
         this, "robot_state_publisher");
 
@@ -164,10 +192,6 @@ public:
         urdf_string = parameters[0].as_string();
         RCLCPP_DEBUG(this->get_logger(),
                      "Robot description obtained from robot_state_publisher");
-        if (kdl_parser::treeFromString(urdf_string, kdl_tree_)) {
-          robot_description_loaded_ = true;
-          RCLCPP_DEBUG(this->get_logger(), "Parsed KDL Tree from URDF");
-        }
       }
     }
   }
@@ -175,14 +199,13 @@ public:
   rclcpp::Service<hexapod_msgs::srv::SolveIK>::SharedPtr solve_ik_service_;
   rclcpp::Service<hexapod_msgs::srv::SolveFK>::SharedPtr solve_fk_service_;
   void setupROS() {
-
     solve_ik_service_ = create_service<hexapod_msgs::srv::SolveIK>(
-        "ik_solver/sol",
+        SOLVE_IK_SERVICE_NAME,
         std::bind(&KinematicsService::handleSolveIKRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
 
     solve_fk_service_ = create_service<hexapod_msgs::srv::SolveFK>(
-        "control/pose",
+        SOLVE_FK_SERVICE_NAME,
         std::bind(&KinematicsService::handleSolveFKRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
   }

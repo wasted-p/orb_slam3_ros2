@@ -1,13 +1,9 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_rviz_plugins/control_panel.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include <QApplication>
 #include <cstddef>
-#include <hexapod_msgs/msg/command.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
-#include <memory>
 #include <pluginlib/class_list_macros.hpp>
 #include <qcheckbox.h>
 #include <qlist.h>

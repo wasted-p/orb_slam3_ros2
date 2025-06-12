@@ -2,7 +2,6 @@
 #define MY_RVIZ_PANEL_HPP
 
 #include "geometry_msgs/msg/point.hpp"
-#include "hexapod_msgs/srv/get_pose.hpp"
 #include <qcheckbox.h>
 #include <qlist.h>
 #include <rclcpp/client.hpp>
@@ -20,8 +19,6 @@
 #include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <hexapod_msgs/msg/command.hpp>
-#include <hexapod_msgs/msg/leg_pose.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 
 namespace hexapod_rviz_plugins {

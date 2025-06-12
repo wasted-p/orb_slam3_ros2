@@ -1,5 +1,4 @@
 #include "geometry_msgs/msg/point.hpp"
-#include "hexapod_msgs/msg/gait.hpp"
 #include "hexapod_msgs/msg/motion.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/set_marker_array.hpp"
@@ -8,7 +7,6 @@
 #include <cmath>
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/pose.hpp>
-#include <hexapod_msgs/msg/gait.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/set_marker_array.hpp>
 #include <memory>
@@ -51,7 +49,7 @@ private:
 
   // ROS Message variables
   // hexapod_msgs::msg::Pose pose_msg_;
-  hexapod_msgs::msg::Gait tripod_gait_;
+  hexapod_msgs::msg::Motion tripod_gait_;
   hexapod_msgs::msg::Motion executing_action;
 
   hexapod_msgs::msg::Pose initial_pose;
@@ -62,7 +60,7 @@ private:
       "top_left",  "mid_left",  "bottom_left",
       "top_right", "mid_right", "bottom_right",
   };
-  std::map<std::string, hexapod_msgs::msg::Gait> actions_;
+  std::map<std::string, hexapod_msgs::msg::Motion> actions_;
 
 public:
   MotionServer() : Node("action_server_node") {
@@ -96,7 +94,7 @@ private:
         std::string gait_id = gait_pair.first.as<std::string>();
         const YAML::Node &gait_node = gait_pair.second;
 
-        hexapod_msgs::msg::Gait gait_msg;
+        hexapod_msgs::msg::Motion gait_msg;
         gait_msg.name = gait_node["name"].as<std::string>();
 
         for (const auto &pose_node : gait_node["poses"]) {
@@ -114,7 +112,7 @@ private:
             pose_msg.positions.push_back(p);
           }
 
-          gait_msg.poses.push_back(pose_msg);
+          // gait_msg.poses.push_back(pose_msg);
         }
 
         actions_[gait_id] = gait_msg;

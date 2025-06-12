@@ -4,7 +4,8 @@ geometry_msgs/Point[] positions
 float64 timeout
 ---
 # Response
-bool success
-string[] leg_names
+string[] joint_names
 float64[] joint_positions
-string error_message
+
+bool success
+string message

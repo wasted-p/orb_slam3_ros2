@@ -1,4 +1,3 @@
-#include "hexapod_msgs/msg/action.hpp"
 #include "hexapod_msgs/msg/motion.hpp"
 #include "joystick_control/joystick.hpp"
 #include "joystick_control/rviz_panel.hpp"

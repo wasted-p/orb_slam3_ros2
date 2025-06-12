@@ -1,5 +1,11 @@
+#include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include <functional>
 #include <hexapod_control/requests.hpp>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
+#include <vector>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -35,21 +41,31 @@ void setMarkerArray(
       });
 };
 
-void setJointState(
+void setJointPositions(
     rclcpp::Node::SharedPtr node,
     const rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedPtr client,
-    const std::vector<std::string> &leg_names,
-    const std::vector<std::vector<double>> &leg_joints) {
+    const std::vector<std::string> &joint_names,
+    const std::vector<double> &joint_positions) {
   auto request = std::make_shared<hexapod_msgs::srv::SetJointState::Request>();
-  sensor_msgs::msg::JointState js;
-  for (size_t i = 0; i < leg_names.size(); i++) {
-    const std::string &leg_name = leg_names[i];
-    js.name.insert(js.name.cbegin(),
-                   {leg_name + "_rotate_joint", leg_name + "_abduct_joint",
-                    leg_name + "_retract_joint"});
-    js.position.insert(js.position.cbegin(),
-                       {leg_joints[i][0], leg_joints[i][1], leg_joints[i][2]});
-  }
+  std::string client_id = "SetJointState Client";
+  request->joint_state.name = joint_names;
+  request->joint_state.position = joint_positions;
+
+  RCLCPP_INFO(node->get_logger(), "Setting Joint States");
+  client->async_send_request(
+      request,
+      [node,
+       client_id](rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedFuture
+                      future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(node->get_logger(), "[%s]:%s", client_id.c_str(),
+                      response->message.c_str());
+        } else {
+          RCLCPP_ERROR(node->get_logger(), "[%s]:%s", client_id.c_str(),
+                       response->message.c_str());
+        }
+      });
 }
 
 void getPose(rclcpp::Node::SharedPtr node,
@@ -62,21 +78,23 @@ void getPose(rclcpp::Node::SharedPtr node,
   response->pose = pose;
 }
 
-void setPose(rclcpp::Node::SharedPtr node,
-             rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
+// void RCLCPP_INFO(rclcpp::Logger logger, )
+void setPose(const rclcpp::Node::SharedPtr node,
+             const rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
              const hexapod_msgs::msg::Pose &pose) {
   auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
   request->pose = pose;
 
+  RCLCPP_INFO(node->get_logger(), "Sending setPose Request for Pose: %s",
+              pose.name.c_str());
   client->async_send_request(
       request, [node](rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedFuture
                           future_response) {
         auto response = future_response.get();
         if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
+          RCLCPP_INFO(node->get_logger(), "%s", response->message.c_str());
         } else {
-
-          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
+          RCLCPP_ERROR(node->get_logger(), "%s", response->message.c_str());
         }
       });
 }
@@ -85,19 +103,24 @@ void solveIK(rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedPtr client,
              const std::vector<std::string> &leg_names,
              const std::vector<geometry_msgs::msg::Point> &positions,
-             const std::vector<std::vector<double>> &joint_positions) {
+             SolveIKSuccessCallback result_callback) {
 
   auto request = std::make_shared<hexapod_msgs::srv::SolveIK::Request>();
   request->leg_names = leg_names;
   request->positions = positions;
+
   client->async_send_request(
-      request, [node](rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedFuture
-                          future_response) {
+      request, [node, result_callback](
+                   rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedFuture
+                       future_response) {
         auto response = future_response.get();
         if (response->success) {
-          RCLCPP_INFO(node->get_logger(), "Successfully sent SetPose request");
+          RCLCPP_INFO(node->get_logger(), "%s", response->message.c_str());
+          RCLCPP_INFO(node->get_logger(), "Solved Joint Positions:");
+          result_callback(response->joint_names, response->joint_positions);
         } else {
-          RCLCPP_ERROR(node->get_logger(), "Error in SetPose request");
+          RCLCPP_ERROR(node->get_logger(), "SolveIK Error: %s",
+                       response->message.c_str());
         }
       });
 }

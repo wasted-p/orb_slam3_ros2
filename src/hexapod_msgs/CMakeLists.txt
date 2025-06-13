@@ -28,6 +28,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SolveIK.srv"
   "srv/SolveFK.srv"
   "srv/SetJointState.srv"
+  "srv/SetJointStates.srv"
   DEPENDENCIES std_msgs geometry_msgs sensor_msgs builtin_interfaces
 )
 

@@ -127,35 +127,39 @@ public:
   void handleSolveIKRequest(
       const std::shared_ptr<hexapod_msgs::srv::SolveIK::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SolveIK::Response> response) {
-    for (size_t i = 0; i < request->leg_names.size(); i++) {
-      std::string &leg_name = request->leg_names[i];
-      geometry_msgs::msg::Point &pos = request->positions[i];
-      std::vector<double> joint_positions;
 
-      int status = planning_group.calculateJntArray(chains_.at(leg_name), pos,
-                                                    joint_positions);
+    for (const hexapod_msgs::msg::Pose &pose : request->poses) {
+      sensor_msgs::msg::JointState joint_state;
+      for (size_t i = 0; i < pose.names.size(); i++) {
+        const std::string &leg_name = pose.names[i];
+        const geometry_msgs::msg::Point &pos = pose.positions[i];
 
-      if (status < 0) {
-        RCLCPP_ERROR(
-            get_logger(),
-            "IK failed or returned insufficient joint positions for leg "
-            "%s (status: %d)",
-            leg_name.c_str(), status);
+        std::vector<double> joint_positions;
+        int status = planning_group.calculateJntArray(chains_.at(leg_name), pos,
+                                                      joint_positions);
+        if (status < 0) {
+          RCLCPP_ERROR(
+              get_logger(),
+              "IK failed or returned insufficient joint positions for leg "
+              "%s (status: %d)",
+              leg_name.c_str(), status);
 
-        response->success = false;
-        response->message = "Error Occurred";
-      } else {
-        response->success = true;
-        response->joint_names.insert(response->joint_names.cbegin(),
-                                     {
-                                         leg_name + "_rotate_joint",
-                                         leg_name + "_abduct_joint",
-                                         leg_name + "_retract_joint",
-                                     });
+          response->success = false;
+          response->message = "Error Occurred";
+          return;
+        }
+        joint_state.name.insert(joint_state.name.cbegin(),
+                                {
+                                    leg_name + "_rotate_joint",
+                                    leg_name + "_abduct_joint",
+                                    leg_name + "_retract_joint",
+                                });
         for (const double &x : joint_positions)
-          response->joint_positions.push_back(x);
+          joint_state.position.push_back(x);
       }
+      response->joint_states.push_back(joint_state);
     }
+    response->success = true;
   }
 
 #define ROBOT_DESCRIPTION "robot_description"

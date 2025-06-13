@@ -53,8 +53,11 @@ void getPose(const rclcpp::Node::SharedPtr node,
 
 using JointNames = std::vector<std::string>;
 using JointPositions = std::vector<double>;
+
 using SolveIKSuccessCallback =
-    std::function<void(const JointNames &, const JointPositions &)>;
+    std::function<void(const sensor_msgs::msg::JointState &)>;
+using BatchSolveIKSuccessCallback =
+    std::function<void(const std::vector<sensor_msgs::msg::JointState> &)>;
 void solveIK(rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedPtr client,
              const std::vector<std::string> &leg_names,

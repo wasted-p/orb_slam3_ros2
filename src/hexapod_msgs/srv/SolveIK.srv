@@ -1,11 +1,8 @@
 # Request
-string[] leg_names
-geometry_msgs/Point[] positions
+hexapod_msgs/Pose[] poses
 float64 timeout
 ---
 # Response
-string[] joint_names
-float64[] joint_positions
-
+sensor_msgs/JointState[] joint_states
 bool success
 string message

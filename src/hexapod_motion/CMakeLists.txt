@@ -95,6 +95,8 @@ ament_target_dependencies(motion_server
   hexapod_msgs
   visualization_msgs
   hexapod_control
+  rclcpp_action
+  control_msgs
 )
 
 

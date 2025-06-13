@@ -16,6 +16,7 @@
 #include <memory>
 #include <rclcpp/client.hpp>
 #include <rclcpp/create_publisher.hpp>
+#include <rclcpp/duration.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -50,6 +51,15 @@ private:
   rclcpp::Client<hexapod_msgs::srv::SolveFK>::SharedPtr solve_fk_client_;
   rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedPtr
       set_joint_state_client_;
+  std::map<std::string, geometry_msgs::msg::Point> initial_pose_;
+  std::map<std::string, geometry_msgs::msg::Point> current_pose_;
+
+  rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
+      trajectory_client_;
+
+  rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
+      send_goal_options_ =
+          rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
 
 public:
   PosePublisher() : Node("leg_control_node") {
@@ -61,9 +71,6 @@ public:
   ~PosePublisher() {}
 
 private:
-  std::map<std::string, geometry_msgs::msg::Point> initial_pose_;
-  std::map<std::string, geometry_msgs::msg::Point> current_pose_;
-
   void getInitialPose() {
     // Declare and get the YAML string parameter
     std::string yaml_string =
@@ -86,6 +93,9 @@ private:
                          const JointPositions &joint_positions) {
               setJointPositions(shared_from_this(), set_joint_state_client_,
                                 joint_names, joint_positions);
+              rclcpp::Duration duration = rclcpp::Duration::from_seconds(0.5);
+              sendTrajectoryGoal(trajectory_client_, joint_names,
+                                 joint_positions, duration, send_goal_options_);
 
               for (size_t i = 0; i < pose.names.size(); i++) {
                 current_pose_[pose.names[i]] = pose.positions[i];
@@ -136,6 +146,28 @@ private:
           response->success = true;
           response->message = "Successfully set pose";
         });
+
+    send_goal_options_.result_callback =
+        [this](const GoalHandle::WrappedResult &result) {
+          switch (result.code) {
+          case rclcpp_action::ResultCode::SUCCEEDED:
+            RCLCPP_DEBUG(this->get_logger(), "Trajectory execution succeeded");
+            break;
+          case rclcpp_action::ResultCode::ABORTED:
+            RCLCPP_ERROR(this->get_logger(), "Trajectory execution aborted");
+            break;
+          case rclcpp_action::ResultCode::CANCELED:
+            RCLCPP_ERROR(this->get_logger(), "Trajectory execution canceled");
+            break;
+          default:
+            RCLCPP_ERROR(this->get_logger(), "Unknown result code");
+            break;
+          }
+        };
+
+    trajectory_client_ = rclcpp_action::create_client<
+        control_msgs::action::FollowJointTrajectory>(this,
+                                                     TRAJECTORY_SERVICE_NAME);
   }
 };
 

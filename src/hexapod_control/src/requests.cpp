@@ -1,3 +1,4 @@
+#include "hexapod_msgs/msg/pose.hpp"
 #include <hexapod_control/requests.hpp>
 
 void setMarkerArray(
@@ -108,13 +109,11 @@ void setPose(const rclcpp::Node::SharedPtr node,
 
 void solveIK(rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedPtr client,
-             const std::vector<std::string> &leg_names,
-             const std::vector<geometry_msgs::msg::Point> &positions,
-             SolveIKSuccessCallback result_callback) {
+             const std::vector<hexapod_msgs::msg::Pose> &poses,
+             BatchSolveIKSuccessCallback result_callback) {
 
   auto request = std::make_shared<hexapod_msgs::srv::SolveIK::Request>();
-  request->leg_names = leg_names;
-  request->positions = positions;
+  request->poses = poses;
 
   std::string NAME = "SolveIKRequest";
   client->async_send_request(
@@ -126,7 +125,7 @@ void solveIK(rclcpp::Node::SharedPtr node,
           RCLCPP_DEBUG(rclcpp::get_logger(NAME), "%s",
                        response->message.c_str());
           RCLCPP_DEBUG(rclcpp::get_logger(NAME), "Solved Joint Positions:");
-          result_callback(response->joint_names, response->joint_positions);
+          result_callback(response->joint_states);
         } else {
           RCLCPP_ERROR(rclcpp::get_logger(NAME), "SolveIK Error: %s",
                        response->message.c_str());

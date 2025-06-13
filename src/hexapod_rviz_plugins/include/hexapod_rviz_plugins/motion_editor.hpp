@@ -25,9 +25,22 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <cmath>
+
+#include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
+#include <cmath>
+#include <cstddef>
+#include <filesystem>
+#include <hexapod_control/requests.hpp>
+#include <hexapod_control/ros_constants.hpp>
+#include <hexapod_motion/motion.hpp>
+#include <hexapod_motion/utils.hpp>
+#include <map>
 #include <pluginlib/class_list_macros.hpp>
+#include <qcombobox.h>
 #include <qevent.h>
 #include <qfiledialog.h>
+#include <qglobal.h>
 #include <qlist.h>
 #include <qlistwidget.h>
 #include <qobject.h>
@@ -39,21 +52,16 @@
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/panel.hpp>
 #include <rviz_common/ros_integration/ros_node_abstraction.hpp>
+#include <string>
+#include <sys/types.h>
 #include <yaml-cpp/yaml.h>
 
 namespace hexapod_rviz_plugins {
-
-struct Motion {
-  std::string name;
-  std::string category;
-  std::string type;
-  double duration;
-  std::vector<hexapod_msgs::msg::Pose> poses;
-};
 
 class MotionEditorRvizPanel : public rviz_common::Panel {
   Q_OBJECT

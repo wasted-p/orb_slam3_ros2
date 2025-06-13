@@ -33,7 +33,6 @@ find_package(yaml-cpp REQUIRED)
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-
 set(EXECUTABLES "")
 
 
@@ -49,6 +48,9 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   rclcpp
   geometry_msgs
   hexapod_msgs
+  control_msgs
+  trajectory_msgs
+  rclcpp_action
   # Add other dependencies
 )
 
@@ -135,6 +137,10 @@ ament_target_dependencies(trajectory_publisher
   controller_manager_msgs
 )
 
+target_link_libraries(trajectory_publisher
+  ${PROJECT_NAME}_lib  # Your utility library
+)
+
 list(APPEND EXECUTABLES trajectory_publisher)
 
 # VisualizationServer
@@ -186,10 +192,9 @@ ament_target_dependencies(startup_controllers
   controller_manager_msgs
 )
 
-list(APPEND EXECUTABLES shutdown_controllers)
+list(APPEND EXECUTABLES startup_controllers)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 
 # Install executables (nodes)
 install(TARGETS
@@ -213,7 +218,7 @@ install(DIRECTORY include/
 
 # Export the targets (creates find_package support)
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(rclcpp hexapod_msgs)
+ament_export_dependencies(rclcpp hexapod_msgs control_msgs)
 
 # Testing
 if(BUILD_TESTING)

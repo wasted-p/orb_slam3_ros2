@@ -11,5 +11,9 @@
 #define SET_JOINT_STATE_SERVICE_NAME "/joint_state/set"
 #define INTERACTIVE_MARKERS_SERVER_NAME "interactive_marker_server"
 #define SET_MARKER_ARRAY_SERVICE_NAME "/set_marker_array"
+#define SET_MARKER_ARRAY_SERVICE_NAME "/set_marker_array"
+#define EXECUTE_MOTION_SERVICE_NAME "motion_server/motion/execute"
 
+#define TRAJECTORY_SERVICE_NAME                                                \
+  "/legs_joint_trajectory_controller/follow_joint_trajectory"
 #endif // !ROS_CONSTANTS_HPP

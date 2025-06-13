@@ -26,6 +26,7 @@ find_package(hexapod_msgs REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 find_package(yaml-cpp REQUIRED)
 find_package(hexapod_control REQUIRED)
+find_package(hexapod_motion REQUIRED)
 
 
 # QT related setup
@@ -64,6 +65,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
   std_msgs
@@ -74,7 +76,9 @@ ament_target_dependencies(${PROJECT_NAME}
   pluginlib
   hexapod_msgs
   hexapod_control
+  hexapod_motion
 )
+
 
 # Export plugin description file
 pluginlib_export_plugin_description_file(rviz_common plugin_description.xml)

@@ -1,13 +1,4 @@
-#include "geometry_msgs/msg/point.hpp"
-#include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/get_pose.hpp"
-#include "hexapod_msgs/srv/set_pose.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
-#include <functional>
 #include <hexapod_control/requests.hpp>
-#include <rclcpp/logger.hpp>
-#include <rclcpp/logging.hpp>
-#include <vector>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -141,4 +132,22 @@ void solveIK(rclcpp::Node::SharedPtr node,
                        response->message.c_str());
         }
       });
+}
+
+using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
+using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
+void sendTrajectoryGoal(
+    const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
+    const std::vector<std::string> &joint_names,
+    const std::vector<double> &joint_positions,
+    const builtin_interfaces::msg::Duration &duration,
+    const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
+        options) {
+  auto goal_msg = FollowJointTrajectory::Goal();
+  goal_msg.trajectory.joint_names = joint_names;
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  point.positions = joint_positions;
+  point.time_from_start = duration;
+  goal_msg.trajectory.points.push_back(point);
+  client->async_send_goal(goal_msg, options);
 }

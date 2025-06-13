@@ -9,6 +9,32 @@
 #include <hexapod_msgs/srv/solve_ik.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include "builtin_interfaces/msg/duration.hpp"
+#include "geometry_msgs/msg/point.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
+#include "hexapod_msgs/srv/set_pose.hpp"
+#include <control_msgs/action/follow_joint_trajectory.hpp>
+#include <functional>
+#include <rclcpp/client.hpp>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <vector>
+
+#include "builtin_interfaces/msg/duration.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include <rclcpp/contexts/default_context.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp/subscription.hpp>
+#include <rclcpp_action/client.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <string>
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
     rclcpp::Client<hexapod_msgs::srv::SetMarkerArray>::SharedPtr client,
@@ -40,4 +66,13 @@ void setPose(const rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
              const hexapod_msgs::msg::Pose &pose, const bool relative = false);
 
+using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
+using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
+void sendTrajectoryGoal(
+    const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
+    const std::vector<std::string> &joint_names,
+    const std::vector<double> &joint_positions,
+    const builtin_interfaces::msg::Duration &duration,
+    const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
+        options);
 #endif // !HEXAPOD_CONTROL_REQUESTS_HPP

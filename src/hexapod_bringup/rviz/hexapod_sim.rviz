@@ -21,35 +21,35 @@ Panels:
       - /Current View1
     Name: Views
     Splitter Ratio: 0.5
-  - Class: hexapod_control/HexapodControlPanel
-    Name: HexapodControlPanel
-  - Class: joystick_control/JoystickRvizPanel
-    Name: JoystickRvizPanel
-    publisher_mode: false
-  - Class: rviz_common/Displays
-    Help Height: 0
-    Name: Displays
-    Property Tree Widget:
-      Expanded:
-        - /Global Options1
-        - /TF1
-        - /TF1/Tree1
-        - /Point Cloud1
-      Splitter Ratio: 0.7492957711219788
-    Tree Height: 282
   - Class: rviz_common/Transformation
     Name: Transformation
+  - Class: rviz_common/Displays
+    Help Height: 70
+    Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 369
+  - Class: hexapod_rviz_plugins/JoystickRvizPanel
+    Name: JoystickRvizPanel
   - Class: hexapod_rviz_plugins/HexapodControlPanel
     Name: HexapodControlPanel
-  - Class: hexapod_rviz_plugins/GaitPlannerPanel
-    Name: GaitPlannerPanel
+  - Class: hexapod_rviz_plugins/MotionEditorPanel
+    Name: MotionEditorPanel
+  - Class: rviz_common/Displays
+    Help Height: 70
+    Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 169
 Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 0.5
       Class: rviz_default_plugins/Grid
-      Color: 160; 160; 164
+      Color: 230; 97; 0
       Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
@@ -274,29 +274,17 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        arm_abductor:
-          Value: true
         arm_base:
           Value: true
         arm_retractor:
-          Value: true
-        arm_rotator:
           Value: true
         base_footprint:
           Value: true
         base_link:
           Value: true
-        bottom_left_cox:
-          Value: true
-        bottom_left_femur:
-          Value: true
         bottom_left_foot:
           Value: true
         bottom_left_tibia:
-          Value: true
-        bottom_right_cox:
-          Value: true
-        bottom_right_femur:
           Value: true
         bottom_right_foot:
           Value: true
@@ -308,33 +296,17 @@ Visualization Manager:
           Value: true
         depth_camera_optical_frame:
           Value: true
-        mid_left_cox:
-          Value: true
-        mid_left_femur:
-          Value: true
         mid_left_foot:
           Value: true
         mid_left_tibia:
-          Value: true
-        mid_right_cox:
-          Value: true
-        mid_right_femur:
           Value: true
         mid_right_foot:
           Value: true
         mid_right_tibia:
           Value: true
-        top_left_cox:
-          Value: true
-        top_left_femur:
-          Value: true
         top_left_foot:
           Value: true
         top_left_tibia:
-          Value: true
-        top_right_cox:
-          Value: true
-        top_right_femur:
           Value: true
         top_right_foot:
           Value: true
@@ -343,50 +315,13 @@ Visualization Manager:
       Marker Scale: 0.25
       Name: TF
       Show Arrows: true
-      Show Axes: true
+      Show Axes: false
       Show Names: false
       Tree:
         base_footprint:
           base_link:
             arm_base:
-              arm_rotator:
-                arm_abductor:
-                  arm_retractor:
-                    camera_case_cover:
-                      {}
-                    depth_camera_link:
-                      depth_camera_optical_frame:
-                        {}
-            bottom_left_cox:
-              bottom_left_femur:
-                bottom_left_tibia:
-                  bottom_left_foot:
-                    {}
-            bottom_right_cox:
-              bottom_right_femur:
-                bottom_right_tibia:
-                  bottom_right_foot:
-                    {}
-            mid_left_cox:
-              mid_left_femur:
-                mid_left_tibia:
-                  mid_left_foot:
-                    {}
-            mid_right_cox:
-              mid_right_femur:
-                mid_right_tibia:
-                  mid_right_foot:
-                    {}
-            top_left_cox:
-              top_left_femur:
-                top_left_tibia:
-                  top_left_foot:
-                    {}
-            top_right_cox:
-              top_right_femur:
-                top_right_tibia:
-                  top_right_foot:
-                    {}
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 0.800000011920929
@@ -422,9 +357,31 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        leg_arrows: true
+        leg_spheres: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /hexapod/visualization/leg_pose_markers
+      Value: true
+    - Class: rviz_default_plugins/InteractiveMarkers
+      Enable Transparency: true
+      Enabled: true
+      Interactive Markers Namespace: /interactive_marker_server
+      Name: InteractiveMarkers
+      Show Axes: false
+      Show Descriptions: true
+      Show Visual Aids: false
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 163; 72
     Fixed Frame: base_footprint
     Frame Rate: 30
   Name: root
@@ -468,7 +425,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.8420875072479248
+      Distance: 1.426512598991394
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -491,9 +448,7 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  GaitPlannerPanel:
-    collapsed: false
-  Height: 964
+  Height: 1011
   HexapodControlPanel:
     collapsed: false
   Hide Left Dock: false
@@ -502,7 +457,9 @@ Window Geometry:
     collapsed: false
   JoystickRvizPanel:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000400000000000001be00000366fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000003f000001c80000001700fffffffb0000000a0049006d0061006700650100000272000000c10000000000000000fb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c00000001af000001f60000006f00fffffffb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000031b0000008a0000007e00fffffffb0000002000470061006900740050006c0061006e006e0065007200500061006e0065006c010000020d00000198000000b900ffffff000000010000016500000366fc0200000007fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb000000100044006900730070006c006100790073000000003f0000017d000000cc00fffffffb000000100044006900730070006c006100790073010000003f0000015a000000cc00fffffffb0000000a005600690065007700730000000203000000b6000000a900fffffffb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c010000019f0000011a0000009100fffffffb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c01000002bf000000e6000000e600fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000001610000036600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  MotionEditorPanel:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000400000000000001ba00000395fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005d00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000003f000001170000001700fffffffb0000000a0049006d006100670065010000003f000001260000000000000000fb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000031b0000008a0000007e00fffffffb0000002000470061006900740050006c0061006e006e0065007200500061006e0065006c000000012c000002a80000000000000000fb00000022004d006f00740069006f006e0045006400690074006f007200500061006e0065006c010000015c000002780000010400ffffff000000010000016500000395fc020000000afb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb000000100044006900730070006c006100790073000000003f0000017d000000cc00fffffffb000000100044006900730070006c006100790073000000003f00000148000000cc00fffffffb000000100044006900730070006c006100790073010000003f0000012f000000cc00fffffffb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c0100000174000001220000009100fffffffb0000000a005600690065007700730000000203000000b6000000a900fffffffb0000002600480065007800610070006f00640043006f006e00740072006f006c00500061006e0065006c0100000152000001160000000000000000fb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c010000029c000001380000005700fffffffb00000022004a006f00790073007400690063006b005200760069007a00500061006e0065006c00000002bf000000e60000000000000000fb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000001880000039500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Tool Properties:
@@ -511,6 +468,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1168
-  X: 734
-  Y: 36
+  Width: 1203
+  X: 717
+  Y: 32

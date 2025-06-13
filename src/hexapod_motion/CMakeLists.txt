@@ -19,6 +19,9 @@ find_package(urdf REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(hexapod_msgs REQUIRED)
+
+find_package(rclcpp_action REQUIRED)
+find_package(hexapod_control REQUIRED)
 find_package(yaml-cpp REQUIRED)
 # find_package(tf2 REQUIRED)
 # find_package(tf2_ros REQUIRED)
@@ -27,24 +30,86 @@ find_package(yaml-cpp REQUIRED)
 # Enable compilation database for Clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+
+# Library
+# ====================
+# Create the library
+add_library(${PROJECT_NAME}_lib SHARED
+  src/utils.cpp
+)
+
+# Link dependencies to the library
+ament_target_dependencies(${PROJECT_NAME}_lib
+  rclcpp
+  geometry_msgs
+  hexapod_msgs
+  control_msgs
+  trajectory_msgs
+  rclcpp_action
+  # Add other dependencies
+)
+
+target_link_libraries(${PROJECT_NAME}_lib
+  yaml-cpp
+)
+
+
+
+# Specify include directories for the library
+target_include_directories(${PROJECT_NAME}_lib PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_export_include_directories(include)
+
+# Install library
+install(TARGETS
+  ${PROJECT_NAME}_lib
+  DESTINATION lib/${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}  # Note: ROS2 convention
+)
+
+# Install headers so other packages can include them
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Export the targets (creates find_package support)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(rclcpp hexapod_msgs)
+
+
+
 # Build motion_server executable
 add_executable(motion_server
 src/motion_server.cpp
 )
+
 
 ament_target_dependencies(motion_server
   rclcpp
   std_msgs
   hexapod_msgs
   visualization_msgs
-  # tf2
-  # tf2_ros
+  hexapod_control
 )
 
 
+target_link_libraries(motion_server
+  hexapod_motion_lib
+)
 
-# Install executables
-install(TARGETS  motion_server
+# Install headers so other packages can include them
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+# Install executables (nodes)
+install(TARGETS
+  motion_server
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -59,6 +124,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
+
 
 
 

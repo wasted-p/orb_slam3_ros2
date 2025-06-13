@@ -103,7 +103,6 @@ private:
   std::string selected_motion_;
   rclcpp::TimerBase::SharedPtr timer_;
   Motion &selectedMotion();
-  Motion transformedMotion();
   hexapod_msgs::msg::Pose &selectedPose();
 };
 

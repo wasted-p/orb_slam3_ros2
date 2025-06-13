@@ -23,10 +23,6 @@ void PoseList::removePose(size_t idx) {
   if (idx > 0)
     setCurrentRow(idx - 1);
 }
-void PoseList::addPose(std::string name) {
-  this->addItem(name.c_str());
-  this->setCurrentRow(0);
-}
 
 void PoseList::moveCurrentPose(int distance) {
   int row = currentRow();

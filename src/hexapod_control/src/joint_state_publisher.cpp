@@ -86,6 +86,7 @@ private:
 
     joint_state_msg_ = request->joint_state;
     joint_state_msg_.header.stamp = this->now();
+    response->success = true;
   }
 };
 

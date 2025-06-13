@@ -169,6 +169,8 @@ private:
                 request->trajectories[i].points;
             publishMarkers(leg_name, positions);
           }
+          response->success = true;
+          response->message = "Successfully Set Marker Array";
         });
     markers_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
         MARKER_ARRAY_TOPIC, rclcpp::QoS(10));

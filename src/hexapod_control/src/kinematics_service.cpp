@@ -127,7 +127,6 @@ public:
   void handleSolveIKRequest(
       const std::shared_ptr<hexapod_msgs::srv::SolveIK::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SolveIK::Response> response) {
-    RCLCPP_INFO(get_logger(), "Solving IK Request...");
     for (size_t i = 0; i < request->leg_names.size(); i++) {
       std::string &leg_name = request->leg_names[i];
       geometry_msgs::msg::Point &pos = request->positions[i];

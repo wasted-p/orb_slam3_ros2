@@ -42,7 +42,7 @@ void parseYaml(std::string &yaml_string,
 }
 
 class PosePublisher : public rclcpp::Node {
-protected:
+private:
   rclcpp::Publisher<hexapod_msgs::msg::Pose>::SharedPtr pose_pub_;
   rclcpp::Service<hexapod_msgs::srv::GetPose>::SharedPtr get_pose_service_;
   rclcpp::Service<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_service_;
@@ -55,11 +55,14 @@ public:
   PosePublisher() : Node("leg_control_node") {
     using namespace std::chrono_literals;
     setupROS();
+    getInitialPose();
+    current_pose_ = initial_pose_;
   }
   ~PosePublisher() {}
 
 private:
   std::map<std::string, geometry_msgs::msg::Point> initial_pose_;
+  std::map<std::string, geometry_msgs::msg::Point> current_pose_;
 
   void getInitialPose() {
     // Declare and get the YAML string parameter
@@ -69,45 +72,35 @@ private:
     parseYaml(yaml_string, initial_pose_);
     RCLCPP_INFO(this->get_logger(), "Loaded Initial Pose:");
     for (const auto &entry : initial_pose_) {
-
       RCLCPP_INFO(this->get_logger(), " - %s=[%.4f,%.4f,%.4f]",
                   entry.first.c_str(), entry.second.x, entry.second.y,
                   entry.second.z);
     }
   }
 
-  hexapod_msgs::msg::Pose toAbsolute(const hexapod_msgs::msg::Pose &pose) {
-    hexapod_msgs::msg::Pose relative_pose;
-    for (size_t i = 0; i < pose.names.size(); i++) {
-      geometry_msgs::msg::Point position = pose.positions[i];
-      const std::string &leg_name = pose.names[i];
-      position.x += initial_pose_[leg_name].x;
-      position.y += initial_pose_[leg_name].y;
-      position.z += initial_pose_[leg_name].z;
-      relative_pose.names.push_back(leg_name);
-      relative_pose.positions.push_back(position);
-    }
-    return relative_pose;
-  }
-
-  void setPose(const hexapod_msgs::msg::Pose &incoming_pose,
+  void setPose(const hexapod_msgs::msg::Pose &pose,
                const bool relative = false) {
 
-    hexapod_msgs::msg::Pose pose;
-    if (relative)
-      pose = toAbsolute(incoming_pose);
-    else
-      pose = incoming_pose;
-
-    const std::vector<std::string> &leg_names = pose.names;
-    const std::vector<geometry_msgs::msg::Point> &positions = pose.positions;
-    solveIK(shared_from_this(), solve_ik_client_, leg_names, positions,
+    solveIK(shared_from_this(), solve_ik_client_, pose.names, pose.positions,
             [this, pose](const JointNames &joint_names,
                          const JointPositions &joint_positions) {
               setJointPositions(shared_from_this(), set_joint_state_client_,
                                 joint_names, joint_positions);
+
+              for (size_t i = 0; i < pose.names.size(); i++) {
+                current_pose_[pose.names[i]] = pose.positions[i];
+              }
               pose_pub_->publish(pose);
             });
+  }
+
+  hexapod_msgs::msg::Pose getPose() {
+    hexapod_msgs::msg::Pose pose;
+    for (const auto &entry : current_pose_) {
+      pose.names.push_back(entry.first);
+      pose.positions.push_back(entry.second);
+    }
+    return pose;
   }
 
   void setupROS() {
@@ -128,7 +121,10 @@ private:
         [this](
             const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
-          getPose(shared_from_this(), request, response);
+          (void)request;
+          response->pose = getPose();
+          response->success = true;
+          response->message = "Message";
         });
 
     set_pose_service_ = create_service<hexapod_msgs::srv::SetPose>(

@@ -19,7 +19,6 @@ public:
   void moveCurrentPose(int distance = 1);
   void moveCurrentPoseUp();
   void moveCurrentPoseDown();
-  void addPose(std::string name);
 
 signals:
   void poseSelected(const size_t idx);

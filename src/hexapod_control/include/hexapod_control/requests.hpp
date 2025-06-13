@@ -20,9 +20,10 @@ void setJointPositions(
     const std::vector<std::string> &joint_names,
     const std::vector<double> &joint_positions);
 
-void getPose(rclcpp::Node::SharedPtr node,
-             const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
-             std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response);
+void getPose(const rclcpp::Node::SharedPtr node,
+             const rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr client,
+             const std::function<void(const hexapod_msgs::msg::Pose &)>
+                 success_callback);
 
 using JointNames = std::vector<std::string>;
 using JointPositions = std::vector<double>;

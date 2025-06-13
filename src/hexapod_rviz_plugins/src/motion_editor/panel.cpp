@@ -2,6 +2,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include <cmath>
+#include <cstddef>
 #include <filesystem>
 #include <hexapod_control/requests.hpp>
 #include <hexapod_control/ros_constants.hpp>
@@ -12,6 +13,7 @@
 #include <qpushbutton.h>
 #include <qspinbox.h>
 #include <rclcpp/client.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <stdexcept>
@@ -158,10 +160,7 @@ void saveToYaml(std::map<std::string, Motion> &motions) {
 }
 // Gait planner
 MotionEditorRvizPanel::MotionEditorRvizPanel(QWidget *parent)
-
     : rviz_common::Panel(parent) {
-  leg_names_ = QStringList{"top_left",  "mid_left",  "bottom_left",
-                           "top_right", "mid_right", "bottom_right"};
   setupUi();
 }
 
@@ -180,6 +179,7 @@ void MotionEditorRvizPanel::onInitialize() {
   for (auto &entry : motions_) {
     motion_combo_box_->addItem(entry.first.c_str());
   }
+  setSelectedMotion(selected_motion_);
 }
 
 hexapod_msgs::msg::Pose &MotionEditorRvizPanel::selectedPose() {
@@ -209,7 +209,6 @@ void rotate(std::vector<hexapod_msgs::msg::Pose> &poses, double roll,
   rotation_transform.setRotation(q);
   rotation_transform.setOrigin(tf2::Vector3(0, 0, 0));
 
-  // Rotate all points in all poses
   for (auto &pose : poses) {
     for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
       const auto &leg_name = pose.names[leg_i];
@@ -239,20 +238,6 @@ void rotate(std::vector<hexapod_msgs::msg::Pose> &poses, double roll,
   }
 }
 
-void scale(std::vector<hexapod_msgs::msg::Pose> &poses, double x, double y,
-           double z) {
-  if (poses.empty())
-    return;
-
-  // Rotate all points in all poses
-  for (auto &pose : poses) {
-    for (size_t leg_i = 0; leg_i < pose.names.size(); leg_i++) {
-      const auto &leg_name = pose.names[leg_i];
-      auto &position = pose.positions[leg_i];
-    }
-  }
-}
-
 Motion &MotionEditorRvizPanel::selectedMotion() {
   return motions_[selected_motion_];
 }
@@ -261,31 +246,9 @@ void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   if (current_pose < 0)
     return;
 
-  std::map<std::string, geometry_msgs::msg::Point> buffer;
+  // selectedPose() = pose;
 
-  for (size_t i = 0; i < selectedPose().names.size(); i++) {
-    buffer[selectedPose().names[i]] = selectedPose().positions[i];
-  }
-
-  for (size_t i = 0; i < pose.names.size(); i++)
-    buffer[pose.names[i]] = pose.positions[i];
-
-  // selectedPose().names = {};
-  // selectedPose().positions = {};
-  // for (auto &entry : buffer) {
-  //   selectedPose().names.push_back(entry.first);
-  //   selectedPose().positions.push_back(entry.second);
-  // }
-
-  setMarkerArray(node_, set_marker_array_client_, transformedMotion().poses,
-                 true);
-}
-
-Motion MotionEditorRvizPanel::transformedMotion() {
-  Motion transformed_motion = selectedMotion();
-  rotate(transformed_motion.poses, 0, 0, yaw_);
-  scale(transformed_motion.poses, effort, 1, 1);
-  return transformed_motion;
+  setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses, true);
 }
 
 void MotionEditorRvizPanel::setupUi() {
@@ -300,11 +263,13 @@ void MotionEditorRvizPanel::setupUi() {
   QPushButton *btn_up = new QPushButton("⬆");
   QPushButton *btn_down = new QPushButton("⬇");
   QPushButton *btn_add = new QPushButton("+");
+  QPushButton *btn_save = new QPushButton("S");
   QPushButton *btn_delete = new QPushButton("🗑");
 
   top_buttons->addWidget(btn_up);
   top_buttons->addWidget(btn_down);
   top_buttons->addWidget(btn_add);
+  top_buttons->addWidget(btn_save);
   top_buttons->addWidget(btn_delete);
 
   QHBoxLayout *param_inputs_layout = new QHBoxLayout();
@@ -328,18 +293,6 @@ void MotionEditorRvizPanel::setupUi() {
 
   QPushButton *save_button = new QPushButton("🗑");
 
-  connect(direction_spinner,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
-          [this](double yaw) {
-            yaw_ = yaw;
-            setPose(node_, set_pose_client_,
-                    transformedMotion().poses[current_pose]);
-            setMarkerArray(node_, set_marker_array_client_,
-                           transformedMotion().poses, true);
-          });
-  connect(save_button, &QPushButton::pressed,
-          [this]() { saveToYaml(motions_); });
-
   bottom_buttons->addWidget(save_button);
   // === Assemble Layout ===
   main_layout->addLayout(top_buttons);
@@ -358,6 +311,30 @@ void MotionEditorRvizPanel::setupUi() {
           &PoseList::moveCurrentPoseUp);
   connect(btn_down, &QPushButton::clicked, pose_list_widget_,
           &PoseList::moveCurrentPoseDown);
+  connect(
+      direction_spinner, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+      this, [this](double new_yaw) {
+        rotate(selectedMotion().poses, 0, 0, new_yaw - yaw_);
+        yaw_ = new_yaw;
+        setPose(node_, set_pose_client_, selectedMotion().poses[current_pose]);
+        setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses,
+                       true);
+      });
+  connect(btn_save, &QPushButton::clicked, this, [this]() {
+    getPose(node_, get_pose_client_,
+            [this](const hexapod_msgs::msg::Pose pose) {
+              for (size_t i = 0; i < pose.names.size(); i++) {
+                RCLCPP_INFO(rclcpp::get_logger("GETTING POSE"),
+                            "%s=[%.4f,%.4f,%.4f]", pose.names[i].c_str(),
+                            pose.positions[i].x, pose.positions[i].y,
+                            pose.positions[i].z);
+              }
+
+              selectedPose() = pose;
+            });
+  });
+  connect(save_button, &QPushButton::pressed,
+          [this]() { saveToYaml(motions_); });
   // Connect a signal to re-select if nothing is selected
   connect(pose_list_widget_, &PoseList::poseSelected, this,
           &MotionEditorRvizPanel::setCurrentPose);
@@ -369,18 +346,19 @@ void MotionEditorRvizPanel::setupUi() {
           [this](const QString &name) {
             this->setSelectedMotion(name.toStdString());
           });
-  // Connect a signal to re-select if nothing is selected
+  // Connect a signal to re - select if nothing is selected
 }
 
 void MotionEditorRvizPanel::setSelectedMotion(std::string name) {
-  selected_motion_ = name.c_str();
+  selected_motion_ = name;
+
   pose_list_widget_->clear();
   for (hexapod_msgs::msg::Pose &pose : selectedMotion().poses) {
-    pose_list_widget_->addPose(pose.name);
+    RCLCPP_INFO(rclcpp::get_logger("DEBUG"), "%s", pose.name.c_str());
+    pose_list_widget_->addItem(pose.name.c_str());
   }
-  selected_motion_ = name;
   setCurrentPose(0);
-  setMarkerArray(node_, set_marker_array_client_, transformedMotion().poses);
+  setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses);
 }
 void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
   RCLCPP_INFO(node_->get_logger(), "Moved Poses from: %i, to:%i", from_idx,
@@ -410,8 +388,7 @@ void MotionEditorRvizPanel::setupROS() {
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {
   current_pose = idx;
-  setPose(node_, set_pose_client_, transformedMotion().poses[idx], true);
-  RCLCPP_INFO(node_->get_logger(), "Pose (%lu) Selected Successfully", idx);
+  setPose(node_, set_pose_client_, selectedPose());
 }
 
 void MotionEditorRvizPanel::onAddPose() {
@@ -433,7 +410,7 @@ void MotionEditorRvizPanel::onAddPose() {
         created_poses_count_++;
         setCurrentPose(selectedMotion().poses.size() - 1);
         current_pose = selectedMotion().poses.size() - 1;
-        pose_list_widget_->addPose(pose.name);
+        pose_list_widget_->addItem(pose.name.c_str());
         RCLCPP_INFO(node_->get_logger(), "Added Pose %s", "Pose");
       });
 }
@@ -452,7 +429,7 @@ void MotionEditorRvizPanel::onDeletePose() {
   selectedMotion().poses.erase(selectedMotion().poses.cbegin() + idx);
   current_pose = selectedMotion().poses.size() - 1;
   if (current_pose >= 0 && current_pose <= selectedMotion().poses.size()) {
-    setPose(node_, set_pose_client_, transformedMotion().poses[0]);
+    setPose(node_, set_pose_client_, selectedMotion().poses[0]);
     RCLCPP_INFO(node_->get_logger(), "Deleting Pose (%lu) from Gait %s", idx,
                 selectedMotion().name.c_str());
   }

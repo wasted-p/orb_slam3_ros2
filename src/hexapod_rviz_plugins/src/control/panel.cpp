@@ -3,10 +3,13 @@
 #include "hexapod_rviz_plugins/control_panel.hpp"
 #include <QApplication>
 #include <cstddef>
+#include <hexapod_control/hexapod.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
+#include <map>
 #include <pluginlib/class_list_macros.hpp>
 #include <qcheckbox.h>
 #include <qlist.h>
+#include <qpushbutton.h>
 #include <qspinbox.h>
 #include <qtablewidget.h>
 #include <rclcpp/context.hpp>
@@ -22,8 +25,47 @@ using namespace rviz_common;
 using namespace rclcpp;
 
 namespace hexapod_rviz_plugins {
-PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
+geometry_msgs::msg::Point point(double x, double y, double z) {
+  geometry_msgs::msg::Point position;
+  position.x = x;
+  position.y = y;
+  position.z = z;
+  return position;
+} // namespace hexapod_rviz_plugins
 
+hexapod_msgs::msg::Pose
+toAbsolute(const hexapod_msgs::msg::Pose &pose,
+           std::map<std::string, geometry_msgs::msg::Point> initial_pose) {
+  hexapod_msgs::msg::Pose absolute_pose;
+  for (size_t i = 0; i < pose.names.size(); i++) {
+    geometry_msgs::msg::Point position = pose.positions[i];
+    const std::string &leg_name = pose.names[i];
+    position.x += initial_pose[leg_name].x;
+    position.y += initial_pose[leg_name].y;
+    position.z += initial_pose[leg_name].z;
+    absolute_pose.names.push_back(leg_name);
+    absolute_pose.positions.push_back(position);
+  }
+  return absolute_pose;
+}
+
+hexapod_msgs::msg::Pose
+toRelative(const hexapod_msgs::msg::Pose &pose,
+           std::map<std::string, geometry_msgs::msg::Point> initial_pose) {
+  hexapod_msgs::msg::Pose relative_pose;
+  for (size_t i = 0; i < pose.names.size(); i++) {
+    geometry_msgs::msg::Point position = pose.positions[i];
+    const std::string &leg_name = pose.names[i];
+    position.x -= initial_pose[leg_name].x;
+    position.y -= initial_pose[leg_name].y;
+    position.z -= initial_pose[leg_name].z;
+    relative_pose.names.push_back(leg_name);
+    relative_pose.positions.push_back(position);
+  }
+  return relative_pose;
+}
+
+PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
   setHorizontalHeaderLabels({"Leg", "X", "Y", "Z"});
   // verticalHeader()->setVisible(false);
 
@@ -64,6 +106,24 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
   }
   resizeColumnsToContents();
 }
+
+hexapod_msgs::msg::Pose PoseTable::getPose() {
+  hexapod_msgs::msg::Pose pose;
+  for (const std::string &leg_name : LEG_NAMES) {
+    geometry_msgs::msg::Point position = getRowValue(leg_name);
+    pose.names.push_back(leg_name);
+    pose.positions.push_back(position);
+  }
+  return pose;
+};
+
+void PoseTable::setPose(const hexapod_msgs::msg::Pose &pose) {
+  for (size_t i = 0; i < pose.names.size(); i++) {
+    const std::string &leg_name = pose.names[i];
+    const geometry_msgs::msg::Point position = pose.positions[i];
+    setRowValue(leg_name, position);
+  }
+};
 
 void PoseTable::setRowValue(std::string leg_name,
                             geometry_msgs::msg::Point position) {
@@ -129,54 +189,48 @@ QDoubleSpinBox *PoseTable::createSpinBox() {
 
 HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
     : rviz_common::Panel(parent) {
+
+  initial_pose_ = {
+      {"top_left", point(0.1287, 0.0911, 0.0043)},
+      {"mid_left", point(0.0106, 0.1264, 0.0052)},
+      {"bottom_left", point(-0.1114, 0.1016, 0.0043)},
+      {"top_right", point(0.1293, -0.0917, 0.0043)},
+      {"mid_right", point(0.0097, -0.1246, 0.0052)},
+      {"bottom_right", point(-0.1120, -0.1004, 0.0043)},
+  };
+
   setupUi();
-  setRelativeMode(true);
+  // setRelativeMode(true);
   // Connect value changes
-  connect(pose_table_, &PoseTable::legPoseUpdated, this,
-          &HexapodControlRvizPanel::onLegPoseUpdate);
-  connect(relative_checkbox_, &QCheckBox::toggled, this,
-          &HexapodControlRvizPanel::setRelativeMode);
-  connect(step_spinbox_, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &HexapodControlRvizPanel::onStepSizeChanged);
-  connect(reset_button_, &QPushButton::clicked, this,
-          &HexapodControlRvizPanel::onResetClicked);
 }
 
-void HexapodControlRvizPanel::setRelativeMode(bool checked) {
-  RCLCPP_INFO(rclcpp::get_logger("HexapodControl"), "Relative mode: %s",
-              checked ? "ON" : "OFF");
-  relative = checked;
-  for (size_t i = 0; i < 6; i++) {
-    geometry_msgs::msg::Point position = pose_table_->getRowValue(LEG_NAMES[i]);
-    if (relative) {
-      position.x -= initial_pose_[i][0];
-      position.y -= initial_pose_[i][1];
-      position.z -= initial_pose_[i][2];
-    } else {
-      position.x += initial_pose_[i][0];
-      position.y += initial_pose_[i][1];
-      position.z += initial_pose_[i][2];
-    }
+void HexapodControlRvizPanel::setRelativeMode(bool relative) {
+  this->relative = relative;
+  hexapod_msgs::msg::Pose pose = pose_table_->getPose();
+  if (relative) {
 
-    pose_table_->setRowValue(LEG_NAMES[i], position);
+    pose = toRelative(pose, initial_pose_);
+  } else {
+
+    pose = toRelative(pose, initial_pose_);
   }
+  pose_table_->setPose(pose);
 }
 
 void HexapodControlRvizPanel::onStepSizeChanged(double value) {
-  RCLCPP_INFO(rclcpp::get_logger("HexapodControl"), "Step size changed: %.3f",
-              value);
+  RCLCPP_INFO(node_->get_logger(), "Step size changed: %.3f", value);
   pose_table_->setStep(value);
 }
 
 void HexapodControlRvizPanel::onResetClicked() {
-  RCLCPP_INFO(rclcpp::get_logger("HexapodControl"), "Reset button clicked");
+  RCLCPP_INFO(node_->get_logger(), "Reset button clicked");
   hexapod_msgs::msg::Pose pose;
-  for (size_t i = 0; i < 6; i++) {
+  for (const auto &entry : initial_pose_) {
     geometry_msgs::msg::Point position;
-    position.x = initial_pose_[i][0];
-    position.y = initial_pose_[i][1];
-    position.z = initial_pose_[i][2];
-    pose.names.push_back(LEG_NAMES[i]);
+    position.x = entry.second.x;
+    position.y = entry.second.y;
+    position.z = entry.second.z;
+    pose.names.push_back(entry.first);
     pose.positions.push_back(position);
   }
   // pose_pub_->publish(pose);
@@ -187,26 +241,17 @@ HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
 
 void HexapodControlRvizPanel::onLegPoseUpdate(std::string leg_name, double x,
                                               double y, double z) {
-  RCLCPP_DEBUG(node_->get_logger(), "Spinner box updated");
   hexapod_msgs::msg::Pose pose;
   geometry_msgs::msg::Point position;
-  if (relative) {
-    auto it = std::find(LEG_NAMES, LEG_NAMES + 6, leg_name);
-    int idx = it - LEG_NAMES;
-    if (idx < 6) {
-      position.x = x + initial_pose_[idx][0];
-      position.y = y + initial_pose_[idx][1];
-      position.z = z + initial_pose_[idx][2];
-    }
-  } else {
-    position.x = x;
-    position.y = y;
-    position.z = z;
-  }
+  position.x = x;
+  position.y = y;
+  position.z = z;
   pose.positions = {position};
   pose.names = {leg_name};
-  // pose_pub_->publish(pose);
-  setPose(this->node_->shared_from_this(), set_pose_client_, pose);
+  if (relative) {
+    pose = toAbsolute(pose, initial_pose_);
+  }
+  setPose(node_->shared_from_this(), set_pose_client_, pose);
 }
 
 void HexapodControlRvizPanel::onInitialize() {
@@ -221,38 +266,32 @@ void HexapodControlRvizPanel::onInitialize() {
   setupROS();
 
   hexapod_msgs::msg::Pose pose;
-  for (size_t i = 0; i < 6; i++) {
-    geometry_msgs::msg::Point position;
-    position.x = initial_pose_[i][0];
-    position.y = initial_pose_[i][1];
-    position.z = initial_pose_[i][2];
-    if (relative) {
-      position.x -= initial_pose_[i][0];
-      position.y -= initial_pose_[i][1];
-      position.z -= initial_pose_[i][2];
-    }
-    pose_table_->setRowValue(LEG_NAMES[i], position);
+  geometry_msgs::msg::Point position;
+  for (const std::string &leg_name : LEG_NAMES) {
+    pose.names.push_back(leg_name);
+    pose.positions.push_back(initial_pose_[leg_name]);
   }
 }
 
 void HexapodControlRvizPanel::setupUi() {
   QVBoxLayout *main_layout = new QVBoxLayout;
 
+  // return;
   // === Top horizontal layout (checkbox + spinner + button) ===
   QHBoxLayout *top_controls_layout = new QHBoxLayout;
 
-  relative_checkbox_ = new QCheckBox("Relative");
-  step_spinbox_ = new QDoubleSpinBox;
-  reset_button_ = new QPushButton("Reset");
-  step_spinbox_->setRange(0.001, 1.0); // adjust as needed
-  step_spinbox_->setSingleStep(0.005);
-  step_spinbox_->setDecimals(3);
+  QCheckBox *relative_checkbox = new QCheckBox("Relative");
+  QDoubleSpinBox *step_spinbox = new QDoubleSpinBox;
+  QPushButton *reset_button = new QPushButton("Reset");
+  step_spinbox->setRange(0.001, 1.0); // adjust as needed
+  step_spinbox->setSingleStep(0.005);
+  step_spinbox->setDecimals(3);
 
-  relative_checkbox_->toggled(true);
+  relative_checkbox->toggled(true);
 
-  top_controls_layout->addWidget(relative_checkbox_);
-  top_controls_layout->addWidget(step_spinbox_);
-  top_controls_layout->addWidget(reset_button_);
+  top_controls_layout->addWidget(relative_checkbox);
+  top_controls_layout->addWidget(step_spinbox);
+  top_controls_layout->addWidget(reset_button);
   top_controls_layout->addStretch(); // pushes widgets to the left
 
   main_layout->addLayout(top_controls_layout);
@@ -262,9 +301,18 @@ void HexapodControlRvizPanel::setupUi() {
   pose_table_ = new PoseTable;
 
   double step = 0.005;
-  step_spinbox_->setValue(step); // default step size
+  step_spinbox->setValue(step); // default step size
   pose_table_->setStep(step);
   horizontal_layout->addWidget(pose_table_, 1); // Stretch factor 1 for table
+
+  connect(pose_table_, &PoseTable::legPoseUpdated, this,
+          &HexapodControlRvizPanel::onLegPoseUpdate);
+  connect(relative_checkbox, &QCheckBox::toggled, this,
+          &HexapodControlRvizPanel::setRelativeMode);
+  connect(step_spinbox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+          this, &HexapodControlRvizPanel::onStepSizeChanged);
+  connect(reset_button, &QPushButton::clicked, this,
+          &HexapodControlRvizPanel::onResetClicked);
 
   main_layout->addLayout(horizontal_layout);
   setLayout(main_layout);
@@ -284,26 +332,14 @@ void HexapodControlRvizPanel::setupROS() {
 
 void HexapodControlRvizPanel::legPoseUpdateCallback(
     hexapod_msgs::msg::Pose pose) {
-  RCLCPP_DEBUG(node_->get_logger(), "Received Pose %s", pose.name.c_str());
-  for (size_t i = 0; i < pose.names.size(); i++) {
-    RCLCPP_DEBUG(node_->get_logger(), "%s=[%.4f,%.4f,%.4f]",
-                 pose.names[i].c_str(), pose.positions[i].x,
-                 pose.positions[i].y, pose.positions[i].z);
-  }
 
-  for (size_t i = 0; i < pose.names.size(); i++) {
-    if (relative) {
-      auto it = std::find(LEG_NAMES, LEG_NAMES + 6, pose.names[i]);
-      int idx = it - LEG_NAMES;
-      if (idx < 6) {
-        pose.positions[i].x -= initial_pose_[idx][0];
-        pose.positions[i].y -= initial_pose_[idx][1];
-        pose.positions[i].z -= initial_pose_[idx][2];
-      }
-    }
-
-    pose_table_->setRowValue(pose.names[i], pose.positions[i]);
+  if (relative) {
+    pose = toRelative(pose, initial_pose_);
   }
+  pose_table_->setPose(pose);
+  // for (size_t i = 0; i < pose.names.size(); i++) {
+  //   pose_table_->setRowValue(pose.names[i], pose.positions[i]);
+  // }
 }
 } // namespace hexapod_rviz_plugins
 

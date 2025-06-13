@@ -1,3 +1,4 @@
 ---
-sensor_msgs/JointState joint_state
 hexapod_msgs/Pose pose
+bool success
+string message

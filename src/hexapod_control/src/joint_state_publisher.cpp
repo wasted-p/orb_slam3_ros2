@@ -1,8 +1,8 @@
 #include "hexapod_msgs/srv/set_joint_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <cmath>
-#include <hexapod_control/hexapod.hpp>
-#include <hexapod_control/ros_constants.hpp>
+#include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/ros_constants.hpp>
 #include <hexapod_msgs/srv/set_joint_state.hpp>
 #include <map>
 #include <rclcpp/create_publisher.hpp>

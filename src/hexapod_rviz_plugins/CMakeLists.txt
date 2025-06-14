@@ -27,6 +27,7 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Core)
 find_package(yaml-cpp REQUIRED)
 find_package(hexapod_control REQUIRED)
 find_package(hexapod_motion REQUIRED)
+find_package(hexapod_common REQUIRED)
 
 
 # QT related setup
@@ -77,6 +78,7 @@ ament_target_dependencies(${PROJECT_NAME}
   hexapod_msgs
   hexapod_control
   hexapod_motion
+  hexapod_common
 )
 
 

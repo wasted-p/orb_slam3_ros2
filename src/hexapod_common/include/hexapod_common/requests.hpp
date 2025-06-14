@@ -1,31 +1,22 @@
-#ifndef HEXAPOD_CONTROL_REQUESTS_HPP
-#define HEXAPOD_CONTROL_REQUESTS_HPP
+#ifndef HEXAPOD_COMMON_REQUESTS_HPP
+#define HEXAPOD_COMMON_REQUESTS_HPP
 
+#include "builtin_interfaces/msg/duration.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include <control_msgs/action/follow_joint_trajectory.hpp>
+#include <functional>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <hexapod_msgs/srv/set_joint_state.hpp>
 #include <hexapod_msgs/srv/set_marker_array.hpp>
 #include <hexapod_msgs/srv/solve_ik.hpp>
-#include <rclcpp/rclcpp.hpp>
-
-#include "builtin_interfaces/msg/duration.hpp"
-#include "geometry_msgs/msg/point.hpp"
-#include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_msgs/srv/get_pose.hpp"
-#include "hexapod_msgs/srv/set_pose.hpp"
-#include <control_msgs/action/follow_joint_trajectory.hpp>
-#include <functional>
 #include <rclcpp/client.hpp>
-#include <rclcpp/logger.hpp>
-#include <rclcpp/logging.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <vector>
-
-#include "builtin_interfaces/msg/duration.hpp"
-#include "hexapod_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
 #include <rclcpp/contexts/default_context.hpp>
+#include <rclcpp/duration.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -34,6 +25,7 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <string>
 #include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <vector>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -69,10 +61,11 @@ void setPose(const rclcpp::Node::SharedPtr node,
 
 using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
+
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
     const std::vector<sensor_msgs::msg::JointState> &joint_states,
     const builtin_interfaces::msg::Duration &duration,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options);
-#endif // !HEXAPOD_CONTROL_REQUESTS_HPP
+#endif // !HEXAPOD_COMMON_REQUESTS_HPP

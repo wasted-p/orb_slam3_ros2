@@ -31,8 +31,8 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <hexapod_control/requests.hpp>
-#include <hexapod_control/ros_constants.hpp>
+#include <hexapod_common/requests.hpp>
+#include <hexapod_common/ros_constants.hpp>
 #include <hexapod_motion/motion.hpp>
 #include <hexapod_motion/utils.hpp>
 #include <map>

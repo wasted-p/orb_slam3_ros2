@@ -3,7 +3,7 @@
 #include "hexapod_rviz_plugins/control_panel.hpp"
 #include <QApplication>
 #include <cstddef>
-#include <hexapod_control/hexapod.hpp>
+#include <hexapod_common/hexapod.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <map>
 #include <pluginlib/class_list_macros.hpp>

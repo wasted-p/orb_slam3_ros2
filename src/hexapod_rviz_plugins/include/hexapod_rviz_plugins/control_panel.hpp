@@ -4,8 +4,8 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
-#include <hexapod_control/requests.hpp>
-#include <hexapod_control/ros_constants.hpp>
+#include <hexapod_common/requests.hpp>
+#include <hexapod_common/ros_constants.hpp>
 #include <map>
 #include <qcheckbox.h>
 #include <qlist.h>

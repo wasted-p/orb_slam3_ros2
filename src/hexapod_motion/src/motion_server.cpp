@@ -1,11 +1,11 @@
 #include "control_msgs/action/follow_joint_trajectory.hpp"
+#include "hexapod_motion/motion.hpp"
 #include "hexapod_msgs/srv/execute_motion.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <cmath>
-#include <hexapod_control/requests.hpp>
-#include <hexapod_control/ros_constants.hpp>
-#include <hexapod_motion/motion.hpp>
+#include <hexapod_common/requests.hpp>
+#include <hexapod_common/ros_constants.hpp>
 #include <hexapod_motion/utils.hpp>
 #include <hexapod_msgs/srv/execute_motion.hpp>
 #include <rclcpp/executors.hpp>

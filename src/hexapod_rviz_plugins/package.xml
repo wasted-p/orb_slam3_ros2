@@ -15,6 +15,7 @@
   <depend>hexapod_msgs</depend>
   <depend>hexapod_control</depend>
   <depend>hexapod_motion</depend>
+  <depend>hexapod_common</depend>
   <exec_depend>libqt5-widgets</exec_depend>
   <export>
     <build_type>ament_cmake</build_type>

@@ -168,13 +168,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    trajectory_publisher = Node(
-        package='hexapod_control',
-        executable='trajectory_publisher',
-        name='trajectory_publisher',
-        output='screen'
-    )
-
     # Launch trajectory node after startup controllers exit
     # launch_trajectory_on_startup_exit = RegisterEventHandler(
     #     OnProcessExit(
@@ -228,7 +221,6 @@ def generate_launch_description():
         kinematics_service,
         pose_publisher,
         visualization_server,
-        trajectory_publisher,
         motion_server,
         joy_node
         # joint_state_publisher

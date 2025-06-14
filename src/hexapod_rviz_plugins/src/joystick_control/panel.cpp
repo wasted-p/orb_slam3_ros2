@@ -7,6 +7,7 @@
 #include <QStackedLayout>
 #include <csignal>
 #include <cstdlib>
+#include <hexapod_common/ros_constants.hpp>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
 #include <qboxlayout.h>
@@ -89,7 +90,7 @@ void JoystickRvizPanel::setupROS() {
 
   // Create subscription for joystick data
   joy_sub_ = node_->create_subscription<sensor_msgs::msg::Joy>(
-      "/joy", 10,
+      JOY_TOPIC, 10,
       std::bind(&JoystickRvizPanel::joyCallback, this, std::placeholders::_1));
 }
 

@@ -1,7 +1,4 @@
-#include "hexapod_msgs/msg/pose.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
 #include <hexapod_common/requests.hpp>
-#include <rclcpp/duration.hpp>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -134,8 +131,6 @@ void solveIK(rclcpp::Node::SharedPtr node,
       });
 }
 
-using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
-using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
     const std::vector<sensor_msgs::msg::JointState> &joint_states,

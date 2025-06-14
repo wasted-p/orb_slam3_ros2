@@ -24,8 +24,7 @@ find_package(orocos_kdl REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(hexapod_msgs REQUIRED)
-find_package(trajectory_msgs REQUIRED)
-find_package(control_msgs REQUIRED)
+find_package(hexapod_common REQUIRED)
 find_package(controller_manager_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -36,49 +35,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(EXECUTABLES "")
 
 
-# Library
-# ====================
-# Create the library
-add_library(${PROJECT_NAME}_lib SHARED
-  src/requests.cpp
-)
-
-# Link dependencies to the library
-ament_target_dependencies(${PROJECT_NAME}_lib
-  rclcpp
-  geometry_msgs
-  hexapod_msgs
-  control_msgs
-  trajectory_msgs
-  rclcpp_action
-  # Add other dependencies
-)
-
-
-# Specify include directories for the library
-target_include_directories(${PROJECT_NAME}_lib PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-
-
 add_executable(joint_state_publisher
   src/joint_state_publisher.cpp
 )
 
-# Link the library to your executabes
-# target_link_libraries( ${PROJECT_NAME}_lib)
 
 ament_target_dependencies(joint_state_publisher
   rclcpp
   std_msgs
   sensor_msgs
   hexapod_msgs
+  hexapod_common
 )
 
-target_link_libraries(joint_state_publisher
-  yaml-cpp
-)
 
 list(APPEND EXECUTABLES joint_state_publisher)
 
@@ -96,6 +65,7 @@ ament_target_dependencies(kinematics_service
   kdl_parser
   orocos_kdl
   hexapod_msgs
+  hexapod_common
 )
 
 list(APPEND EXECUTABLES kinematics_service)
@@ -112,36 +82,12 @@ ament_target_dependencies(pose_publisher
   sensor_msgs
   geometry_msgs
   hexapod_msgs
+  hexapod_common
 )
 
-target_link_libraries(pose_publisher
-  ${PROJECT_NAME}_lib  # Your utility library
-  yaml-cpp
-)
 
 list(APPEND EXECUTABLES pose_publisher)
 
-# TrajectoryPublisher
-# ====================
-add_executable(trajectory_publisher
-  src/trajectory_publisher.cpp
-)
-
-ament_target_dependencies(trajectory_publisher
-  rclcpp
-  std_msgs
-  trajectory_msgs
-  rclcpp_action
-  control_msgs
-  hexapod_msgs
-  controller_manager_msgs
-)
-
-target_link_libraries(trajectory_publisher
-  ${PROJECT_NAME}_lib  # Your utility library
-)
-
-list(APPEND EXECUTABLES trajectory_publisher)
 
 # VisualizationServer
 # ====================
@@ -157,14 +103,12 @@ ament_target_dependencies(visualization_server
   hexapod_msgs
   visualization_msgs
   interactive_markers
+  hexapod_common
 )
 
 list(APPEND EXECUTABLES visualization_server)
 
 
-target_link_libraries(visualization_server
-  ${PROJECT_NAME}_lib  # Your utility library
-)
 
 # ShutdownControllers
 # ====================
@@ -201,24 +145,11 @@ install(TARGETS
   ${EXECUTABLES}
   DESTINATION lib/${PROJECT_NAME}
 )
-# Install executables
-install(TARGETS
-  ${PROJECT_NAME}_lib
-  DESTINATION lib/${PROJECT_NAME}
-
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}  # Note: ROS2 convention
-)
 # Install headers so other packages can include them
 install(DIRECTORY include/
   DESTINATION include
 )
 
-# Export the targets (creates find_package support)
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
-ament_export_dependencies(rclcpp hexapod_msgs control_msgs)
 
 # Testing
 if(BUILD_TESTING)

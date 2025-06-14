@@ -1,11 +1,11 @@
 
 #include "geometry_msgs/msg/point.hpp"
-#include "hexapod_control/ros_constants.hpp"
+#include "hexapod_common/ros_constants.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/point.hpp>
-#include <hexapod_control/hexapod.hpp>
+#include <hexapod_common/hexapod.hpp>
 #include <hexapod_msgs/srv/solve_fk.hpp>
 #include <hexapod_msgs/srv/solve_ik.hpp>
 #include <kdl/chain.hpp>

@@ -168,6 +168,12 @@ def generate_launch_description():
         output="screen",
     )
 
+    hexapod_teleop = Node(
+        package='hexapod_teleop',
+        executable='teleop_joy',
+        name='teleop_joy',
+        output="screen",
+    )
     # Launch trajectory node after startup controllers exit
     # launch_trajectory_on_startup_exit = RegisterEventHandler(
     #     OnProcessExit(
@@ -222,6 +228,7 @@ def generate_launch_description():
         pose_publisher,
         visualization_server,
         motion_server,
-        joy_node
+        joy_node,
+        hexapod_teleop
         # joint_state_publisher
     ])

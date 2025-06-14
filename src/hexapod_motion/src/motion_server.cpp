@@ -80,10 +80,12 @@ private:
     const Motion &motion = motions_[name];
     RCLCPP_INFO(get_logger(), "Executing %s", name.c_str());
     solveIK(shared_from_this(), solve_ik_client_, motion.poses,
-            [this](std::vector<sensor_msgs::msg::JointState> joint_states) {
+            [this,
+             response](std::vector<sensor_msgs::msg::JointState> joint_states) {
               rclcpp::Duration duration = rclcpp::Duration::from_seconds(0.5);
               sendTrajectoryGoal(trajectory_client_, joint_states, duration,
                                  send_goal_options_);
+              response->success = true;
             });
   };
 };

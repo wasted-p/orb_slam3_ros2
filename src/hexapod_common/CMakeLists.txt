@@ -37,11 +37,6 @@ add_library(${PROJECT_NAME} SHARED
   src/yaml_utils.cpp
 )
 
-# Specify include directories for the library
-target_include_directories(${PROJECT_NAME} PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
 
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -77,6 +72,12 @@ install(TARGETS
 # Install headers so other packages can include them
 install(DIRECTORY include/
   DESTINATION include
+)
+
+# Specify include directories for the library
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 # Export the targets (creates find_package support)

@@ -3,6 +3,7 @@
 
 #include "builtin_interfaces/msg/duration.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
+#include "hexapod_msgs/srv/execute_motion.hpp"
 #include "hexapod_msgs/srv/get_pose.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -68,4 +69,9 @@ void sendTrajectoryGoal(
     const builtin_interfaces::msg::Duration &duration,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options);
+
+void sendExecuteMotionRequest(
+    rclcpp::Client<hexapod_msgs::srv::ExecuteMotion>::SharedPtr client,
+    const std::string &name, const double &direction, const double &stride);
 #endif // !HEXAPOD_COMMON_REQUESTS_HPP
+//

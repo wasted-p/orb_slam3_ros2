@@ -41,7 +41,6 @@ ament_target_dependencies(teleop_joy
   std_msgs
   sensor_msgs
   hexapod_msgs
-
   hexapod_common
 )
 

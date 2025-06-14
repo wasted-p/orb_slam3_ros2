@@ -1,4 +1,7 @@
+#include "hexapod_msgs/srv/execute_motion.hpp"
 #include <hexapod_common/requests.hpp>
+#include <rclcpp/client.hpp>
+#include <rclcpp/logging.hpp>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -150,4 +153,27 @@ void sendTrajectoryGoal(
     duration = duration + step;
   }
   client->async_send_goal(goal_msg, options);
+}
+
+void executeMotion(
+    rclcpp::Client<hexapod_msgs::srv::ExecuteMotion>::SharedPtr client,
+    const std::string &name, const double &direction, const double &stride) {
+  auto request = std::make_shared<hexapod_msgs::srv::ExecuteMotion::Request>();
+  request->name = name;
+  request->direction = direction;
+  request->stride = stride;
+  std::string NAME = "SetMarkerRequest";
+  client->async_send_request(
+      request,
+      [NAME](rclcpp::Client<hexapod_msgs::srv::ExecuteMotion>::SharedFuture
+                 future_response) {
+        auto response = future_response.get();
+        if (response->success) {
+          RCLCPP_INFO(rclcpp::get_logger(NAME), "ExecuteMotion: %s",
+                      response->message.c_str());
+        } else {
+          RCLCPP_ERROR(rclcpp::get_logger(NAME), "Adding markers failed: %s",
+                       response->message.c_str());
+        }
+      });
 }

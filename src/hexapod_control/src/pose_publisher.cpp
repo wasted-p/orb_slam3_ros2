@@ -77,8 +77,7 @@ private:
         [this, pose](std::vector<sensor_msgs::msg::JointState> joint_states) {
           setJointState(shared_from_this(), set_joint_state_client_,
                         joint_states[0]);
-          rclcpp::Duration duration = rclcpp::Duration::from_seconds(0.5);
-          sendTrajectoryGoal(trajectory_client_, joint_states, duration,
+          sendTrajectoryGoal(trajectory_client_, joint_states, 0.5,
                              send_goal_options_);
 
           for (size_t i = 0; i < pose.names.size(); i++) {

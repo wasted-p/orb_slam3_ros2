@@ -130,12 +130,12 @@ def generate_launch_description():
         # output='screen',
     )
 
-    startup_controllers = Node(
-        package='hexapod_control',
-        executable='startup_controllers',
-        name='startup_controllers',
-        output='screen'
-    )
+    # startup_controllers = Node(
+    #     package='hexapod_control',
+    #     executable='startup_controllers',
+    #     name='startup_controllers',
+    #     output='screen'
+    # )
 
     kinematics_service = Node(
         package='hexapod_control',
@@ -174,11 +174,19 @@ def generate_launch_description():
         name='teleop_joy',
         output="screen",
     )
+
+    startup_controllers = Node(
+        package='hexapod_control',
+        executable='startup_controllers',
+        name='startup_controllers',
+        output='screen'
+    )
+    #
     # Launch trajectory node after startup controllers exit
-    # launch_trajectory_on_startup_exit = RegisterEventHandler(
+    # startup_controllers_on_gz_setup = RegisterEventHandler(
     #     OnProcessExit(
     #         target_action=startup_controllers,
-    #         on_exit=[hexapod_trajectory_node]
+    #         on_exit=[gazebo]
     #     )
     # )
 
@@ -215,8 +223,8 @@ def generate_launch_description():
         ros_gz_bridge_node,
         # hexapod_gait_planner_node ,
         point_cloud_node,
-        startup_controllers,
-        # launch_trajectory_on_startup_exit,
+        # startup_controllers,
+        # startup_controllers_on_gz_setup,
         # rviz_config_arg,
         # use_sim_time_arg,
         # rviz_args_arg,
@@ -229,6 +237,7 @@ def generate_launch_description():
         visualization_server,
         motion_server,
         joy_node,
-        hexapod_teleop
+        hexapod_teleop,
+        # startup_controllers
         # joint_state_publisher
     ])

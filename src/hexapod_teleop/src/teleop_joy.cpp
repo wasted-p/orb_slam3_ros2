@@ -34,19 +34,25 @@ private:
   }
 
   void joystickInputCallback(const sensor_msgs::msg::Joy &msg) {
-    // RCLCPP_INFO(get_logger(),
-    //             "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
-    //             msg.axes[0], msg.axes[1], msg.axes[2], msg.axes[3],
-    //             msg.axes[4], msg.axes[5], msg.axes[6], msg.axes[7]);
-    // controller->setControllerState(msg.axes);
-    // hexapod_msgs::msg::Motion action_msg;
-    const float default_axes[8] = {0, 0, 1, 0, 0, 1, 0, 0};
+    // Left stick input
+    float x = msg.axes[0]; // left/right (inverted)
+    float y = msg.axes[1]; // forward/backward
 
-    bool idle = std::equal(msg.axes.begin(), msg.axes.end(), default_axes);
-    if (idle)
-      return;
+    if (std::abs(x) < 0.05 && std::abs(y) < 0.05) {
+      return; // stick is idle
+    }
+
+    // Compute angle from north (positive Y axis)
+    double angle_rad = std::atan2(x, y); // note: atan2(x, y) not y, x
+
+    RCLCPP_DEBUG(get_logger(),
+                 "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
+                 msg.axes[0], msg.axes[1], msg.axes[2], msg.axes[3],
+                 msg.axes[4], msg.axes[5], msg.axes[6], msg.axes[7]);
+    RCLCPP_DEBUG(get_logger(), "Left stick angle: %.2f rad", angle_rad);
+
     const std::string name = "tripod";
-    sendExecuteMotionRequest(execute_motion_client_, name, 0, 1);
+    sendExecuteMotionRequest(execute_motion_client_, name, angle_rad, 1);
   }
 };
 

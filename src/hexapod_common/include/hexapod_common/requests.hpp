@@ -66,7 +66,7 @@ using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
     const std::vector<sensor_msgs::msg::JointState> &joint_states,
-    const builtin_interfaces::msg::Duration &duration,
+    const double &duration,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options);
 

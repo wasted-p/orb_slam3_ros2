@@ -1,6 +1,7 @@
 #include "hexapod_msgs/srv/execute_motion.hpp"
 #include <hexapod_common/requests.hpp>
 #include <rclcpp/client.hpp>
+#include <rclcpp/duration.hpp>
 #include <rclcpp/logging.hpp>
 
 void setMarkerArray(
@@ -137,20 +138,21 @@ void solveIK(rclcpp::Node::SharedPtr node,
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
     const std::vector<sensor_msgs::msg::JointState> &joint_states,
-    const builtin_interfaces::msg::Duration &step_,
+    const double &duration,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options) {
   auto goal_msg = FollowJointTrajectory::Goal();
   goal_msg.trajectory.joint_names = joint_states[0].name;
 
-  rclcpp::Duration duration(0, 0);
-  rclcpp::Duration step(0, 500000000); // 0.5 sec = 500M ns
+  double step_size = duration / joint_states.size();
+  rclcpp::Duration t(0, 0);
+  rclcpp::Duration step = rclcpp::Duration::from_seconds(step_size);
   for (const sensor_msgs::msg::JointState &joint_state : joint_states) {
     trajectory_msgs::msg::JointTrajectoryPoint point;
     point.positions = joint_state.position;
-    point.time_from_start = duration;
+    t = t + step;
+    point.time_from_start = t;
     goal_msg.trajectory.points.push_back(point);
-    duration = duration + step;
   }
   client->async_send_goal(goal_msg, options);
 }
@@ -162,7 +164,7 @@ void sendExecuteMotionRequest(
   request->name = name;
   request->direction = direction;
   request->stride = stride;
-  std::string NAME = "SetMarkerRequest";
+  std::string NAME = "ExecuteMotionRequest";
   client->async_send_request(
       request,
       [NAME](rclcpp::Client<hexapod_msgs::srv::ExecuteMotion>::SharedFuture
@@ -172,7 +174,7 @@ void sendExecuteMotionRequest(
           RCLCPP_INFO(rclcpp::get_logger(NAME), "ExecuteMotion: %s",
                       response->message.c_str());
         } else {
-          RCLCPP_ERROR(rclcpp::get_logger(NAME), "Adding markers failed: %s",
+          RCLCPP_ERROR(rclcpp::get_logger(NAME), "%s",
                        response->message.c_str());
         }
       });

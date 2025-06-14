@@ -22,6 +22,8 @@ find_package(hexapod_msgs REQUIRED)
 find_package(hexapod_control REQUIRED)
 find_package(hexapod_common REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 # find_package(tf2 REQUIRED)
 # find_package(tf2_ros REQUIRED)
 
@@ -44,6 +46,8 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   hexapod_msgs
   trajectory_msgs
   rclcpp_action
+  tf2
+  tf2_ros
   # Add other dependencies
 )
 

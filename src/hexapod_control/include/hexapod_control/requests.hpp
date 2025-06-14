@@ -40,11 +40,10 @@ void setMarkerArray(
     rclcpp::Client<hexapod_msgs::srv::SetMarkerArray>::SharedPtr client,
     const std::vector<hexapod_msgs::msg::Pose> &poses, bool update = false);
 
-void setJointPositions(
+void setJointState(
     rclcpp::Node::SharedPtr node,
     const rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedPtr client,
-    const std::vector<std::string> &joint_names,
-    const std::vector<double> &joint_positions);
+    const sensor_msgs::msg::JointState &joint_state);
 
 void getPose(const rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedPtr client,
@@ -60,9 +59,8 @@ using BatchSolveIKSuccessCallback =
     std::function<void(const std::vector<sensor_msgs::msg::JointState> &)>;
 void solveIK(rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedPtr client,
-             const std::vector<std::string> &leg_names,
-             const std::vector<geometry_msgs::msg::Point> &positions,
-             SolveIKSuccessCallback result_callback);
+             const std::vector<hexapod_msgs::msg::Pose> &poses,
+             BatchSolveIKSuccessCallback result_callback);
 
 // void RCLCPP_INFO(rclcpp::Logger logger, )
 void setPose(const rclcpp::Node::SharedPtr node,
@@ -73,8 +71,7 @@ using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
-    const std::vector<std::string> &joint_names,
-    const std::vector<double> &joint_positions,
+    const std::vector<sensor_msgs::msg::JointState> &joint_states,
     const builtin_interfaces::msg::Duration &duration,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options);

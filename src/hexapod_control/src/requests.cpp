@@ -1,5 +1,7 @@
 #include "hexapod_msgs/msg/pose.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include <hexapod_control/requests.hpp>
+#include <rclcpp/duration.hpp>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -37,15 +39,14 @@ void setMarkerArray(
       });
 };
 
-void setJointPositions(
+void setJointState(
     rclcpp::Node::SharedPtr node,
     const rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedPtr client,
-    const std::vector<std::string> &joint_names,
-    const std::vector<double> &joint_positions) {
+    const sensor_msgs::msg::JointState &joint_state) {
   auto request = std::make_shared<hexapod_msgs::srv::SetJointState::Request>();
   std::string client_id = "SetJointState Client";
-  request->joint_state.name = joint_names;
-  request->joint_state.position = joint_positions;
+  request->joint_state.name = joint_state.name;
+  request->joint_state.position = joint_state.position;
 
   std::string NAME = "SetJointPositionsRequest";
   client->async_send_request(
@@ -137,16 +138,21 @@ using FollowJointTrajectory = control_msgs::action::FollowJointTrajectory;
 using GoalHandle = rclcpp_action::ClientGoalHandle<FollowJointTrajectory>;
 void sendTrajectoryGoal(
     const rclcpp_action::Client<FollowJointTrajectory>::SharedPtr client,
-    const std::vector<std::string> &joint_names,
-    const std::vector<double> &joint_positions,
-    const builtin_interfaces::msg::Duration &duration,
+    const std::vector<sensor_msgs::msg::JointState> &joint_states,
+    const builtin_interfaces::msg::Duration &step_,
     const rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
         options) {
   auto goal_msg = FollowJointTrajectory::Goal();
-  goal_msg.trajectory.joint_names = joint_names;
-  trajectory_msgs::msg::JointTrajectoryPoint point;
-  point.positions = joint_positions;
-  point.time_from_start = duration;
-  goal_msg.trajectory.points.push_back(point);
+  goal_msg.trajectory.joint_names = joint_states[0].name;
+
+  rclcpp::Duration duration(0, 0);
+  rclcpp::Duration step(0, 500000000); // 0.5 sec = 500M ns
+  for (const sensor_msgs::msg::JointState &joint_state : joint_states) {
+    trajectory_msgs::msg::JointTrajectoryPoint point;
+    point.positions = joint_state.position;
+    point.time_from_start = duration;
+    goal_msg.trajectory.points.push_back(point);
+    duration = duration + step;
+  }
   client->async_send_goal(goal_msg, options);
 }

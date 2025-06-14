@@ -5,6 +5,7 @@
 #include "hexapod_msgs/srv/set_pose.hpp"
 #include "hexapod_msgs/srv/solve_fk.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_control/hexapod.hpp>
 #include <hexapod_control/requests.hpp>
@@ -88,20 +89,20 @@ private:
   void setPose(const hexapod_msgs::msg::Pose &pose,
                const bool relative = false) {
 
-    solveIK(shared_from_this(), solve_ik_client_, pose.names, pose.positions,
-            [this, pose](const JointNames &joint_names,
-                         const JointPositions &joint_positions) {
-              setJointPositions(shared_from_this(), set_joint_state_client_,
-                                joint_names, joint_positions);
-              rclcpp::Duration duration = rclcpp::Duration::from_seconds(0.5);
-              sendTrajectoryGoal(trajectory_client_, joint_names,
-                                 joint_positions, duration, send_goal_options_);
+    solveIK(
+        shared_from_this(), solve_ik_client_, {pose},
+        [this, pose](std::vector<sensor_msgs::msg::JointState> joint_states) {
+          setJointState(shared_from_this(), set_joint_state_client_,
+                        joint_states[0]);
+          rclcpp::Duration duration = rclcpp::Duration::from_seconds(0.5);
+          sendTrajectoryGoal(trajectory_client_, joint_states, duration,
+                             send_goal_options_);
 
-              for (size_t i = 0; i < pose.names.size(); i++) {
-                current_pose_[pose.names[i]] = pose.positions[i];
-              }
-              pose_pub_->publish(pose);
-            });
+          for (size_t i = 0; i < pose.names.size(); i++) {
+            current_pose_[pose.names[i]] = pose.positions[i];
+          }
+          pose_pub_->publish(pose);
+        });
   }
 
   hexapod_msgs::msg::Pose getPose() {

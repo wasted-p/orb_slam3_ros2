@@ -10,6 +10,7 @@
 #include <hexapod_common/hexapod.hpp>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <hexapod_msgs/srv/set_pose.hpp>
@@ -24,24 +25,6 @@
 #include <rclcpp/service.hpp>
 #include <string>
 #include <vector>
-#include <yaml-cpp/yaml.h>
-
-void parseYaml(std::string &yaml_string,
-               std::map<std::string, geometry_msgs::msg::Point> map) {
-  try {
-    YAML::Node root = YAML::Load(yaml_string);
-    for (const auto &pair : root["initial_pose"]) {
-      std::string joint_name = pair.first.as<std::string>();
-      geometry_msgs::msg::Point position;
-      position.x = pair.second["x"].as<double>();
-      position.y = pair.second["y"].as<double>();
-      position.z = pair.second["z"].as<double>();
-      map[joint_name] = position;
-    }
-  } catch (const YAML::Exception &e) {
-    throw std::runtime_error(e.what());
-  }
-}
 
 class PosePublisher : public rclcpp::Node {
 private:

@@ -3,31 +3,16 @@
 #include <cmath>
 #include <hexapod_common/hexapod.hpp>
 #include <hexapod_common/ros_constants.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/set_joint_state.hpp>
 #include <map>
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/service.hpp>
-#include <stdexcept>
 #include <string>
-#include <yaml-cpp/node/node.h>
-#include <yaml-cpp/yaml.h>
 
 using namespace std::chrono_literals;
-
-void parseYaml(std::string &yaml_string, std::map<std::string, double> &map) {
-  try {
-    YAML::Node root = YAML::Load(yaml_string);
-    for (const auto &pair : root["initial_positions"]) {
-      std::string joint_name = pair.first.as<std::string>();
-      double value = pair.second.as<double>();
-      map[joint_name] = value;
-    }
-  } catch (const YAML::Exception &e) {
-    throw std::runtime_error(e.what());
-  }
-}
 
 class JointStatePublisher : public rclcpp::Node {
 public:
@@ -66,7 +51,7 @@ private:
     std::string yaml_string = this->declare_parameter(
         "initial_positions", std::string("{initial_positions:}"));
 
-    parseYaml(yaml_string, initial_positions_);
+    parseYamls(yaml_string, initial_positions_);
     RCLCPP_INFO(this->get_logger(), "Loaded %zu initial positions",
                 initial_positions_.size());
 

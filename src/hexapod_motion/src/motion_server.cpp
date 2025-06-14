@@ -24,6 +24,7 @@ private:
   rclcpp::Service<hexapod_msgs::srv::ExecuteMotion>::SharedPtr
       execute_motion_service_;
 
+  bool executing_motion_;
   rclcpp::Client<hexapod_msgs::srv::SolveIK>::SharedPtr solve_ik_client_;
   rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
       trajectory_client_;
@@ -60,6 +61,7 @@ private:
             RCLCPP_ERROR(this->get_logger(), "Unknown result code");
             break;
           }
+          executing_motion_ = false;
         };
 
     trajectory_client_ = rclcpp_action::create_client<
@@ -76,6 +78,9 @@ private:
       const hexapod_msgs::srv::ExecuteMotion::Request::SharedPtr request,
       hexapod_msgs::srv::ExecuteMotion::Response::SharedPtr response) {
 
+    if (executing_motion_)
+      return;
+    executing_motion_ = true;
     std::string name = "tripod";
     const Motion &motion = motions_[name];
     RCLCPP_INFO(get_logger(), "Executing %s", name.c_str());

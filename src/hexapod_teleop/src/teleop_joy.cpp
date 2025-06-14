@@ -19,7 +19,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
 
 public:
-  TeleopJoy() : Node("Joy To Motion") { setupROS(); }
+  TeleopJoy() : Node("teleop_joy") { setupROS(); }
 
 private:
   void setupROS() {
@@ -34,17 +34,19 @@ private:
   }
 
   void joystickInputCallback(const sensor_msgs::msg::Joy &msg) {
-    RCLCPP_DEBUG(get_logger(),
-                 "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
-                 msg.axes[0], msg.axes[1], msg.axes[2], msg.axes[3],
-                 msg.axes[4], msg.axes[5], msg.axes[6], msg.axes[7]);
+    // RCLCPP_INFO(get_logger(),
+    //             "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
+    //             msg.axes[0], msg.axes[1], msg.axes[2], msg.axes[3],
+    //             msg.axes[4], msg.axes[5], msg.axes[6], msg.axes[7]);
     // controller->setControllerState(msg.axes);
     // hexapod_msgs::msg::Motion action_msg;
     const float default_axes[8] = {0, 0, 1, 0, 0, 1, 0, 0};
 
     bool idle = std::equal(msg.axes.begin(), msg.axes.end(), default_axes);
+    if (idle)
+      return;
     const std::string name = "tripod";
-    // sendExecuteMotionRequest(execute_motion_client_, name, 0, 1);
+    sendExecuteMotionRequest(execute_motion_client_, name, 0, 1);
   }
 };
 

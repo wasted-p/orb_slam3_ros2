@@ -155,7 +155,7 @@ void sendTrajectoryGoal(
   client->async_send_goal(goal_msg, options);
 }
 
-void executeMotion(
+void sendExecuteMotionRequest(
     rclcpp::Client<hexapod_msgs::srv::ExecuteMotion>::SharedPtr client,
     const std::string &name, const double &direction, const double &stride) {
   auto request = std::make_shared<hexapod_msgs::srv::ExecuteMotion::Request>();

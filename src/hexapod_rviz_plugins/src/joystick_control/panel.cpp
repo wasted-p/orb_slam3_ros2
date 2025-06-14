@@ -52,7 +52,6 @@ void JoystickRvizPanel::onInitialize() {
   }
   node_ = ros_node_abstraction->get_raw_node();
 
-  launchJoyNode();
   setupROS();
 }
 
@@ -92,23 +91,6 @@ void JoystickRvizPanel::setupROS() {
   joy_sub_ = node_->create_subscription<sensor_msgs::msg::Joy>(
       "/joy", 10,
       std::bind(&JoystickRvizPanel::joyCallback, this, std::placeholders::_1));
-}
-
-void JoystickRvizPanel::launchJoyNode() {
-  // Fork and execute ros2 run joy joy_node
-  joy_node_pid_ = fork();
-  if (joy_node_pid_ == 0) {
-    // Child process
-    execlp("ros2", "ros2", "run", "joy", "joy_node", nullptr);
-    // If execlp fails
-    RCLCPP_ERROR(node_->get_logger(), "Failed to launch joy_node");
-    exit(1);
-  } else if (joy_node_pid_ < 0) {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to fork process for joy_node");
-  } else {
-    RCLCPP_INFO(node_->get_logger(), "Launched joy_node with PID %d",
-                joy_node_pid_);
-  }
 }
 
 void JoystickRvizPanel::joyCallback(
@@ -154,12 +136,6 @@ void JoystickRvizPanel::publishJoystickState(const float axes[6]) {
     msg->buttons = {0, 0, 0, 0, 0, 0, 0, 0}; // Placeholder, no buttons
     msg->header.stamp = node_->get_clock()->now();
     joy_pub_->publish(std::move(msg));
-
-    // Print joystick message
-    std::stringstream ss;
-    ss << "Published joy message: axes=[" << -axes[0] << ", " << axes[1] << ", "
-       << -axes[2] << ", " << axes[3] << "], buttons=[0, 0, 0, 0, 0, 0, 0, 0]";
-    RCLCPP_INFO(node_->get_logger(), "%s", ss.str().c_str());
   }
 }
 

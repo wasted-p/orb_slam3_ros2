@@ -47,7 +47,6 @@ private:
 
   void setupUi();
   void setupROS();
-  void launchJoyNode();
   void publishCommand(const std::string &command);
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg);
   void setPublishing(bool state);

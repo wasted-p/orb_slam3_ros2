@@ -97,6 +97,13 @@ def generate_launch_description():
         # parameters=[initial_pose_path]
     )
 
+    joy_node = Node(
+        package='joy',
+        executable='joy_node',
+        name='joy_node',
+        output='screen'
+    )
+
     # Nodes
     joint_state_publisher = Node(
         package='hexapod_control',
@@ -141,5 +148,6 @@ def generate_launch_description():
         motion_server_node,
         kinematics_service,
         pose_publisher,
-        visualization_server
+        visualization_server,
+        joy_node
     ])

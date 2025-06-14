@@ -193,6 +193,13 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}],
     )
 
+    joy_node = Node(
+        package='joy',
+        executable='joy_node',
+        name='joy_node',
+        output='screen'
+    )
+
     # joint_state_publisher = Node(
     #     package='hexapod_control',
     #     executable='joint_state_publisher',
@@ -222,6 +229,7 @@ def generate_launch_description():
         pose_publisher,
         visualization_server,
         trajectory_publisher,
-        motion_server
+        motion_server,
+        joy_node
         # joint_state_publisher
     ])

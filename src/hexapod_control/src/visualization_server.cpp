@@ -15,7 +15,9 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
+#include <functional>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/logging.hpp>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
 #include <hexapod_msgs/msg/pose.hpp>
@@ -26,6 +28,7 @@
 #include <rclcpp/client.hpp>
 #include <rclcpp/create_client.hpp>
 #include <rclcpp/create_publisher.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/service.hpp>
@@ -75,6 +78,7 @@ void processFeedback(
     hexapod_msgs::msg::Pose pose;
     pose.names = {feedback->marker_name};
     pose.positions = {feedback->pose.position};
+
     setPose(node, client, pose);
     break;
   }
@@ -110,13 +114,15 @@ private:
 
 private:
   void poseUpdateCallback(const hexapod_msgs::msg::Pose msg) {
+    RCLCPP_LOG_POSE(msg);
     for (size_t i = 0; i < msg.names.size(); i++) {
       geometry_msgs::msg::Pose pose;
       const std::string &name = msg.names[i];
       pose.position = msg.positions[i];
       server_->setPose(name, pose);
+
+      server_->applyChanges();
     }
-    server_->applyChanges();
   }
 
   void setupInteractiveMarkers() {
@@ -155,24 +161,38 @@ private:
         INTERACTIVE_MARKERS_SERVER_NAME, this, rclcpp::QoS(10),
         rclcpp::QoS(10));
 
-    set_marker_array_service_ = create_service<
-        hexapod_msgs::srv::SetMarkerArray>(
-        SET_MARKER_ARRAY_SERVICE_NAME,
-        [this](const std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Request>
-                   request,
-               std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Response>
-                   response) {
-          for (size_t i = 0; i < request->leg_names.size(); i++) {
-            const std::string &leg_name = request->leg_names[i];
-            const std::vector<geometry_msgs::msg::Point> &positions =
-                request->trajectories[i].points;
-            publishMarkers(leg_name, positions);
-          }
-          response->success = true;
-          response->message = "Successfully Set Marker Array";
-        });
+    set_marker_array_service_ =
+        create_service<hexapod_msgs::srv::SetMarkerArray>(
+            SET_MARKER_ARRAY_SERVICE_NAME,
+            std::bind(&VisualizationServer::handleSetMarkerArrayRequest, this,
+                      std::placeholders::_1, std::placeholders::_2));
     markers_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
         MARKER_ARRAY_TOPIC, rclcpp::QoS(10));
+  }
+
+  void handleSetMarkerArrayRequest(
+      const std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Request> request,
+      std::shared_ptr<hexapod_msgs::srv::SetMarkerArray::Response> response) {
+
+    std::map<std::string, std::vector<geometry_msgs::msg::Point>> map;
+
+    for (const std::string &leg_name : LEG_NAMES) {
+      map[leg_name] =
+          std::vector<geometry_msgs::msg::Point>(request->poses.size());
+    }
+    for (size_t i = 0; i < request->poses.size(); i++) {
+      const hexapod_msgs::msg::Pose &pose = request->poses[i];
+      for (size_t j = 0; j < pose.names.size(); j++) {
+        map[pose.names[j]].at(i) = pose.positions[j];
+      }
+    }
+
+    for (const auto &[leg_name, positions] : map) {
+      publishMarkers(leg_name, positions);
+    }
+
+    response->success = true;
+    response->message = "Successfully Set Marker Array";
   }
 
   void publishMarkers(const std::string leg_name,
@@ -223,8 +243,8 @@ private:
         arrow.id = marker_id++;
         arrow.type = visualization_msgs::msg::Marker::ARROW;
         arrow.action = action;
-        arrow.points.push_back(positions[i - 1]);
         arrow.points.push_back(position);
+        arrow.points.push_back(positions[i - 1]);
         arrow.scale.x = 0.0025; // shaft diameter
         arrow.scale.y = 0.01;   // head diameter
         arrow.scale.z = 0.01;   // head length

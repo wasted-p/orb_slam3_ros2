@@ -1,5 +1,4 @@
-string[] leg_names
-hexapod_msgs/PointArray[] trajectories
+hexapod_msgs/Pose[] poses
 bool update
 ---
 bool success

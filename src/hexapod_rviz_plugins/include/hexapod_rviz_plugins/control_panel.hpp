@@ -70,7 +70,7 @@ private:
   rclcpp::Subscription<hexapod_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr set_pose_client_;
 
-  bool relative = true;
+  bool relative = false;
 
   std::map<std::string, geometry_msgs::msg::Point> initial_pose_;
 

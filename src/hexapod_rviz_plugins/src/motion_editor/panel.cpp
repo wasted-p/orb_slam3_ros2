@@ -95,8 +95,6 @@ void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
   if (current_pose < 0)
     return;
 
-  // selectedPose() = pose;
-
   setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses, true);
 }
 
@@ -244,24 +242,24 @@ void MotionEditorRvizPanel::onAddPose() {
   auto get_pose_request =
       std::make_shared<hexapod_msgs::srv::GetPose::Request>();
 
-  get_pose_client_->async_send_request(
-      get_pose_request,
-      [this](rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedFuture
-                 future_response) {
-        auto response = future_response.get();
-        hexapod_msgs::msg::Pose pose = response->pose;
-        pose.name = "Pose " + std::to_string(created_poses_count_ + 1);
-        RCLCPP_INFO(node_->get_logger(), "Number of poses: %lu ",
-                    pose.names.size());
-
-        selectedMotion().poses.push_back(pose);
-        setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses);
-        created_poses_count_++;
-        setCurrentPose(selectedMotion().poses.size() - 1);
-        current_pose = selectedMotion().poses.size() - 1;
-        pose_list_widget_->addItem(pose.name.c_str());
-        RCLCPP_INFO(node_->get_logger(), "Added Pose %s", "Pose");
-      });
+  // get_pose_client_->async_send_request(
+  //     get_pose_request,
+  //     [this](rclcpp::Client<hexapod_msgs::srv::GetPose>::SharedFuture
+  //                future_response) {
+  //       auto response = future_response.get();
+  //       hexapod_msgs::msg::Pose pose = response->pose;
+  //       pose.name = "Pose " + std::to_string(created_poses_count_ + 1);
+  //       RCLCPP_INFO(node_->get_logger(), "Number of poses: %lu ",
+  //                   pose.names.size());
+  //
+  //       selectedMotion().poses.push_back(pose);
+  //       setMarkerArray(node_, set_marker_array_client_,
+  //       selectedMotion().poses); created_poses_count_++;
+  //       setCurrentPose(selectedMotion().poses.size() - 1);
+  //       current_pose = selectedMotion().poses.size() - 1;
+  //       pose_list_widget_->addItem(pose.name.c_str());
+  //       RCLCPP_INFO(node_->get_logger(), "Added Pose %s", "Pose");
+  //     });
 }
 
 void MotionEditorRvizPanel::onDeletePose() {

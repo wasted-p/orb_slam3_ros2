@@ -8,6 +8,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/logging.hpp>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
 #include <hexapod_common/yaml_utils.hpp>
@@ -82,6 +83,11 @@ private:
 
           for (size_t i = 0; i < pose.names.size(); i++) {
             current_pose_[pose.names[i]] = pose.positions[i];
+          }
+          hexapod_msgs::msg::Pose msg;
+          for (const auto &[leg_name, position] : current_pose_) {
+            msg.names.push_back(leg_name);
+            msg.positions.push_back(position);
           }
           pose_pub_->publish(pose);
         });

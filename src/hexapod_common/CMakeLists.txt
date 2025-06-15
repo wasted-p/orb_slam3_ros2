@@ -28,6 +28,7 @@ find_package(yaml-cpp REQUIRED)
 add_library(${PROJECT_NAME} SHARED
   src/requests.cpp
   src/yaml_utils.cpp
+  src/logging.cpp
 )
 
 # Include directories

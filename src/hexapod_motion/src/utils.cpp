@@ -85,7 +85,6 @@ void saveToYaml(std::map<std::string, Motion> &motions) {
     motion_node["duration"] = motion.duration;
     motion_node["type"] = motion.type;
     motion_node["definition"] = pose_filename;
-    // motion_node[""] = motion.type;
     motionsnode[motion_id] = motion_node;
 
     // Save poses to separate file

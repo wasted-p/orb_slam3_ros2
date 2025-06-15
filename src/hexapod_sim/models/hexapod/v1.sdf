@@ -289,7 +289,7 @@
           </noise>
         </camera>
         <pose>-0.012500000000000001 0 0.055 3.1415926535746808 -1.5707926535453185 1.570792653591518</pose>
-        <!-- <gz_frame_id>depth_camera_optical_frame</gz_frame_id> -->
+        <gz_frame_id>depth_camera_optical_frame</gz_frame_id>
       </sensor>
     </link>
     <joint name="bottom_left_rotate_joint" type="revolute">

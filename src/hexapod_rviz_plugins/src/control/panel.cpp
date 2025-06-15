@@ -208,11 +208,9 @@ void HexapodControlRvizPanel::setRelativeMode(bool relative) {
   this->relative = relative;
   hexapod_msgs::msg::Pose pose = pose_table_->getPose();
   if (relative) {
-
     pose = toRelative(pose, initial_pose_);
   } else {
-
-    pose = toRelative(pose, initial_pose_);
+    pose = toAbsolute(pose, initial_pose_);
   }
   pose_table_->setPose(pose);
 }
@@ -333,6 +331,11 @@ void HexapodControlRvizPanel::setupROS() {
 void HexapodControlRvizPanel::legPoseUpdateCallback(
     hexapod_msgs::msg::Pose pose) {
 
+  for (size_t i = 0; i < pose.names.size(); i++) {
+    RCLCPP_INFO(get_logger("TEST"), "%s=[%0.4f,%0.4f,%0.4f]",
+                pose.names[i].c_str(), pose.positions[i].x, pose.positions[i].y,
+                pose.positions[i].z);
+  }
   if (relative) {
     pose = toRelative(pose, initial_pose_);
   }

@@ -1,8 +1,13 @@
+#include "geometry_msgs/msg/pose.hpp"
+#include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/execute_motion.hpp"
+#include <hexapod_common/hexapod.hpp>
 #include <hexapod_common/requests.hpp>
 #include <rclcpp/client.hpp>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/logging.hpp>
+#include <string>
+#include <vector>
 
 void setMarkerArray(
     rclcpp::Node::SharedPtr node,
@@ -10,20 +15,7 @@ void setMarkerArray(
     const std::vector<hexapod_msgs::msg::Pose> &poses, bool update) {
   auto request = std::make_shared<hexapod_msgs::srv::SetMarkerArray::Request>();
   request->update = update;
-  std::map<std::string, std::vector<geometry_msgs::msg::Point>> map;
-  for (const hexapod_msgs::msg::Pose &pose : poses) {
-    for (size_t i = 0; i < pose.names.size(); i++) {
-      map[pose.names[i]].push_back(pose.positions[i]);
-    }
-  }
-
-  for (const auto &entry : map) {
-    hexapod_msgs::msg::PointArray trajectory;
-    request->leg_names.push_back(entry.first);
-    trajectory.points = entry.second;
-    request->trajectories.push_back(trajectory);
-  }
-
+  request->poses = poses;
   std::string NAME = "SetMarkerRequest";
   client->async_send_request(
       request,

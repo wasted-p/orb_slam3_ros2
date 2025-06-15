@@ -59,6 +59,9 @@ add_library(${PROJECT_NAME} SHARED
   include/joystick_control/joystick.hpp  # <-- Add this line
   src/joystick_control/joystick.cpp
   ${RESOURCES_RCC}  # Add the compiled qrc here
+
+  src/arm_control/panel.cpp
+  include/arm_control/panel.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

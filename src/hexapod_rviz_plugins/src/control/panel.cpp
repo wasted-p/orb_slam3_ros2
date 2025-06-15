@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <hexapod_common/hexapod.hpp>
 #include <hexapod_common/ros_constants.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <map>
 #include <pluginlib/class_list_macros.hpp>
@@ -320,14 +321,12 @@ void HexapodControlRvizPanel::setupROS() {
   std::string service_name, topic_name;
   std::string prefix_ = "hexapod";
 
-  service_name = "/" + prefix_ + "/" + SET_POSE_SERVICE_NAME;
-  set_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::SetPose>(service_name);
+  set_pose_client_ = node_->create_client<hexapod_msgs::srv::SetPose>(
+      joinWithSlash(prefix_, SET_POSE_SERVICE_NAME));
   // std::string POSE_TOPIC = "/hexapod/pose";
 
-  topic_name = "/" + prefix_ + "/" + POSE_TOPIC;
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
-      topic_name,
+      joinWithSlash(prefix_, POSE_TOPIC),
       10, // QoS history depth
       std::bind(&HexapodControlRvizPanel::legPoseUpdateCallback, this,
                 std::placeholders::_1));

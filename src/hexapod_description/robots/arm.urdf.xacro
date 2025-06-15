@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="hexapod" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="prefix" value="arm"></xacro:property>
+  <xacro:property name="description_package" value="$(find hexapod_description)"></xacro:property>
+  <xacro:property name="robots" value="${description_package}/robots"></xacro:property>
+  <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"></xacro:property>
+  <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"></xacro:include>
+  <xacro:include filename="$(find hexapod_description)/ros2_control/arm.ros2_control.xacro"></xacro:include>
+  <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"></xacro:include>
+  <xacro:include filename="${robots}/parts/arm/arm.urdf.xacro"></xacro:include>
+  <xacro:include filename="${robots}/parts/sensors/sipeed_maixsense_a010.urdf.xacro"></xacro:include>
+  <!-- ================== ARGS ===================== -->
+  <xacro:arg default="initial_positions.yaml" name="initial_positions_file"></xacro:arg>
+  <!-- =============== Link & Joint =============== -->
+  <!-- Base -->
+  <link name="base_link"></link>
+  <!-- Arm -->
+  <xacro:arm parent="base_link">
+    <origin rpy="0 0 0" xyz="0.025588 -0.019423 0.0449"></origin>
+  </xacro:arm>
+  <!-- ================ Camera =============== -->
+  <xacro:camera parent="arm_retractor">
+    <origin rpy="0 ${-1/2*pi} ${-1/2*pi}" xyz="-0.0125 0.0 0.055"></origin>
+  </xacro:camera>
+  <!-- =============== Gazebo =============== -->
+  <xacro:hexapod_gazebo></xacro:hexapod_gazebo>
+  <xacro:hexapod_ros2_control initial_positions_file="$(arg initial_positions_file)" name="FakeSystem"></xacro:hexapod_ros2_control>
+</robot>

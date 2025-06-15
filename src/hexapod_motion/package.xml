@@ -13,6 +13,7 @@
   <depend>geometry_msgs</depend>
   <depend>hexapod_msgs</depend>
   <depend>hexapod_control</depend>
+  <depend>hexapod_common</depend>
   <!-- Test dependencies -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

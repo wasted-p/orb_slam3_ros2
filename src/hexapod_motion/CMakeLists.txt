@@ -32,57 +32,14 @@ find_package(tf2_ros REQUIRED)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
-# Library
-# ====================
-# Create the library
-add_library(${PROJECT_NAME}_lib SHARED
-  src/utils.cpp
-)
-
-# Link dependencies to the library
-ament_target_dependencies(${PROJECT_NAME}_lib
-  rclcpp
-  geometry_msgs
-  hexapod_msgs
-  trajectory_msgs
-  rclcpp_action
-  tf2
-  tf2_ros
-  # Add other dependencies
-)
-
-target_link_libraries(${PROJECT_NAME}_lib
-  yaml-cpp
-)
-
-
-
-# Specify include directories for the library
-target_include_directories(${PROJECT_NAME}_lib PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-ament_export_include_directories(include)
-
-# Install library
-install(TARGETS
-  ${PROJECT_NAME}_lib
-  DESTINATION lib/${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}  # Note: ROS2 convention
-)
-
 # Install headers so other packages can include them
 install(DIRECTORY include/
   DESTINATION include
 )
 
 # Export the targets (creates find_package support)
-ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+# ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(rclcpp hexapod_msgs)
-
 
 
 # Build motion_server executable
@@ -100,12 +57,13 @@ ament_target_dependencies(motion_server
   hexapod_common
   rclcpp_action
   control_msgs
+  tf2
+  tf2_ros
+  rclcpp_action
+  control_msgs
 )
 
 
-target_link_libraries(motion_server
-  hexapod_motion_lib
-)
 
 # Install headers so other packages can include them
 install(DIRECTORY include/

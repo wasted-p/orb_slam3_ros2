@@ -1,0 +1,4 @@
+initial_positions:
+  arm_rotator_joint: 0.0
+  arm_abductor_joint: 0.0
+  arm_retractor_joint: 0.0

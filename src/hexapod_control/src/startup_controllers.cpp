@@ -33,9 +33,10 @@ public:
         this->create_client<controller_manager_msgs::srv::SwitchController>(
             "/controller_manager/switch_controller");
 
-    controllers_ = {"joint_state_broadcaster",
-                    "legs_joint_trajectory_controller",
-                    "arm_joint_group_position_controller"};
+    controllers_ = {
+        "joint_state_broadcaster", "legs_joint_trajectory_controller",
+        // "arm_joint_group_position_controller"
+    };
 
     wait_for_services();
     setup_controllers();

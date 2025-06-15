@@ -1,5 +1,5 @@
 #include "control_msgs/action/follow_joint_trajectory.hpp"
-#include "hexapod_motion/motion.hpp"
+
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/execute_motion.hpp"
 #include "hexapod_msgs/srv/solve_ik.hpp"
@@ -7,13 +7,14 @@
 #include <cmath>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
-#include <hexapod_motion/utils.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/execute_motion.hpp>
 #include <rclcpp/executors.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/service.hpp>
 #include <rclcpp_action/client.hpp>
+#include <rclcpp_action/create_client.hpp>
 #include <tf2/LinearMath/Transform.hpp>
 #include <vector>
 
@@ -98,11 +99,8 @@ public:
   }
 
 private:
+  std::string prefix_;
   void setupROS() {
-
-    solve_ik_client_ =
-        create_client<hexapod_msgs::srv::SolveIK>(SOLVE_IK_SERVICE_NAME);
-
     send_goal_options_.result_callback =
         [this](const GoalHandle::WrappedResult &result) {
           switch (result.code) {
@@ -122,12 +120,20 @@ private:
           executing_motion_ = false;
         };
 
-    trajectory_client_ = rclcpp_action::create_client<
-        control_msgs::action::FollowJointTrajectory>(this,
-                                                     TRAJECTORY_SERVICE_NAME);
+    prefix_ = this->declare_parameter("prefix", std::string(""));
 
+    solve_ik_client_ = create_client<hexapod_msgs::srv::SolveIK>(
+        joinWithSlash(prefix_, SOLVE_IK_SERVICE_NAME));
+
+    // trajectory_client_ = rclcpp_action::create_client<
+    //     control_msgs::action::FollowJointTrajectory>(
+    //     joinWithSlash(TRAJECTORY_SERVICE_NAME));
+
+    trajectory_client_ = rclcpp_action::create_client<
+        control_msgs::action::FollowJointTrajectory>(
+        this, joinWithSlash(TRAJECTORY_SERVICE_NAME));
     execute_motion_service_ = create_service<hexapod_msgs::srv::ExecuteMotion>(
-        EXECUTE_MOTION_SERVICE_NAME,
+        joinWithSlash(prefix_, EXECUTE_MOTION_SERVICE_NAME),
         std::bind(&MotionServer::handleExecuteMotionRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
   }

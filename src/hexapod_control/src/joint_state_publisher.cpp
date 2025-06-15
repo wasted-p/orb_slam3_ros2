@@ -20,6 +20,7 @@ public:
   ~JointStatePublisher() {};
 
 private:
+  std::string prefix_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr
       joint_state_publisher_;
@@ -34,40 +35,44 @@ private:
   }
 
   void setupROS() {
-    joint_state_publisher_ =
-        this->create_publisher<sensor_msgs::msg::JointState>(JOINT_STATE_TOPIC,
-                                                             rclcpp::QoS(10));
+    std::string topic_name, service_name, yaml_string;
+
+    // Declare and get the YAML string parameter
+    yaml_string = this->declare_parameter("initial_positions",
+                                          std::string("{initial_positions:}"));
+
+    parseYamls(yaml_string, initial_positions_);
+
+    // Declare and get the YAML string parameter
+    prefix_ = this->declare_parameter("prefix", std::string(""));
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(100),
         std::bind(&JointStatePublisher::timerCallback, this));
-    joint_state_msg_.header.frame_id = "base_footprint";
 
+    topic_name = "/" + prefix_ + "/" + JOINT_STATE_TOPIC;
+    joint_state_publisher_ =
+        this->create_publisher<sensor_msgs::msg::JointState>(topic_name,
+                                                             rclcpp::QoS(10));
+
+    service_name = "/" + prefix_ + "/" + SET_JOINT_STATE_SERVICE_NAME;
     set_joint_state_service_ = create_service<hexapod_msgs::srv::SetJointState>(
-        SET_JOINT_STATE_SERVICE_NAME,
+        service_name,
         std::bind(&JointStatePublisher::handleSetJointStateRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
 
-    // Declare and get the YAML string parameter
-    std::string yaml_string = this->declare_parameter(
-        "initial_positions", std::string("{initial_positions:}"));
-
-    parseYamls(yaml_string, initial_positions_);
-    RCLCPP_INFO(this->get_logger(), "Loaded %zu initial positions",
-                initial_positions_.size());
-
-    RCLCPP_INFO(get_logger(), "Initialising joints:");
     for (const auto &entry : initial_positions_) {
-      RCLCPP_INFO(get_logger(), " - %s=%.2f", entry.first.c_str(),
-                  entry.second);
       joint_state_msg_.name.push_back(entry.first);
       joint_state_msg_.position.push_back(entry.second);
     }
+
+    joint_state_msg_.header.frame_id = "base_footprint";
   }
 
   void handleSetJointStateRequest(
       const std::shared_ptr<hexapod_msgs::srv::SetJointState::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SetJointState::Response> response) {
-    RCLCPP_DEBUG(get_logger(), "SetJointState Request Recieved");
+
+    std::string topic_name = "/" + prefix_ + "/" + JOINT_STATE_TOPIC;
 
     joint_state_msg_ = request->joint_state;
     joint_state_msg_.header.stamp = this->now();

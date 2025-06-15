@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <cstddef>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/ros_constants.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
 #include <map>
 #include <pluginlib/class_list_macros.hpp>
@@ -189,6 +190,7 @@ QDoubleSpinBox *PoseTable::createSpinBox() {
 
 HexapodControlRvizPanel::HexapodControlRvizPanel(QWidget *parent)
     : rviz_common::Panel(parent) {
+  relative = true;
 
   initial_pose_ = {
       {"top_left", point(0.1287, 0.0911, 0.0043)},
@@ -216,12 +218,10 @@ void HexapodControlRvizPanel::setRelativeMode(bool relative) {
 }
 
 void HexapodControlRvizPanel::onStepSizeChanged(double value) {
-  RCLCPP_INFO(node_->get_logger(), "Step size changed: %.3f", value);
   pose_table_->setStep(value);
 }
 
 void HexapodControlRvizPanel::onResetClicked() {
-  RCLCPP_INFO(node_->get_logger(), "Reset button clicked");
   hexapod_msgs::msg::Pose pose;
   for (const auto &entry : initial_pose_) {
     geometry_msgs::msg::Point position;
@@ -285,7 +285,7 @@ void HexapodControlRvizPanel::setupUi() {
   step_spinbox->setSingleStep(0.005);
   step_spinbox->setDecimals(3);
 
-  relative_checkbox->toggled(true);
+  relative_checkbox->toggled(relative);
 
   top_controls_layout->addWidget(relative_checkbox);
   top_controls_layout->addWidget(step_spinbox);
@@ -317,12 +317,17 @@ void HexapodControlRvizPanel::setupUi() {
 }
 
 void HexapodControlRvizPanel::setupROS() {
+  std::string service_name, topic_name;
+  std::string prefix_ = "hexapod";
+
+  service_name = "/" + prefix_ + "/" + SET_POSE_SERVICE_NAME;
   set_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::SetPose>(SET_POSE_SERVICE_NAME);
+      node_->create_client<hexapod_msgs::srv::SetPose>(service_name);
   // std::string POSE_TOPIC = "/hexapod/pose";
 
+  topic_name = "/" + prefix_ + "/" + POSE_TOPIC;
   pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
-      POSE_TOPIC,
+      topic_name,
       10, // QoS history depth
       std::bind(&HexapodControlRvizPanel::legPoseUpdateCallback, this,
                 std::placeholders::_1));
@@ -330,12 +335,6 @@ void HexapodControlRvizPanel::setupROS() {
 
 void HexapodControlRvizPanel::legPoseUpdateCallback(
     hexapod_msgs::msg::Pose pose) {
-
-  for (size_t i = 0; i < pose.names.size(); i++) {
-    RCLCPP_INFO(get_logger("TEST"), "%s=[%0.4f,%0.4f,%0.4f]",
-                pose.names[i].c_str(), pose.positions[i].x, pose.positions[i].y,
-                pose.positions[i].z);
-  }
   if (relative) {
     pose = toRelative(pose, initial_pose_);
   }

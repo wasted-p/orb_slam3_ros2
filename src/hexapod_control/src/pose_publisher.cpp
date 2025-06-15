@@ -42,6 +42,7 @@ private:
   rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
       trajectory_client_;
 
+  std::string prefix_;
   rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
       send_goal_options_ =
           rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
@@ -62,12 +63,12 @@ private:
         this->declare_parameter("initial_pose", std::string("{initial_pose:}"));
 
     parseYaml(yaml_string, initial_pose_);
-    RCLCPP_INFO(this->get_logger(), "Loaded Initial Pose:");
-    for (const auto &entry : initial_pose_) {
-      RCLCPP_INFO(this->get_logger(), " - %s=[%.4f,%.4f,%.4f]",
-                  entry.first.c_str(), entry.second.x, entry.second.y,
-                  entry.second.z);
+    hexapod_msgs::msg::Pose pose;
+    for (const auto &[leg_name, position] : initial_pose_) {
+      pose.names.push_back(leg_name);
+      pose.positions.push_back(position);
     }
+    pose_pub_->publish(pose);
   }
 
   void setPose(const hexapod_msgs::msg::Pose &pose,
@@ -103,20 +104,22 @@ private:
   }
 
   void setupROS() {
+    prefix_ = this->declare_parameter("prefix", std::string(""));
+
     pose_pub_ = this->create_publisher<hexapod_msgs::msg::Pose>(
         POSE_TOPIC, rclcpp::QoS(10));
 
-    solve_ik_client_ =
-        create_client<hexapod_msgs::srv::SolveIK>(SOLVE_IK_SERVICE_NAME);
+    solve_ik_client_ = create_client<hexapod_msgs::srv::SolveIK>(
+        joinWithSlash(prefix_, SOLVE_IK_SERVICE_NAME));
 
-    solve_fk_client_ =
-        create_client<hexapod_msgs::srv::SolveFK>(SOLVE_FK_SERVICE_NAME);
+    solve_fk_client_ = create_client<hexapod_msgs::srv::SolveFK>(
+        joinWithSlash(prefix_, SOLVE_FK_SERVICE_NAME));
 
     set_joint_state_client_ = create_client<hexapod_msgs::srv::SetJointState>(
-        SET_JOINT_STATE_SERVICE_NAME);
+        joinWithSlash(prefix_, SET_JOINT_STATE_SERVICE_NAME));
 
     get_pose_service_ = create_service<hexapod_msgs::srv::GetPose>(
-        GET_POSE_SERVICE_NAME,
+        joinWithSlash(prefix_, GET_POSE_SERVICE_NAME),
         [this](
             const std::shared_ptr<hexapod_msgs::srv::GetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::GetPose::Response> response) {
@@ -127,7 +130,7 @@ private:
         });
 
     set_pose_service_ = create_service<hexapod_msgs::srv::SetPose>(
-        SET_POSE_SERVICE_NAME,
+        joinWithSlash(prefix_, SET_POSE_SERVICE_NAME),
         [this](
             const std::shared_ptr<hexapod_msgs::srv::SetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::SetPose::Response> response) {

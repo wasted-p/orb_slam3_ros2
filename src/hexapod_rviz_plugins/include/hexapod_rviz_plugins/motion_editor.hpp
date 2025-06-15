@@ -33,8 +33,7 @@
 #include <filesystem>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
-#include <hexapod_motion/motion.hpp>
-#include <hexapod_motion/utils.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <map>
 #include <pluginlib/class_list_macros.hpp>
 #include <qcombobox.h>

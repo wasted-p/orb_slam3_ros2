@@ -6,6 +6,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/point.hpp>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/solve_fk.hpp>
 #include <hexapod_msgs/srv/solve_ik.hpp>
 #include <kdl/chain.hpp>
@@ -14,6 +15,7 @@
 #include <kdl/tree.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 #include <rclcpp/create_service.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/parameter_client.hpp>
@@ -74,6 +76,7 @@ public:
 
 class KinematicsService : public rclcpp::Node {
 private:
+  std::string prefix_;
   const static int CHAIN_COUNT = 6;
   std::map<std::string, KDL::Chain> chains_;
   KDL::Tree kdl_tree_;
@@ -137,6 +140,7 @@ public:
         std::vector<double> joint_positions;
         int status = planning_group.calculateJntArray(chains_.at(leg_name), pos,
                                                       joint_positions);
+
         if (status < 0) {
           RCLCPP_ERROR(
               get_logger(),
@@ -162,14 +166,10 @@ public:
     response->success = true;
   }
 
-#define ROBOT_DESCRIPTION "robot_description"
   void readRobotDescription() {
     // Declare and get the YAML string parameter
     std::string urdf_string =
-        this->declare_parameter(ROBOT_DESCRIPTION, std::string(""));
-    RCLCPP_INFO(this->get_logger(),
-                "Reading robot_description from paramater (%s)",
-                ROBOT_DESCRIPTION);
+        this->declare_parameter("robot_description", std::string(""));
     parseURDF(urdf_string);
   }
 
@@ -201,14 +201,17 @@ public:
 
   rclcpp::Service<hexapod_msgs::srv::SolveIK>::SharedPtr solve_ik_service_;
   rclcpp::Service<hexapod_msgs::srv::SolveFK>::SharedPtr solve_fk_service_;
+
   void setupROS() {
+    prefix_ = this->declare_parameter("prefix", std::string(""));
+
     solve_ik_service_ = create_service<hexapod_msgs::srv::SolveIK>(
-        SOLVE_IK_SERVICE_NAME,
+        joinWithSlash(prefix_, SOLVE_IK_SERVICE_NAME),
         std::bind(&KinematicsService::handleSolveIKRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
 
     solve_fk_service_ = create_service<hexapod_msgs::srv::SolveFK>(
-        SOLVE_FK_SERVICE_NAME,
+        joinWithSlash(prefix_, SOLVE_FK_SERVICE_NAME),
         std::bind(&KinematicsService::handleSolveFKRequest, this,
                   std::placeholders::_1, std::placeholders::_2));
   }

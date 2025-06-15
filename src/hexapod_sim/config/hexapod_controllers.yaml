@@ -5,18 +5,18 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
 
 
-    arm_joint_group_position_controller:
-      type: position_controllers/JointGroupPositionController
+    # arm_joint_group_position_controller:
+    #   type: position_controllers/JointGroupPositionController
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-arm_joint_group_position_controller:
-  ros__parameters:
-    joints:
-      - arm_rotator_joint
-      - arm_abductor_joint
-      - arm_retractor_joint
+# arm_joint_group_position_controller:
+#   ros__parameters:
+#     joints:
+#       - arm_rotator_joint
+#       - arm_abductor_joint
+#       - arm_retractor_joint
 
 
 

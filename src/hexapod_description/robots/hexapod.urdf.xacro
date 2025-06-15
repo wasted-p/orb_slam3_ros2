@@ -1,70 +1,50 @@
-<?xml version="1.0"?>
-<!-- Basic differential drive mobile base -->
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="hexapod">
-
-  <xacro:property name="description_package" value="$(find hexapod_description)"/>
-  <xacro:property name="HEXAPOD_HEIGHT" value="0.085"/>
-  <xacro:property name="robots" value="${description_package}/robots"/>
-  <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"/>
-
-  <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"/>
-  <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"/>
-  <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"/>
-  <xacro:include filename="${robots}/parts/base/base.urdf.xacro"/>
-  <xacro:include filename="${robots}/parts/arm/arm.urdf.xacro"/>
-  <xacro:include filename="${robots}/parts/leg/leg.urdf.xacro"/>
-  <xacro:include filename="${robots}/parts/sensors/sipeed_maixsense_a010.urdf.xacro"/>
-
-
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Basic differential drive mobile base --><robot name="hexapod" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="description_package" value="$(find hexapod_description)"></xacro:property>
+  <xacro:property name="HEXAPOD_HEIGHT" value="0.085"></xacro:property>
+  <xacro:property name="robots" value="${description_package}/robots"></xacro:property>
+  <xacro:property name="meshes" value="file://$(find hexapod_description)/meshes"></xacro:property>
+  <xacro:include filename="$(find hexapod_description)/gazebo/hexapod.gazebo.xacro"></xacro:include>
+  <xacro:include filename="$(find hexapod_description)/ros2_control/hexapod.ros2_control.xacro"></xacro:include>
+  <xacro:include filename="$(find hexapod_description)/materials/hexapod.materials.xacro"></xacro:include>
+  <xacro:include filename="${robots}/parts/base/base.urdf.xacro"></xacro:include>
+  <xacro:include filename="${robots}/parts/leg/leg.urdf.xacro"></xacro:include>
+  <xacro:include filename="${robots}/parts/sensors/sipeed_maixsense_a010.urdf.xacro"></xacro:include>
   <!-- ================== ARGS ===================== -->
-
-  <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
-
+  <xacro:arg default="initial_positions.yaml" name="initial_positions_file"></xacro:arg>
   <!-- =============== Link & Joint =============== -->
-
   <!-- Base -->
-  <link name="base_footprint"/>
+  <link name="base_footprint"></link>
   <!--link name="base_footprint"/ -->
   <!-- Base -->
   <xacro:base parent="base_footprint">
-    <origin xyz="0 0 ${HEXAPOD_HEIGHT}" rpy="0 0 0"/>
+    <origin rpy="0 0 0" xyz="0 0 ${HEXAPOD_HEIGHT}"></origin>
   </xacro:base>
-  <!-- Arm -->
-  <xacro:arm parent="base_link">
-    <origin xyz="0.025588 -0.019423 0.0449" rpy="0 0 0"/>
-  </xacro:arm>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="top" side="left">
-    <origin xyz="0.074451 0.046824 0.0297" rpy="0 0 ${-1/4*pi}"/>
+    <origin rpy="0 0 ${-1/4*pi}" xyz="0.074451 0.046824 0.0297"></origin>
   </xacro:leg>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="mid" side="left">
-    <origin xyz="0.003612 0.056729 0.0306" rpy="0 0 ${0}"/>
+    <origin rpy="0 0 ${0}" xyz="0.003612 0.056729 0.0306"></origin>
   </xacro:leg>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="bottom" side="left">
-    <origin xyz="-0.067095 0.047401 0.0297" rpy="0 0 ${1/4*pi}"/>
+    <origin rpy="0 0 ${1/4*pi}" xyz="-0.067095 0.047401 0.0297"></origin>
   </xacro:leg>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="top" side="right">
-    <origin xyz="0.075633 -0.046741 0.0297" rpy="0 0 ${(1+1/4)*pi}"/>
+    <origin rpy="0 0 ${(1+1/4)*pi}" xyz="0.075633 -0.046741 0.0297"></origin>
   </xacro:leg>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="mid" side="right">
-    <origin xyz="0.003574 -0.054899 0.0306" rpy="0 0 ${1*pi}"/>
+    <origin rpy="0 0 ${1*pi}" xyz="0.003574 -0.054899 0.0306"></origin>
   </xacro:leg>
   <!-- Leg -->
   <xacro:leg parent="base_link" position="bottom" side="right">
-    <origin xyz="-0.067095 -0.046741 0.0297" rpy="0 0 ${(1-1/4)*pi}"/>
+    <origin rpy="0 0 ${(1-1/4)*pi}" xyz="-0.067095 -0.046741 0.0297"></origin>
   </xacro:leg>
-
-
-  <!-- ================ Camera =============== -->
-  <xacro:camera parent="arm_retractor">
-    <origin xyz="-0.0125 0.0 0.055" rpy="0 ${-1/2*pi} ${-1/2*pi}"/>
-  </xacro:camera>
-
   <!-- =============== Gazebo =============== -->
-  <xacro:hexapod_gazebo/>
-  <xacro:hexapod_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+  <xacro:hexapod_gazebo></xacro:hexapod_gazebo>
+  <xacro:hexapod_ros2_control initial_positions_file="$(arg initial_positions_file)" name="FakeSystem"></xacro:hexapod_ros2_control>
 </robot>

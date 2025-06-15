@@ -46,6 +46,7 @@ install(DIRECTORY materials/
 
 xacro_add_files(
   robots/hexapod.urdf.xacro
+  robots/arm.urdf.xacro
     INSTALL DESTINATION robots
 )
 

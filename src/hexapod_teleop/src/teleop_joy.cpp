@@ -3,6 +3,7 @@
 #include "sensor_msgs/msg/joy.hpp"
 #include <hexapod_common/requests.hpp>
 #include <hexapod_common/ros_constants.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/execute_motion.hpp>
 #include <rclcpp/client.hpp>
 #include <rclcpp/executors.hpp>
@@ -22,9 +23,12 @@ public:
   TeleopJoy() : Node("teleop_joy") { setupROS(); }
 
 private:
+  std::string prefix_;
   void setupROS() {
+
+    prefix_ = this->declare_parameter("prefix", std::string(""));
     execute_motion_client_ = create_client<hexapod_msgs::srv::ExecuteMotion>(
-        EXECUTE_MOTION_SERVICE_NAME);
+        joinWithSlash(prefix_, EXECUTE_MOTION_SERVICE_NAME));
 
     // Create subscription for joystick data
     joy_sub_ = create_subscription<sensor_msgs::msg::Joy>(

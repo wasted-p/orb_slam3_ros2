@@ -48,9 +48,6 @@ ament_target_dependencies(joint_state_publisher
   hexapod_common
 )
 
-# target_link_libraries(joint_state_publisher
-# hexapod_common
-# )
 #
 # target_include_directories(joint_state_publisher PUBLIC
 #   $<BUILD_INTERFACE:${hexapod_common_INCLUDE_DIRS}>

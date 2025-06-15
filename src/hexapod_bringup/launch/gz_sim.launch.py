@@ -142,7 +142,8 @@ def generate_launch_description():
         executable='kinematics_service',
         name='kinematics_service',
         output="screen",
-        parameters=[{'robot_description': robot_urdf}],
+        parameters=[{'robot_description': robot_urdf},
+                    {'prefix': 'hexapod'}],
     )
 
     pose_publisher = Node(
@@ -150,7 +151,8 @@ def generate_launch_description():
         executable='pose_publisher',
         name='pose_publisher',
         output="screen",
-        parameters=[{'initial_pose': initial_pose}],
+        parameters=[{'initial_pose': initial_pose},
+                    {'prefix': 'hexapod'}],
     )
 
     motion_server = Node(
@@ -158,7 +160,8 @@ def generate_launch_description():
         executable='motion_server',
         name='motion_server',
         output="screen",
-        parameters=[{'initial_pose': initial_pose}],
+        parameters=[{'initial_pose': initial_pose},
+                    {'prefix': 'hexapod'}],
     )
 
     visualization_server = Node(
@@ -173,6 +176,7 @@ def generate_launch_description():
         executable='teleop_joy',
         name='teleop_joy',
         output="screen",
+        parameters=[{'prefix': 'hexapod'}],
     )
 
     startup_controllers = Node(

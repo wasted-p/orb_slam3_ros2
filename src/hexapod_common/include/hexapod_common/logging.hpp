@@ -7,4 +7,6 @@
 
 void RCLCPP_LOG_POSE(hexapod_msgs::msg::Pose pose);
 
+std::ostream &operator<<(std::ostream &os, const hexapod_msgs::msg::Pose &pose);
+
 #endif

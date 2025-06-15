@@ -100,8 +100,6 @@ private:
   void handleSetJointStateRequest(
       const std::shared_ptr<hexapod_msgs::srv::SetJointState::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SetJointState::Response> response) {
-    RCLCPP_INFO(rclcpp::get_logger("TEST"),
-                "Sending Trajectory to joint state");
     sendTrajectoryGoal(trajectory_client_, {request->joint_state}, 0.5,
                        send_goal_options_);
 

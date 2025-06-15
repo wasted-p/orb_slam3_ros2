@@ -6,6 +6,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include <geometry_msgs/msg/point.hpp>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/logging.hpp>
 #include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/solve_fk.hpp>
 #include <hexapod_msgs/srv/solve_ik.hpp>
@@ -152,7 +153,7 @@ public:
           response->message = "Error Occurred";
           return;
         }
-        joint_state.name.insert(joint_state.name.cbegin(),
+        joint_state.name.insert(joint_state.name.cend(),
                                 {
                                     leg_name + "_rotate_joint",
                                     leg_name + "_abduct_joint",

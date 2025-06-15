@@ -78,7 +78,6 @@ private:
   void setupUi();
   void setupROS();
   void legPoseUpdateCallback(const hexapod_msgs::msg::Pose msg);
-  void onLegPoseUpdate(std::string leg_name, double x, double y, double z);
 
   // UI Elements
   PoseTable *pose_table_;

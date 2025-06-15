@@ -81,7 +81,8 @@ private:
             msg.names.push_back(leg_name);
             msg.positions.push_back(position);
           }
-          pose_pub_->publish(pose);
+
+          pose_pub_->publish(msg);
         });
   }
 

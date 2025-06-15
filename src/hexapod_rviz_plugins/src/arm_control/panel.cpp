@@ -95,7 +95,6 @@ void ArmJointStateControlPanel::setupUi() {
 }
 
 void ArmJointStateControlPanel::sendJointState() {
-  return;
   sensor_msgs::msg::JointState joint_state;
   for (const auto &[joint_name, spinner] : spinners_) {
     joint_state.name.push_back(joint_name);

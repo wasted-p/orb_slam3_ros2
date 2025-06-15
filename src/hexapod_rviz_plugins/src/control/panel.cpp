@@ -4,6 +4,7 @@
 #include <QApplication>
 #include <cstddef>
 #include <hexapod_common/hexapod.hpp>
+#include <hexapod_common/logging.hpp>
 #include <hexapod_common/ros_constants.hpp>
 #include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
@@ -72,13 +73,10 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
   // verticalHeader()->setVisible(false);
 
   // Set leg names
-  const QStringList LEG_NAMES =
-      QStringList{"top_left",  "mid_left",  "bottom_left",
-                  "top_right", "mid_right", "bottom_right"};
 
-  for (int i = 0; i < 6; ++i) {
+  for (int i = 5; i >= 0; i--) {
     // Leg name
-    QTableWidgetItem *name_item = new QTableWidgetItem(LEG_NAMES[i]);
+    QTableWidgetItem *name_item = new QTableWidgetItem(LEG_NAMES[i].c_str());
     name_item->setFlags(name_item->flags() & ~Qt::ItemIsEditable);
     setItem(i, 0, name_item);
 
@@ -93,7 +91,7 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
       // spin_box->setValue(initial_pose[i][j]);
       layout->addWidget(spin_box);
       widget->setLayout(layout);
-      spin_box->setProperty("legName", LEG_NAMES[i]);
+      spin_box->setProperty("legName", LEG_NAMES[i].c_str());
       spin_box->setProperty("axis", j); // 0 = X, 1 = Y, 2 = Z
 
       setCellWidget(i, j + 1, widget);
@@ -104,7 +102,7 @@ PoseTable::PoseTable() : QTableWidget(ROW_COUNT, COLUMN_COUNT) {
       spin_array[j] = spin_box;
     }
 
-    spinners_[LEG_NAMES[i].toStdString()] = spin_array;
+    spinners_[LEG_NAMES[i].c_str()] = spin_array;
   }
   resizeColumnsToContents();
 }
@@ -232,26 +230,9 @@ void HexapodControlRvizPanel::onResetClicked() {
     pose.names.push_back(entry.first);
     pose.positions.push_back(position);
   }
-  // pose_pub_->publish(pose);
-  setPose(this->node_->shared_from_this(), set_pose_client_, pose);
 }
 
 HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
-
-void HexapodControlRvizPanel::onLegPoseUpdate(std::string leg_name, double x,
-                                              double y, double z) {
-  hexapod_msgs::msg::Pose pose;
-  geometry_msgs::msg::Point position;
-  position.x = x;
-  position.y = y;
-  position.z = z;
-  pose.positions = {position};
-  pose.names = {leg_name};
-  if (relative) {
-    pose = toAbsolute(pose, initial_pose_);
-  }
-  setPose(node_->shared_from_this(), set_pose_client_, pose);
-}
 
 void HexapodControlRvizPanel::onInitialize() {
   Panel::onInitialize();
@@ -282,6 +263,8 @@ void HexapodControlRvizPanel::setupUi() {
   QCheckBox *relative_checkbox = new QCheckBox("Relative");
   QDoubleSpinBox *step_spinbox = new QDoubleSpinBox;
   QPushButton *reset_button = new QPushButton("Reset");
+  QPushButton *execute_button = new QPushButton("Execute");
+
   step_spinbox->setRange(0.001, 1.0); // adjust as needed
   step_spinbox->setSingleStep(0.005);
   step_spinbox->setDecimals(3);
@@ -290,6 +273,7 @@ void HexapodControlRvizPanel::setupUi() {
 
   top_controls_layout->addWidget(relative_checkbox);
   top_controls_layout->addWidget(step_spinbox);
+  top_controls_layout->addWidget(execute_button);
   top_controls_layout->addWidget(reset_button);
   top_controls_layout->addStretch(); // pushes widgets to the left
 
@@ -304,12 +288,16 @@ void HexapodControlRvizPanel::setupUi() {
   pose_table_->setStep(step);
   horizontal_layout->addWidget(pose_table_, 1); // Stretch factor 1 for table
 
-  connect(pose_table_, &PoseTable::legPoseUpdated, this,
-          &HexapodControlRvizPanel::onLegPoseUpdate);
   connect(relative_checkbox, &QCheckBox::toggled, this,
           &HexapodControlRvizPanel::setRelativeMode);
   connect(step_spinbox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
           this, &HexapodControlRvizPanel::onStepSizeChanged);
+  connect(execute_button, &QPushButton::clicked, this, [this]() {
+    hexapod_msgs::msg::Pose pose = pose_table_->getPose();
+    if (relative)
+      pose = toAbsolute(pose, initial_pose_);
+    setPose(node_->shared_from_this(), set_pose_client_, pose);
+  });
   connect(reset_button, &QPushButton::clicked, this,
           &HexapodControlRvizPanel::onResetClicked);
 

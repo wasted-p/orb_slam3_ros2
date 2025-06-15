@@ -114,7 +114,6 @@ private:
 
 private:
   void poseUpdateCallback(const hexapod_msgs::msg::Pose msg) {
-    RCLCPP_LOG_POSE(msg);
     for (size_t i = 0; i < msg.names.size(); i++) {
       geometry_msgs::msg::Pose pose;
       const std::string &name = msg.names[i];

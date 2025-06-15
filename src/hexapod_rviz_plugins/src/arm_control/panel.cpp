@@ -95,13 +95,14 @@ void ArmJointStateControlPanel::setupUi() {
 }
 
 void ArmJointStateControlPanel::sendJointState() {
+  return;
   sensor_msgs::msg::JointState joint_state;
   for (const auto &[joint_name, spinner] : spinners_) {
     joint_state.name.push_back(joint_name);
     double joint_position = spinner->value();
     joint_state.position.push_back(joint_position);
   }
-  setJointState(node_, set_joint_state_client_, joint_state);
+  // setJointState(node_, set_joint_state_client_, joint_state);
 };
 
 void ArmJointStateControlPanel::setupROS() {

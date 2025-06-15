@@ -38,14 +38,7 @@ private:
       set_joint_state_client_;
   std::map<std::string, geometry_msgs::msg::Point> initial_pose_;
   std::map<std::string, geometry_msgs::msg::Point> current_pose_;
-
-  rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr
-      trajectory_client_;
-
   std::string prefix_;
-  rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
-      send_goal_options_ =
-          rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions();
 
 public:
   PosePublisher() : Node("leg_control_node") {
@@ -79,8 +72,6 @@ private:
         [this, pose](std::vector<sensor_msgs::msg::JointState> joint_states) {
           setJointState(shared_from_this(), set_joint_state_client_,
                         joint_states[0]);
-          sendTrajectoryGoal(trajectory_client_, joint_states, 0.5,
-                             send_goal_options_);
 
           for (size_t i = 0; i < pose.names.size(); i++) {
             current_pose_[pose.names[i]] = pose.positions[i];
@@ -138,28 +129,6 @@ private:
           response->success = true;
           response->message = "Successfully set pose";
         });
-
-    send_goal_options_.result_callback =
-        [this](const GoalHandle::WrappedResult &result) {
-          switch (result.code) {
-          case rclcpp_action::ResultCode::SUCCEEDED:
-            RCLCPP_DEBUG(this->get_logger(), "Trajectory execution succeeded");
-            break;
-          case rclcpp_action::ResultCode::ABORTED:
-            RCLCPP_ERROR(this->get_logger(), "Trajectory execution aborted");
-            break;
-          case rclcpp_action::ResultCode::CANCELED:
-            RCLCPP_ERROR(this->get_logger(), "Trajectory execution canceled");
-            break;
-          default:
-            RCLCPP_ERROR(this->get_logger(), "Unknown result code");
-            break;
-          }
-        };
-
-    trajectory_client_ = rclcpp_action::create_client<
-        control_msgs::action::FollowJointTrajectory>(this,
-                                                     TRAJECTORY_SERVICE_NAME);
   }
 };
 

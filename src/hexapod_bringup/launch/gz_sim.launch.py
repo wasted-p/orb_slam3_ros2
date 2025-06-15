@@ -193,6 +193,7 @@ def generate_launch_description():
     #         on_exit=[gazebo]
     #     )
     # )
+    #
 
     # RViz node configuration
     rviz_node = Node(
@@ -209,6 +210,16 @@ def generate_launch_description():
         executable='joy_node',
         name='joy_node',
         output='screen'
+    )
+
+    # Nodes
+    hexapod_joint_state_publisher = Node(
+        package='hexapod_control',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        output="screen",
+        parameters=[{'initial_positions': initial_positions},
+                    {'prefix': 'arm'}]
     )
 
     # joint_state_publisher = Node(
@@ -242,6 +253,7 @@ def generate_launch_description():
         motion_server,
         joy_node,
         hexapod_teleop,
+        hexapod_joint_state_publisher
         # startup_controllers
         # joint_state_publisher
     ])

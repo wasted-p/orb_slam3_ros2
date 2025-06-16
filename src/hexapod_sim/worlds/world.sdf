@@ -31,11 +31,20 @@
     </include>
     <include>
       <uri>model://arm</uri>
-      <pose>0.1 0.1 0.1 0 0 0</pose>
+      <pose>0.0 0.0 0.1 0 0 0</pose>
       <!-- Set initial pose: x y z roll pitch yaw -->
       <name>arm</name>
       <!-- Unique name for the robot in the world -->
     </include>
+    <!-- Fixed joint to attach arm to base -->
+    <joint name="base_to_arm_joint" type="fixed">
+      <parent>hexapod::base_link</parent>
+      <!-- Replace with actual base link name -->
+      <child>arm::base_link</child>
+      <!-- Replace with actual arm base link name -->
+      <pose>0.025588 -0.019423 0.0449 0 0 0</pose>
+      <!-- Attachment point offset -->
+    </joint>
     <!-- Ground plane -->
     <model name="ground_plane">
       <static>true</static>

@@ -47,7 +47,7 @@ private:
     }
 
     // Compute angle from north (positive Y axis)
-    double angle_rad = std::atan2(x, y); // note: atan2(x, y) not y, x
+    double angle_rad = std::atan2(-x, -y); // note: atan2(x, y) not y, x
 
     RCLCPP_DEBUG(get_logger(),
                  "Controller = [%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",

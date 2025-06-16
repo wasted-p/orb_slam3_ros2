@@ -1,7 +1,9 @@
 #include "sensor_msgs/msg/joint_state.hpp"
+#include <array>
 #include <cmath>
 #include <hexapod_common/requests.hpp>
 #include <hexapod_rviz_panels/arm_control/panel.hpp>
+#include <map>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 
@@ -73,9 +75,17 @@ void ArmJointStateControlPanel::setupUi() {
   // === Main horizontal layout (pose table) ===
   QHBoxLayout *horizontal_layout = new QHBoxLayout;
 
+  std::map<std::string, std::array<double, 2>> joint_limits = {
+      {"arm_rotator_joint", {-M_PI, M_PI}},
+      {"arm_abductor_joint", {-M_PI_2, M_PI_2}},
+      {"arm_retractor_joint", {-M_PI_2, M_PI_2}},
+  };
+
   for (const std::string &joint_name : joint_names) {
     spinners_[joint_name] = new QDoubleSpinBox;
-    spinners_[joint_name]->setRange(-M_PI_2, M_PI_2); // adjust as needed
+    spinners_[joint_name]->setRange(
+        joint_limits[joint_name][0],
+        joint_limits[joint_name][1]); // adjust as needed
     spinners_[joint_name]->setSingleStep(0.2);
     spinners_[joint_name]->setDecimals(3);
     connect(spinners_[joint_name],

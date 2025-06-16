@@ -1,59 +1,63 @@
-controller_manager:
-  ros__parameters:
-    use_sim_time: true
-    legs_joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
+hexapod:  # Add the namespace here
+  controller_manager:
+    ros__parameters:
+      # robot_description_topic: /hexapod/robot_description
+      use_sim_time: true
+      legs_joint_trajectory_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
 
 
-    # arm_joint_group_position_controller:
-    #   type: position_controllers/JointGroupPositionController
+      # arm_joint_group_position_controller:
+      #   type: position_controllers/JointGroupPositionController
 
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
+      joint_state_broadcaster:
+        type: joint_state_broadcaster/JointStateBroadcaster
+        ros__parameters:
+          publish_rate: 50  # Reduce from default (usually 100Hz)
 
-# arm_joint_group_position_controller:
-#   ros__parameters:
-#     joints:
-#       - arm_rotator_joint
-#       - arm_abductor_joint
-#       - arm_retractor_joint
+  # arm_joint_group_position_controller:
+  #   ros__parameters:
+  #     joints:
+  #       - arm_rotator_joint
+  #       - arm_abductor_joint
+  #       - arm_retractor_joint
 
 
 
-legs_joint_trajectory_controller:
-  ros__parameters:
-    joints:
-      - top_left_rotate_joint
-      - top_left_abduct_joint
-      - top_left_retract_joint
-      - mid_left_rotate_joint
-      - mid_left_abduct_joint
-      - mid_left_retract_joint
-      - bottom_left_rotate_joint
-      - bottom_left_abduct_joint
-      - bottom_left_retract_joint
-      - top_right_rotate_joint
-      - top_right_abduct_joint
-      - top_right_retract_joint
-      - mid_right_rotate_joint
-      - mid_right_abduct_joint
-      - mid_right_retract_joint
-      - bottom_right_rotate_joint
-      - bottom_right_abduct_joint
-      - bottom_right_retract_joint
+  legs_joint_trajectory_controller:
+    ros__parameters:
+      joints:
+        - top_left_rotate_joint
+        - top_left_abduct_joint
+        - top_left_retract_joint
+        - mid_left_rotate_joint
+        - mid_left_abduct_joint
+        - mid_left_retract_joint
+        - bottom_left_rotate_joint
+        - bottom_left_abduct_joint
+        - bottom_left_retract_joint
+        - top_right_rotate_joint
+        - top_right_abduct_joint
+        - top_right_retract_joint
+        - mid_right_rotate_joint
+        - mid_right_abduct_joint
+        - mid_right_retract_joint
+        - bottom_right_rotate_joint
+        - bottom_right_abduct_joint
+        - bottom_right_retract_joint
 
-    interface_name: position
+      interface_name: position
 
-    command_interfaces:
-      - position
+      command_interfaces:
+        - position
 
-    state_interfaces:
-      - position
-    state_publish_rate: 50.0
-    action_monitor_rate: 20.0
+      state_interfaces:
+        - position
+      state_publish_rate: 50.0
+      action_monitor_rate: 20.0
 
-    allow_partial_joints_goal: true
-    open_loop_control: true
-    constraints:
-      stopped_velocity_tolerance: 0.01
-      goal_time: 0.0
+      allow_partial_joints_goal: true
+      open_loop_control: true
+      constraints:
+        stopped_velocity_tolerance: 0.01
+        goal_time: 0.0

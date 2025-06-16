@@ -5,6 +5,7 @@
 #include <controller_manager_msgs/srv/load_controller.hpp>
 #include <controller_manager_msgs/srv/switch_controller.hpp>
 #include <controller_manager_msgs/srv/unload_controller.hpp>
+#include <hexapod_common/yaml_utils.hpp>
 #include <rclcpp/contexts/default_context.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
@@ -20,19 +21,36 @@ public:
   ~StartupControllersNode() {}
 
   StartupControllersNode() : Node("startup_controllers_node") {
-    load_client_ = create_client<controller_manager_msgs::srv::LoadController>(
-        "/controller_manager/load_controller");
+    std::string prefix_ = "hexapod";
+    // load_client_ =
+    // create_client<controller_manager_msgs::srv::LoadController>(
+    //     joinWithSlash(prefix_, "controller_manager/load_controller"));
+    // unload_client_ =
+    //     create_client<controller_manager_msgs::srv::UnloadController>(
+    //         joinWithSlash(prefix_, "controller_manager/unload_controller"));
+    // configure_client_ =
+    //     create_client<controller_manager_msgs::srv::ConfigureController>(
+    //         joinWithSlash(prefix_,
+    //         "controller_manager/configure_controller"));
+    // switch_client_ =
+    //     this->create_client<controller_manager_msgs::srv::SwitchController>(
+    //         joinWithSlash(prefix_, "controller_manager/switch_controller"));
 
+    load_client_ = create_client<controller_manager_msgs::srv::LoadController>(
+        "/hexapod/controller_manager/load_controller"); // Add namespace here
     unload_client_ =
         create_client<controller_manager_msgs::srv::UnloadController>(
-            "/controller_manager/unload_controller");
+            "/hexapod/controller_manager/unload_controller"); // Add namespace
+                                                              // here
     configure_client_ =
         create_client<controller_manager_msgs::srv::ConfigureController>(
-            "/controller_manager/configure_controller");
+            "/hexapod/controller_manager/configure_controller"); // Add
+                                                                 // namespace
+                                                                 // here
     switch_client_ =
         this->create_client<controller_manager_msgs::srv::SwitchController>(
-            "/controller_manager/switch_controller");
-
+            "/hexapod/controller_manager/switch_controller"); // Add namespace
+                                                              // here
     controllers_ = {
         "joint_state_broadcaster", "legs_joint_trajectory_controller",
         // "arm_joint_group_position_controller"

@@ -5,11 +5,11 @@
 #include "hexapod_msgs/srv/set_marker_array.hpp"
 #include <QListWidget>
 #include <QStringList>
+#include <hexapod_rviz_panels/motion_editor/ui/pose_list.hpp>
 #include <map>
 #include <qcombobox.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rviz_common/panel.hpp>
-#include <ui/pose_list.hpp>
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/yaml.h>
 
@@ -17,7 +17,6 @@
 #include "hexapod_msgs/msg/pose.hpp"
 #include "hexapod_msgs/srv/set_marker_array.hpp"
 #include "hexapod_msgs/srv/set_pose.hpp"
-#include "ui/pose_list.hpp"
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QInputDialog>

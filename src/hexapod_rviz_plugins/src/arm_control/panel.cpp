@@ -1,7 +1,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
-#include <arm_control/panel.hpp>
 #include <cmath>
 #include <hexapod_common/requests.hpp>
+#include <hexapod_rviz_panels/arm_control/panel.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 

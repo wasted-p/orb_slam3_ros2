@@ -15,7 +15,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <hexapod_msgs/msg/motion.hpp>
-#include <joystick_control/joystick.hpp>
+#include <hexapod_rviz_panels/joystick_control/ui/joystick.hpp>
 
 namespace hexapod_rviz_plugins {
 

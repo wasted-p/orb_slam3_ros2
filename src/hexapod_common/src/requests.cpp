@@ -5,6 +5,7 @@
 #include <hexapod_common/requests.hpp>
 #include <rclcpp/client.hpp>
 #include <rclcpp/duration.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
@@ -84,6 +85,7 @@ void setPose(const rclcpp::Node::SharedPtr node,
              const rclcpp::Client<hexapod_msgs::srv::SetPose>::SharedPtr client,
              const hexapod_msgs::msg::Pose &pose, const bool relative) {
 
+  RCLCPP_INFO(rclcpp::get_logger("REQUEST"), "SENDING REQUEST");
   auto request = std::make_shared<hexapod_msgs::srv::SetPose::Request>();
   request->pose = pose;
 

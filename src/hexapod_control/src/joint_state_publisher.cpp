@@ -72,9 +72,9 @@ private:
 
     // Declare and get the YAML string parameter
     prefix_ = this->declare_parameter("prefix", std::string(""));
-    timer_ = this->create_wall_timer(
-        std::chrono::milliseconds(100),
-        std::bind(&JointStatePublisher::timerCallback, this));
+    // timer_ = this->create_wall_timer(
+    //     std::chrono::milliseconds(100),
+    //     std::bind(&JointStatePublisher::timerCallback, this));
 
     joint_state_publisher_ =
         this->create_publisher<sensor_msgs::msg::JointState>(
@@ -93,8 +93,8 @@ private:
     joint_state_msg_.header.frame_id = "base_footprint";
 
     trajectory_client_ = rclcpp_action::create_client<
-        control_msgs::action::FollowJointTrajectory>(this,
-                                                     TRAJECTORY_SERVICE_NAME);
+        control_msgs::action::FollowJointTrajectory>(
+        this, joinWithSlash(prefix_, TRAJECTORY_SERVICE_NAME));
   }
 
   void handleSetJointStateRequest(

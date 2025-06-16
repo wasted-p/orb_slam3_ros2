@@ -88,14 +88,32 @@ def generate_launch_description():
     ####################################
     # Nodes
     ####################################
+
     hexapod_robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
         name='robot_state_publisher',
-        output="both",
-        parameters=[{'publish_frequency': 50.0,
-                     'robot_description': hexapod_urdf,
-                     'use_sim_time': use_sim_time}]
+        namespace='hexapod',
+        parameters=[
+            {'robot_description': hexapod_urdf},
+            {'use_sim_time': use_sim_time},
+            {'prefix': 'hexapod'}
+        ],
+        remappings=[
+            ('/joint_states', 'hexapod/joint_states')
+        ]
+    )
+
+    arm_robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        namespace='arm',
+        parameters=[
+            {'robot_description': arm_urdf},
+            {'use_sim_time': use_sim_time},
+            {'prefix': 'arm'}
+        ],
     )
 
     # Include Gazebo simulation launch description
@@ -138,6 +156,25 @@ def generate_launch_description():
         # output='screen',
     )
 
+    # Nodes
+    hexapod_joint_state_publisher = Node(
+        package='hexapod_control',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        output="screen",
+        parameters=[{'initial_positions': hexapod_initial_positions},
+                    {'prefix': 'hexapod'}]
+    )
+
+    arm_joint_state_publisher = Node(
+        package='hexapod_control',
+        executable='joint_state_publisher',
+        name='joint_state_publisher',
+        output="screen",
+        parameters=[{'initial_positions': arm_initial_positions},
+                    {'prefix': 'arm'}]
+    )
+
     hexapod_kinematics_service = Node(
         package='hexapod_control',
         executable='kinematics_service',
@@ -172,25 +209,6 @@ def generate_launch_description():
         output="screen",
         parameters=[{'initial_pose': arm_initial_pose},
                     {'prefix': 'arm'}],
-    )
-
-    # Nodes
-    hexapod_joint_state_publisher = Node(
-        package='hexapod_control',
-        executable='joint_state_publisher',
-        name='joint_state_publisher',
-        output="screen",
-        parameters=[{'initial_positions': hexapod_initial_positions},
-                    {'prefix': 'hexapod'}]
-    )
-
-    arm_joint_state_publisher = Node(
-        package='hexapod_control',
-        executable='joint_state_publisher',
-        name='joint_state_publisher',
-        output="screen",
-        parameters=[{'initial_positions': arm_initial_positions},
-                    {'prefix': 'arm'}]
     )
 
     motion_server = Node(
@@ -254,14 +272,18 @@ def generate_launch_description():
         visualization_server,
 
         # Hexapod
-        hexapod_kinematics_service,
         hexapod_pose_publisher,
+        hexapod_kinematics_service,
         hexapod_joint_state_publisher,
         hexapod_teleop,
         motion_server,
 
         # Arm
-        # arm_joint_state_publisher
+        # arm_robot_state_publisher,
+        # arm_pose_publisher,
+        # arm_kinematics_service,
+        # arm_joint_state_publisher,
+
         # startup_controllers
         # joint_state_publisher
     ])

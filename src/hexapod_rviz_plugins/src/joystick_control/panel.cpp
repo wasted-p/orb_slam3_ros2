@@ -1,6 +1,4 @@
 #include "hexapod_msgs/msg/motion.hpp"
-#include "joystick_control/joystick.hpp"
-#include "joystick_control/rviz_panel.hpp"
 #include <QCheckBox>
 #include <QMouseEvent>
 #include <QPainter>
@@ -8,6 +6,7 @@
 #include <csignal>
 #include <cstdlib>
 #include <hexapod_common/ros_constants.hpp>
+#include <hexapod_rviz_panels/joystick_control/rviz_panel.hpp>
 #include <memory>
 #include <pluginlib/class_list_macros.hpp>
 #include <qboxlayout.h>
@@ -21,7 +20,6 @@
 #include <rclcpp/visibility_control.hpp>
 #include <rviz_common/display_context.hpp>
 #include <sensor_msgs/msg/joy.hpp>
-#include <string>
 #include <unistd.h>
 
 namespace hexapod_rviz_plugins {

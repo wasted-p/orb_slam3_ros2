@@ -126,6 +126,8 @@ private:
         [this](
             const std::shared_ptr<hexapod_msgs::srv::SetPose::Request> request,
             std::shared_ptr<hexapod_msgs::srv::SetPose::Response> response) {
+          RCLCPP_INFO(get_logger(), "NAME: %s",
+                      joinWithSlash(prefix_, SET_POSE_SERVICE_NAME).c_str());
           setPose(request->pose, request->relative);
           response->success = true;
           response->message = "Successfully set pose";

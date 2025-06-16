@@ -1161,6 +1161,9 @@
     </link>
     <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>/home/thurdparty/Code/hexapod-ros/install/hexapod_sim/share/hexapod_sim/config/hexapod_controllers.yaml</parameters>
+      <ros>
+        <namespace>hexapod</namespace>
+      </ros>
       <ros2_control name="FakeSystem" type="system">
         <hardware>
           <plugin>gz_ros2_control/GazeboSimSystem</plugin>

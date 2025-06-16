@@ -44,24 +44,22 @@ include_directories(
 qt5_add_resources(RESOURCES_RCC resources.qrc)
 
 # Build the plugin library
+# Automatically find all source files
+file(GLOB_RECURSE SOURCE_FILES
+  "src/*.cpp"
+  "src/*.c"
+)
+
+# Automatically find all header files
+file(GLOB_RECURSE HEADER_FILES
+  "include/*.hpp"
+  "include/*.h"
+)
+
 add_library(${PROJECT_NAME} SHARED
-  src/control/panel.cpp
-  include/hexapod_rviz_plugins/control_panel.hpp  # <-- Add this line
-
-  src/motion_editor/panel.cpp
-  include/hexapod_rviz_plugins/motion_editor.hpp  # <-- Add this line
-
-  src/motion_editor/pose_list.cpp
-  include/ui/pose_list.hpp  # <-- Add this line
-
-  src/joystick_control/panel.cpp
-  include/joystick_control/rviz_panel.hpp  # <-- Add this line
-  include/joystick_control/joystick.hpp  # <-- Add this line
-  src/joystick_control/joystick.cpp
+  ${SOURCE_FILES}
+  ${HEADER_FILES}
   ${RESOURCES_RCC}  # Add the compiled qrc here
-
-  src/arm_control/panel.cpp
-  include/arm_control/panel.hpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC

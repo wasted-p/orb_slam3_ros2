@@ -1,7 +1,7 @@
 
+#include <hexapod_rviz_panels/motion_editor/ui/pose_list.hpp>
 #include <qevent.h>
 #include <qobjectdefs.h>
-#include <ui/pose_list.hpp>
 
 using namespace hexapod_rviz_plugins;
 

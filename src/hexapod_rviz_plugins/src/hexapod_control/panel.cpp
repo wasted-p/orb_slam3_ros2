@@ -1,6 +1,5 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "hexapod_msgs/msg/pose.hpp"
-#include "hexapod_rviz_plugins/control_panel.hpp"
 #include <QApplication>
 #include <cstddef>
 #include <hexapod_common/hexapod.hpp>
@@ -8,6 +7,7 @@
 #include <hexapod_common/ros_constants.hpp>
 #include <hexapod_common/yaml_utils.hpp>
 #include <hexapod_msgs/srv/get_pose.hpp>
+#include <hexapod_rviz_panels/hexapod_control/panel.hpp>
 #include <map>
 #include <pluginlib/class_list_macros.hpp>
 #include <qcheckbox.h>
@@ -230,6 +230,7 @@ void HexapodControlRvizPanel::onResetClicked() {
     pose.names.push_back(entry.first);
     pose.positions.push_back(position);
   }
+  pose_table_->setPose(pose);
 }
 
 HexapodControlRvizPanel::~HexapodControlRvizPanel() {}
@@ -296,6 +297,7 @@ void HexapodControlRvizPanel::setupUi() {
     hexapod_msgs::msg::Pose pose = pose_table_->getPose();
     if (relative)
       pose = toAbsolute(pose, initial_pose_);
+    RCLCPP_INFO(get_logger("TEST"), "EXECUTING POSE");
     setPose(node_->shared_from_this(), set_pose_client_, pose);
   });
   connect(reset_button, &QPushButton::clicked, this,

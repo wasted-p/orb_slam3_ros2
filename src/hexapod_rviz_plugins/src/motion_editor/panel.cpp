@@ -1,6 +1,8 @@
 
 
-#include <hexapod_rviz_plugins/motion_editor.hpp>
+#include <hexapod_common/ros_constants.hpp>
+#include <hexapod_common/yaml_utils.hpp>
+#include <hexapod_rviz_panels/motion_editor/panel.hpp>
 
 using namespace rviz_common;
 using namespace rclcpp;
@@ -89,13 +91,6 @@ void rotate(std::vector<hexapod_msgs::msg::Pose> &poses, double roll,
 
 Motion &MotionEditorRvizPanel::selectedMotion() {
   return motions_[selected_motion_];
-}
-
-void MotionEditorRvizPanel::onPoseUpdate(hexapod_msgs::msg::Pose pose) {
-  if (current_pose < 0)
-    return;
-
-  setMarkerArray(node_, set_marker_array_client_, selectedMotion().poses, true);
 }
 
 void MotionEditorRvizPanel::setupUi() {
@@ -216,21 +211,16 @@ void MotionEditorRvizPanel::onPoseMoved(const int from_idx, const int to_idx) {
 };
 
 void MotionEditorRvizPanel::setupROS() {
+  std::string prefix_ = "hexapod";
   set_marker_array_client_ =
       node_->create_client<hexapod_msgs::srv::SetMarkerArray>(
-          SET_MARKER_ARRAY_SERVICE_NAME);
+          joinWithSlash(prefix_, SET_MARKER_ARRAY_SERVICE_NAME));
 
-  get_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::GetPose>(GET_POSE_SERVICE_NAME);
+  get_pose_client_ = node_->create_client<hexapod_msgs::srv::GetPose>(
+      joinWithSlash(prefix_, GET_POSE_SERVICE_NAME));
 
-  set_pose_client_ =
-      node_->create_client<hexapod_msgs::srv::SetPose>(SET_POSE_SERVICE_NAME);
-
-  pose_sub_ = node_->create_subscription<hexapod_msgs::msg::Pose>(
-      POSE_TOPIC,
-      10, // QoS history depth
-      std::bind(&MotionEditorRvizPanel::onPoseUpdate, this,
-                std::placeholders::_1));
+  set_pose_client_ = node_->create_client<hexapod_msgs::srv::SetPose>(
+      joinWithSlash(prefix_, SET_POSE_SERVICE_NAME));
 }
 
 void MotionEditorRvizPanel::setCurrentPose(const size_t idx) {

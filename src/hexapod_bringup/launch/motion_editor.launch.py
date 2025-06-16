@@ -150,7 +150,7 @@ def generate_launch_description():
         executable='kinematics_service',
         name='kinematics_service',
         output="screen",
-        parameters=[{'robot_description': hexapod_urdf},
+        parameters=[{'robot_description': arm_urdf},
                     {'prefix': 'arm'}],
     )
 

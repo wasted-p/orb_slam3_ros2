@@ -139,6 +139,7 @@ ament_target_dependencies(startup_controllers
   rclcpp
   std_msgs
   controller_manager_msgs
+  hexapod_common
 )
 
 list(APPEND EXECUTABLES startup_controllers)

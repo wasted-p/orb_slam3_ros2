@@ -1,8 +1,6 @@
-#include "joystick_control/rviz_panel.hpp"
 #include <QMouseEvent>
 #include <QtDebug>
-#include <cstdint>
-#include <joystick_control/joystick.hpp>
+#include <hexapod_rviz_panels/joystick_control/ui/joystick.hpp>
 #include <qchar.h>
 #include <qcolor.h>
 #include <qglobal.h>
@@ -12,6 +10,7 @@
 #include <qrgb.h>
 #include <qwidget.h>
 #include <rclcpp/logging.hpp>
+
 #include <string>
 
 namespace hexapod_rviz_plugins {

@@ -131,7 +131,7 @@ private:
 
     trajectory_client_ = rclcpp_action::create_client<
         control_msgs::action::FollowJointTrajectory>(
-        this, joinWithSlash(TRAJECTORY_SERVICE_NAME));
+        this, joinWithSlash(prefix_, TRAJECTORY_SERVICE_NAME));
     execute_motion_service_ = create_service<hexapod_msgs::srv::ExecuteMotion>(
         joinWithSlash(prefix_, EXECUTE_MOTION_SERVICE_NAME),
         std::bind(&MotionServer::handleExecuteMotionRequest, this,

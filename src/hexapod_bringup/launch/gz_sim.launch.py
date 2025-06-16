@@ -43,7 +43,7 @@ def generate_launch_description():
     gui_config_path = os.path.join(share_dir, 'config', 'gazebo_gui.config')
     pkg_hexapod_sim = get_package_share_directory('hexapod_sim')
     bridge_params = os.path.join(
-        pkg_hexapod_sim, 'config', 'hexapod_bridge.yaml')
+        pkg_hexapod_sim, 'config', 'hexapod_bridge.yml')
     pkg_hexapod_description = get_package_share_directory(
         'hexapod_description')
 

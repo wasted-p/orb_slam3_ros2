@@ -30,11 +30,33 @@ def generate_launch_description():
     #     parameters=[initial_pose_path],
     # )
 
-    startup_controllers_node = Node(
+    hexapod_controller_config_path = os.path.join(get_package_share_directory(
+        'hexapod_sim'), 'config', 'hexapod_controllers.yml')
+
+    arm_controller_config_path = os.path.join(get_package_share_directory(
+        'hexapod_sim'), 'config', 'arm_controllers.yml')
+
+    ####################################
+    # Files
+    ####################################
+    hexapod_startup_controllers_node = Node(
         package='hexapod_control',
         executable='startup_controllers',
         name='startup_controllers',
-        output='screen'
+        output='screen',
+        parameters=[
+            {'prefix': 'hexapod'},
+            {'config_path': hexapod_controller_config_path}]
+    )
+
+    arm_startup_controllers_node = Node(
+        package='hexapod_control',
+        executable='startup_controllers',
+        name='startup_controllers',
+        output='screen',
+        parameters=[
+            {'prefix': 'arm'},
+            {'config_path': arm_controller_config_path}]
     )
 
     # hexapod_trajectory_node = Node(
@@ -56,7 +78,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         # action_server_node,
-        startup_controllers_node,
+        hexapod_startup_controllers_node,
+        arm_startup_controllers_node,
         # launch_trajectory_on_startup_exit,
         # use_sim_time
     ])

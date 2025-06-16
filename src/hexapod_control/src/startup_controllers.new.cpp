@@ -7,11 +7,15 @@
 #include <controller_manager_msgs/srv/unload_controller.hpp>
 #include <hexapod_common/yaml_utils.hpp>
 #include <rclcpp/contexts/default_context.hpp>
+#include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/node.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdexcept>
 #include <string>
+#include <yaml-cpp/node/parse.h>
+
+using namespace std::chrono_literals;
 
 std::vector<std::string>
 extractControllersFromYaml(const std::string &config_path,
@@ -39,49 +43,44 @@ extractControllersFromYaml(const std::string &config_path,
 
   return controllers;
 }
-using namespace std::chrono_literals;
 
 class StartupControllersNode : public rclcpp::Node {
 
 private:
+  std::vector<std::string> controllers_names_;
+  rclcpp::Client<controller_manager_msgs::srv::LoadController>::SharedPtr
+      load_client_;
+  rclcpp::Client<controller_manager_msgs::srv::UnloadController>::SharedPtr
+      unload_client_;
+  rclcpp::Client<controller_manager_msgs::srv::ConfigureController>::SharedPtr
+      configure_client_;
+  rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr
+      switch_client_;
+  rclcpp::TimerBase::SharedPtr wait_timer_;
   std::string prefix_;
 
 public:
   ~StartupControllersNode() {}
 
   StartupControllersNode() : Node("startup_controllers_node") {
-    // load_client_ =
-    // create_client<controller_manager_msgs::srv::LoadController>(
-    //     joinWithSlash(prefix_, "controller_manager/load_controller"));
-    // unload_client_ =
-    //     create_client<controller_manager_msgs::srv::UnloadController>(
-    //         joinWithSlash(prefix_, "controller_manager/unload_controller"));
-    // configure_client_ =
-    //     create_client<controller_manager_msgs::srv::ConfigureController>(
-    //         joinWithSlash(prefix_,
-    //         "controller_manager/configure_controller"));
-    // switch_client_ =
-    //     this->create_client<controller_manager_msgs::srv::SwitchController>(
-    //         joinWithSlash(prefix_, "controller_manager/switch_controller"));
-
     loadParams();
     setupControllerManager();
     wait_for_services();
     setup_controllers();
   }
+
   void loadParams() {
-    prefix_ = this->declare_parameter("prefix", std::string(""));
-    RCLCPP_INFO(get_logger(), "Prefix: %s", prefix_.c_str());
-    std::string config_path = this->declare_parameter(
+    prefix_ = this->declare_parameter("prefix", std::string("hexapod"));
+    std::string controller_config = this->declare_parameter(
         "config", std::string("/home/thurdparty/Code/hexapod-ros/src/"
                               "hexapod_sim/config/hexapod_controllers.yml"));
+    controllers_names_ = extractControllersFromYaml(controller_config, prefix_);
 
-    RCLCPP_INFO(get_logger(), "Reading config from: %s", config_path.c_str());
-    RCLCPP_INFO(get_logger(), "Found following controllers:");
-    controllers_ = extractControllersFromYaml(config_path, prefix_);
-    for (const std::string &name : controllers_) {
-      RCLCPP_INFO_STREAM(get_logger(), " - " << name);
-    }
+    controllers_names_ = {
+        "joint_state_broadcaster", "legs_joint_trajectory_controller",
+        // "arm_joint_group_position_controller"
+    };
+    RCLCPP_INFO_STREAM(get_logger(), controller_config);
   }
 
   void setupControllerManager() {
@@ -148,7 +147,7 @@ public:
     }
   }
   void setup_controllers() {
-    for (const auto &name : controllers_) {
+    for (const auto &name : controllers_names_) {
       try {
         loadController(name);
         RCLCPP_INFO(this->get_logger(), "Configured controller: %s",
@@ -161,7 +160,7 @@ public:
     }
     auto switch_req = std::make_shared<
         controller_manager_msgs::srv::SwitchController::Request>();
-    switch_req->activate_controllers = controllers_;
+    switch_req->activate_controllers = controllers_names_;
     switch_req->deactivate_controllers = {};
     switch_req->strictness =
         controller_manager_msgs::srv::SwitchController::Request::STRICT;
@@ -176,18 +175,6 @@ public:
       RCLCPP_INFO(this->get_logger(), "Started controllers successfully");
     }
   }
-
-private:
-  std::vector<std::string> controllers_;
-  rclcpp::Client<controller_manager_msgs::srv::LoadController>::SharedPtr
-      load_client_;
-  rclcpp::Client<controller_manager_msgs::srv::UnloadController>::SharedPtr
-      unload_client_;
-  rclcpp::Client<controller_manager_msgs::srv::ConfigureController>::SharedPtr
-      configure_client_;
-  rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr
-      switch_client_;
-  rclcpp::TimerBase::SharedPtr wait_timer_;
 };
 
 int main(int argc, char **argv) {

@@ -258,9 +258,41 @@
         <gz_frame_id>depth_camera_optical_frame</gz_frame_id>
       </sensor>
     </link>
-    <!-- <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"> -->
-    <!--   <render_engine>ogre2</render_engine> -->
-    <!-- </plugin> -->
+    <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>/home/thurdparty/Code/hexapod-ros/install/hexapod_sim/share/hexapod_sim/config/arm_controllers.yml</parameters>
+      <ros>
+        <namespace>arm</namespace>
+      </ros>
+      <ros2_control name="ArmControlFakeSystem" type="system">
+        <hardware>
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </hardware>
+        <joint name="arm_rotator_joint">
+          <command_interface name="position">
+            <param name="min">-1.5</param>
+            <param name="max">1.5</param>
+            <!-- <param name="initial_value">${initial_positions['top_left_rotate_joint']}</param> -->
+          </command_interface>
+          <state_interface name="position"></state_interface>
+        </joint>
+        <joint name="arm_abductor_joint">
+          <command_interface name="position">
+            <param name="min">-1.5</param>
+            <param name="max">1.5</param>
+            <!-- <param name="initial_value">${initial_positions['top_left_rotate_joint']}</param> -->
+          </command_interface>
+          <state_interface name="position"></state_interface>
+        </joint>
+        <joint name="arm_retractor_joint">
+          <command_interface name="position">
+            <param name="min">-1.5</param>
+            <param name="max">1.5</param>
+            <!-- <param name="initial_value">${initial_positions['top_left_rotate_joint']}</param> -->
+          </command_interface>
+          <state_interface name="position"></state_interface>
+        </joint>
+      </ros2_control>
+    </plugin>
     <frame attached_to="base_link" name="arm_base_mount_joint">
       <pose>0.025588 -0.019422999999999999 0.044900000000000002 0 0 0</pose>
     </frame>

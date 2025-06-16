@@ -1160,7 +1160,7 @@
       </visual>
     </link>
     <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>/home/thurdparty/Code/hexapod-ros/install/hexapod_sim/share/hexapod_sim/config/hexapod_controllers.yaml</parameters>
+      <parameters>/home/thurdparty/Code/hexapod-ros/install/hexapod_sim/share/hexapod_sim/config/hexapod_controllers.yml</parameters>
       <ros>
         <namespace>hexapod</namespace>
       </ros>

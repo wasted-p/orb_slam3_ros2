@@ -72,9 +72,8 @@ public:
   void loadParams() {
     prefix_ = this->declare_parameter("prefix", std::string(""));
     RCLCPP_INFO(get_logger(), "Prefix: %s", prefix_.c_str());
-    std::string config_path = this->declare_parameter(
-        "config", std::string("/home/thurdparty/Code/hexapod-ros/src/"
-                              "hexapod_sim/config/hexapod_controllers.yml"));
+    std::string config_path =
+        this->declare_parameter("config_path", std::string());
 
     RCLCPP_INFO(get_logger(), "Reading config from: %s", config_path.c_str());
     RCLCPP_INFO(get_logger(), "Found following controllers:");

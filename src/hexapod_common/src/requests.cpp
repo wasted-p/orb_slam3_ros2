@@ -37,6 +37,7 @@ void setJointState(
     rclcpp::Node::SharedPtr node,
     const rclcpp::Client<hexapod_msgs::srv::SetJointState>::SharedPtr client,
     const sensor_msgs::msg::JointState &joint_state) {
+  RCLCPP_INFO(rclcpp::get_logger("SET JOINT STATE"), "Sending request");
   auto request = std::make_shared<hexapod_msgs::srv::SetJointState::Request>();
   std::string client_id = "SetJointState Client";
   request->joint_state.name = joint_state.name;

@@ -1,6 +1,7 @@
 #include "control_msgs/action/follow_joint_trajectory.hpp"
 #include "hexapod_msgs/srv/set_joint_state.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "std_msgs/msg/float64_multi_array.hpp"
 #include <cmath>
 #include <control_msgs/action/follow_joint_trajectory.hpp>
 #include <hexapod_common/hexapod.hpp>
@@ -13,9 +14,11 @@
 #include <rclcpp/create_publisher.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/service.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 #include <string>
 
 using namespace std::chrono_literals;
@@ -35,6 +38,8 @@ private:
   sensor_msgs::msg::JointState joint_state_msg_;
   std::map<std::string, double> initial_positions_;
   rclcpp_action::Client<FollowJointTrajectory>::SharedPtr trajectory_client_;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr
+      joint_group_pub_;
   rclcpp_action::Client<FollowJointTrajectory>::SendGoalOptions
       send_goal_options_ = rclcpp_action::Client<
           control_msgs::action::FollowJointTrajectory>::SendGoalOptions();
@@ -92,16 +97,35 @@ private:
 
     joint_state_msg_.header.frame_id = "base_footprint";
 
-    trajectory_client_ = rclcpp_action::create_client<
-        control_msgs::action::FollowJointTrajectory>(
-        this, joinWithSlash(prefix_, TRAJECTORY_SERVICE_NAME));
+    if (prefix_.compare("hexapod") == 0)
+      trajectory_client_ = rclcpp_action::create_client<
+          control_msgs::action::FollowJointTrajectory>(
+          this, joinWithSlash(prefix_, TRAJECTORY_SERVICE_NAME));
+
+#define ARM_JOINT_GROUP_TOPIC "arm_joint_group_position_controller/commands"
+    else if (prefix_.compare("arm") == 0)
+      joint_group_pub_ =
+          this->create_publisher<std_msgs::msg::Float64MultiArray>(
+              joinWithSlash(prefix_, ARM_JOINT_GROUP_TOPIC), 10);
   }
 
   void handleSetJointStateRequest(
       const std::shared_ptr<hexapod_msgs::srv::SetJointState::Request> request,
       std::shared_ptr<hexapod_msgs::srv::SetJointState::Response> response) {
-    sendTrajectoryGoal(trajectory_client_, {request->joint_state}, 0.5,
-                       send_goal_options_);
+    RCLCPP_INFO(get_logger(), "Recieved SetJointState Request at %s",
+                prefix_.c_str());
+
+    if (prefix_.compare("hexapod") == 0)
+      sendTrajectoryGoal(trajectory_client_, {request->joint_state}, 0.5,
+                         send_goal_options_);
+
+    else if (prefix_.compare("arm") == 0) {
+      auto msg = std_msgs::msg::Float64MultiArray();
+      for (const double &position : request->joint_state.position) {
+        msg.data.push_back(position);
+      };
+      joint_group_pub_->publish(msg);
+    }
 
     joint_state_msg_ = request->joint_state;
     joint_state_msg_.header.stamp = this->now();

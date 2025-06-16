@@ -101,7 +101,7 @@ void ArmJointStateControlPanel::sendJointState() {
     double joint_position = spinner->value();
     joint_state.position.push_back(joint_position);
   }
-  // setJointState(node_, set_joint_state_client_, joint_state);
+  setJointState(node_, set_joint_state_client_, joint_state);
 };
 
 void ArmJointStateControlPanel::setupROS() {

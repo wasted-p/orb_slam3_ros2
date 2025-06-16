@@ -12,8 +12,8 @@ hexapod:  # Add the namespace here
 
       joint_state_broadcaster:
         type: joint_state_broadcaster/JointStateBroadcaster
-        ros__parameters:
-          publish_rate: 50  # Reduce from default (usually 100Hz)
+        # ros__parameters:
+        #   publish_rate: 50  # Reduce from default (usually 100Hz)
 
   # arm_joint_group_position_controller:
   #   ros__parameters:

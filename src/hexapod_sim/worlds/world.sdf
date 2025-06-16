@@ -29,6 +29,13 @@
       <name>hexapod</name>
       <!-- Unique name for the robot in the world -->
     </include>
+    <include>
+      <uri>model://arm</uri>
+      <pose>0.1 0.1 0.1 0 0 0</pose>
+      <!-- Set initial pose: x y z roll pitch yaw -->
+      <name>arm</name>
+      <!-- Unique name for the robot in the world -->
+    </include>
     <!-- Ground plane -->
     <model name="ground_plane">
       <static>true</static>

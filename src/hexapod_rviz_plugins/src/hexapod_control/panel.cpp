@@ -230,6 +230,9 @@ void HexapodControlRvizPanel::onResetClicked() {
     pose.names.push_back(entry.first);
     pose.positions.push_back(position);
   }
+  if (relative)
+    pose = toRelative(pose, initial_pose_);
+
   pose_table_->setPose(pose);
 }
 
@@ -297,7 +300,6 @@ void HexapodControlRvizPanel::setupUi() {
     hexapod_msgs::msg::Pose pose = pose_table_->getPose();
     if (relative)
       pose = toAbsolute(pose, initial_pose_);
-    RCLCPP_INFO(get_logger("TEST"), "EXECUTING POSE");
     setPose(node_->shared_from_this(), set_pose_client_, pose);
   });
   connect(reset_button, &QPushButton::clicked, this,

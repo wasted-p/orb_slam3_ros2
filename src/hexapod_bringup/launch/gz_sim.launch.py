@@ -279,10 +279,10 @@ def generate_launch_description():
         motion_server,
 
         # Arm
-        # arm_robot_state_publisher,
-        # arm_pose_publisher,
-        # arm_kinematics_service,
-        # arm_joint_state_publisher,
+        arm_robot_state_publisher,
+        arm_pose_publisher,
+        arm_kinematics_service,
+        arm_joint_state_publisher,
 
         # startup_controllers
         # joint_state_publisher

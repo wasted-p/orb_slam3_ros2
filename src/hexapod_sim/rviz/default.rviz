@@ -236,14 +236,52 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: ""
+        Value: /arm/robot_description
       Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
-        Link Tree Style: ""
+        Link Tree Style: Links in Alphabetic Order
+        arm_abductor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_retractor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        arm_rotator:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_case_cover:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        depth_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        depth_camera_optical_frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Mass Properties:
         Inertia: false
         Mass: false
@@ -273,6 +311,10 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        arm_base:
+          Value: true
+        arm_retractor:
+          Value: true
         base_footprint:
           Value: true
         base_link:
@@ -292,6 +334,12 @@ Visualization Manager:
         bottom_right_foot:
           Value: true
         bottom_right_tibia:
+          Value: true
+        camera_case_cover:
+          Value: true
+        depth_camera_link:
+          Value: true
+        depth_camera_optical_frame:
           Value: true
         mid_left_cox:
           Value: true
@@ -333,6 +381,8 @@ Visualization Manager:
       Tree:
         base_footprint:
           base_link:
+            arm_base:
+              {}
             bottom_left_cox:
               bottom_left_femur:
                 bottom_left_tibia:

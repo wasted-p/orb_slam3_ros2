@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.11">
+  <model name="hexapod">
+    <link name="base_link">
+      <inertial>
+        <pose>0.02970309371682564 0.00057730865422784411 0.055254218641148212 0 0 0</pose>
+        <mass>0.01462876925433078</mass>
+        <inertia>
+          <ixx>1.999999999999994e-06</ixx>
+          <ixy>1.058791184067875e-22</ixy>
+          <ixz>0</ixz>
+          <iyy>3.0000000000000052e-06</iyy>
+          <iyz>1.5881867761018129e-22</iyz>
+          <izz>2.0000000000000012e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="base_link_fixed_joint_lump__arm_base_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/collision/base.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="base_link_fixed_joint_lump__arm_base_visual">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/visual/base.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.37500003 0.37500003 0.37500003 1</diffuse>
+          <ambient>0.37500003 0.37500003 0.37500003 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name="arm_rotator_joint" type="revolute">
+      <pose relative_to="base_link">0.025676000000000001 0.00057600000000000012 0.07485 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>arm_rotator</child>
+      <axis>
+        <xyz>0 0 -1</xyz>
+        <limit>
+          <effort>100</effort>
+          <velocity>100</velocity>
+          <lower>-inf</lower>
+          <upper>inf</upper>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="arm_rotator">
+      <pose relative_to="arm_rotator_joint">0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>-0.00046642883527773718 0.0027188082250819241 0.00576546998065737 0 0 0</pose>
+        <mass>0.026235460257998749</mass>
+        <inertia>
+          <ixx>3.9999999999999998e-06</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.9999999999999998e-06</iyy>
+          <iyz>0</iyz>
+          <izz>5.0000000000000004e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="arm_rotator_collision">
+        <pose>-0.025676000000000001 -0.00057600000000000001 -0.07485 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/collision/rotator.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="arm_rotator_visual">
+        <pose>-0.025676000000000001 -0.00057600000000000001 -0.07485 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/visual/rotator.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.37500003 0.37500003 0.37500003 1</diffuse>
+          <ambient>0.37500003 0.37500003 0.37500003 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name="arm_abductor_joint" type="revolute">
+      <pose relative_to="arm_rotator">0.014581999999999999 0.00068999999999999997 0.013923 0 0 0</pose>
+      <parent>arm_rotator</parent>
+      <child>arm_abductor</child>
+      <axis>
+        <xyz>-1 0 0</xyz>
+        <limit>
+          <lower>-1.5707960000000001</lower>
+          <upper>1.5707960000000001</upper>
+          <effort>100</effort>
+          <velocity>100</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="arm_abductor">
+      <pose relative_to="arm_abductor_joint">0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>-0.014167725035919119 3.5639852713031771e-07 0.031090662760010459 0 0 0</pose>
+        <mass>0.016534189067873271</mass>
+        <inertia>
+          <ixx>5.0000000000000004e-06</ixx>
+          <ixy>0</ixy>
+          <ixz>9.9999999999999995e-07</ixz>
+          <iyy>6.9999999999999999e-06</iyy>
+          <iyz>0</iyz>
+          <izz>1.9999999999999999e-06</izz>
+        </inertia>
+      </inertial>
+      <collision name="arm_abductor_collision">
+        <pose>-0.040258000000000002 -0.001266 -0.088773000000000005 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/collision/abductor.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="arm_abductor_visual">
+        <pose>-0.040258000000000002 -0.001266 -0.088773000000000005 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/visual/abductor.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.37500003 0.37500003 0.37500003 1</diffuse>
+          <ambient>0.37500003 0.37500003 0.37500003 1</ambient>
+        </material>
+      </visual>
+    </link>
+    <joint name="arm_retractor_joint" type="revolute">
+      <pose relative_to="arm_abductor">-0.00040099999999999999 0 0.046709000000000001 0 0 0</pose>
+      <parent>arm_abductor</parent>
+      <child>arm_retractor</child>
+      <axis>
+        <xyz>-0.99999300000000002 0 -0.003676</xyz>
+        <limit>
+          <lower>-1.5707960000000001</lower>
+          <upper>1.5707960000000001</upper>
+          <effort>100</effort>
+          <velocity>100</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+      </axis>
+    </joint>
+    <link name="arm_retractor">
+      <pose relative_to="arm_retractor_joint">0 0 0 0 0 0</pose>
+      <inertial>
+        <pose>-0.004404397432206335 0.028800148655828622 0.055147099289247839 0 0 0</pose>
+        <mass>0.022054446872393021</mass>
+        <inertia>
+          <ixx>9.7604469514316704e-05</ixx>
+          <ixy>-9.603467881046577e-06</ixy>
+          <ixz>-1.0578923179550571e-05</ixz>
+          <iyy>6.0971994445165682e-05</iyy>
+          <iyz>-4.6086416521681348e-05</iyz>
+          <izz>4.9041338098155538e-05</izz>
+        </inertia>
+      </inertial>
+      <collision name="arm_retractor_collision">
+        <pose>-0.039856999999999997 -0.001266 -0.13548199999999999 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/collision/retractor.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <collision name="arm_retractor_fixed_joint_lump__camera_case_cover_collision_1">
+        <pose>0.0079840000000000293 -0.080935000000000007 0.096998999999999974 -1.5707963267948957 -1.5707963267948966 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/collision/camera_case_cover.stl</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="arm_retractor_visual">
+        <pose>-0.039856999999999997 -0.001266 -0.13548199999999999 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/visual/retractor.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.37500003 0.37500003 0.37500003 1</diffuse>
+          <ambient>0.37500003 0.37500003 0.37500003 1</ambient>
+        </material>
+      </visual>
+      <visual name="arm_retractor_fixed_joint_lump__camera_case_cover_visual_1">
+        <pose>-0.039999999999999987 2.775557561562891e-17 -0.13 -2.4651903288156619e-32 -2.2204460492503131e-16 2.2204460492503131e-16</pose>
+        <geometry>
+          <mesh>
+            <scale>0.001 0.001 0.001</scale>
+            <uri>file:///home/thurdparty/Code/hexapod-ros/install/hexapod_description/share/hexapod_description/meshes/visual/camera_case_cover.stl</uri>
+          </mesh>
+        </geometry>
+        <material>
+          <diffuse>0.37500003 0.37500003 0.37500003 1</diffuse>
+          <ambient>0.37500003 0.37500003 0.37500003 1</ambient>
+        </material>
+      </visual>
+      <visual name="arm_retractor_fixed_joint_lump__depth_camera_link_visual_2">
+        <pose>-0.01 5.2041704279304213e-18 0.042500000000000003 -1.5707963267948957 -1.5707963267948966 0</pose>
+        <geometry>
+          <box>
+            <size>0.01 0.040000000000000001 0.029999999999999999</size>
+          </box>
+        </geometry>
+      </visual>
+      <sensor name="depth_camera_link" type="depth_camera">
+        <always_on>true</always_on>
+        <visualize>true</visualize>
+        <update_rate>100</update_rate>
+        <topic>depth_camera/depth/image_raw</topic>
+        <camera name="Sipeed_MaixSense_A010">
+          <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
+          <horizontal_fov>1.0471999999999999</horizontal_fov>
+          <image>
+            <width>100</width>
+            <height>100</height>
+            <format>R_FLOAT32</format>
+          </image>
+          <clip>
+            <near>0.050000000000000003</near>
+            <far>3</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </camera>
+        <pose>-0.012500000000000001 0 0.055 3.1415926535746808 -1.5707926535453185 1.570792653591518</pose>
+        <gz_frame_id>depth_camera_optical_frame</gz_frame_id>
+      </sensor>
+    </link>
+    <!-- <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"> -->
+    <!--   <render_engine>ogre2</render_engine> -->
+    <!-- </plugin> -->
+    <frame attached_to="base_link" name="arm_base_mount_joint">
+      <pose>0.025588 -0.019422999999999999 0.044900000000000002 0 0 0</pose>
+    </frame>
+    <frame attached_to="arm_base_mount_joint" name="arm_base">
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+    <frame attached_to="arm_retractor" name="camera_case_cover_joint">
+      <pose>-0.012500000000000001 0 0.055 -1.5707963267948957 -1.5707963267948966 0</pose>
+    </frame>
+    <frame attached_to="camera_case_cover_joint" name="camera_case_cover">
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+    <frame attached_to="depth_camera_link" name="depth_camera_optical_joint">
+      <pose>0 0 0 -1.5707963267948959 -5.5511151231257827e-17 -1.5707963267948959</pose>
+    </frame>
+    <frame attached_to="depth_camera_optical_joint" name="depth_camera_optical_frame">
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+    <frame attached_to="arm_retractor" name="depth_camera_link_joint">
+      <pose>-0.012500000000000001 0 0.055 -1.5707963267948957 -1.5707963267948966 0</pose>
+    </frame>
+    <frame attached_to="depth_camera_link_joint" name="depth_camera_link">
+      <pose>0 0 0 0 0 0</pose>
+    </frame>
+  </model>
+</sdf>

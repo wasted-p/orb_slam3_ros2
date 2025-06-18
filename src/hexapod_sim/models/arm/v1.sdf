@@ -231,30 +231,54 @@
           </box>
         </geometry>
       </visual>
-      <sensor name="depth_camera_link" type="depth_camera">
+      <!-- RGB Camera -->
+      <sensor name="rgb_camera" type="camera">
         <always_on>true</always_on>
+        <update_rate>30</update_rate>
         <visualize>true</visualize>
-        <update_rate>100</update_rate>
-        <topic>depth_camera/depth/image_raw</topic>
-        <camera name="Sipeed_MaixSense_A010">
-          <camera_info_topic>depth_camera/depth/camera_info</camera_info_topic>
-          <horizontal_fov>1.0471999999999999</horizontal_fov>
+        <camera name="rgb_camera">
+          <camera_info_topic>camera/color/camera_info</camera_info_topic>
           <image>
-            <width>100</width>
-            <height>100</height>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>10.0</far>
+          </clip>
+          <horizontal_fov>1.0472</horizontal_fov>
+          <!-- ~60 degrees -->
+        </camera>
+        <pose>-0.012500000000000001 0 0.055 3.1415926535746808 -1.5707926535453185 1.570792653591518</pose>
+        <topic>camera/color/image_raw</topic>
+        <gz_frame_id>rgb_camera_optical_frame</gz_frame_id>
+      </sensor>
+      <!-- Depth Camera -->
+      <sensor name="depth_camera" type="depth_camera">
+        <always_on>true</always_on>
+        <update_rate>30</update_rate>
+        <visualize>true</visualize>
+        <camera name="depth_camera">
+          <camera_info_topic>camera/depth/camera_info</camera_info_topic>
+          <image>
+            <width>640</width>
+            <height>480</height>
             <format>R_FLOAT32</format>
           </image>
           <clip>
-            <near>0.050000000000000003</near>
-            <far>3</far>
+            <near>0.1</near>
+            <far>10.0</far>
           </clip>
+          <horizontal_fov>1.0472</horizontal_fov>
           <noise>
             <type>gaussian</type>
-            <mean>0</mean>
+            <mean>0.0</mean>
             <stddev>0.01</stddev>
           </noise>
         </camera>
         <pose>-0.012500000000000001 0 0.055 3.1415926535746808 -1.5707926535453185 1.570792653591518</pose>
+        <topic>camera/depth/image_raw</topic>
         <gz_frame_id>depth_camera_optical_frame</gz_frame_id>
       </sensor>
     </link>

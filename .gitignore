@@ -3,4 +3,6 @@ install/
 log/
 .clangd
 .cache/
+dataset/
+rosbags/
 

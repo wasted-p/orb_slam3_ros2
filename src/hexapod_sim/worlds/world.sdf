@@ -1,27 +1,297 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<sdf version="1.10">
-  <world name="hexapod_world">
-    <physics name="1ms" type="ignored">
-      <max_step_size>0.001</max_step_size>
+<?xml version="1.0" encoding="ASCII"?>
+<sdf version="1.7">
+  <world name="world_demo">
+    <gravity>0 0 -9.8</gravity>
+    <physics type="ode">
+      <max_step_size>0.01</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <max_contacts>10</max_contacts>
     </physics>
-    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+    <plugin filename="libignition-gazebo-physics-system.so" name="ignition::gazebo::systems::Physics"></plugin>
+    <plugin filename="libignition-gazebo-user-commands-system.so" name="ignition::gazebo::systems::UserCommands"></plugin>
+    <plugin filename="libignition-gazebo-scene-broadcaster-system.so" name="ignition::gazebo::systems::SceneBroadcaster"></plugin>
+    <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu"></plugin>
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
-    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
-    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
-    <plugin filename="libResetListenerSystem.so" name="reset_listener_system::ResetListenerSystem"></plugin>
-    <gravity>0 0 -9.81</gravity>
-    <magnetic_field>5.5644999999999998e-06 2.2875799999999999e-05 -4.2388400000000002e-05</magnetic_field>
-    <atmosphere type="adiabatic"></atmosphere>
+    <gui fullscreen="0">
+      <!-- 3D scene -->
+      <plugin filename="GzScene3D" name="3D View">
+        <ignition-gui>
+          <title>3D View</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">docked</property>
+        </ignition-gui>
+        <engine>ogre2</engine>
+        <scene>scene</scene>
+        <ambient_light>0.4 0.4 0.4</ambient_light>
+        <background_color>0.8 0.8 0.8</background_color>
+        <camera_pose>13.4 -6.1 2.23 0 0.4 -1.83</camera_pose>
+      </plugin>
+      <!-- World control -->
+      <plugin filename="WorldControl" name="World control">
+        <ignition-gui>
+          <title>World control</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="height" type="double">72</property>
+          <property key="width" type="double">121</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"></line>
+            <line own="bottom" target="bottom"></line>
+          </anchors>
+        </ignition-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>true</start_paused>
+      </plugin>
+      <!-- World statistics -->
+      <plugin filename="WorldStats" name="World stats">
+        <ignition-gui>
+          <title>World stats</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="height" type="double">110</property>
+          <property key="width" type="double">290</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"></line>
+            <line own="bottom" target="bottom"></line>
+          </anchors>
+        </ignition-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+      <plugin filename="TransformControl" name="Transform control">
+        <ignition-gui>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">250</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </ignition-gui>
+      </plugin>
+      <plugin filename="Shapes" name="Shapes">
+        <ignition-gui>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="x" type="double">250</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">150</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </ignition-gui>
+      </plugin>
+      <plugin filename="Screenshot" name="Screenshot">
+        <ignition-gui>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="x" type="double">400</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">50</property>
+          <property key="height" type="double">50</property>
+          <property key="state" type="string">floating</property>
+          <property key="cardBackground" type="string">#666666</property>
+        </ignition-gui>
+      </plugin>
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <ignition-gui>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">400</property>
+          <property key="height" type="double">375</property>
+          <property key="state" type="string">docked_collapsed</property>
+        </ignition-gui>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <ignition-gui>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">400</property>
+          <property key="height" type="double">375</property>
+          <property key="state" type="string">docked_collapsed</property>
+        </ignition-gui>
+      </plugin>
+      <plugin filename="Teleop" name="Teleop">
+        <ignition-gui>
+          <property key="x" type="double">0</property>
+          <property key="y" type="double">0</property>
+          <property key="width" type="double">400</property>
+          <property key="height" type="double">900</property>
+          <property key="state" type="string">docked</property>
+        </ignition-gui>
+        <topic>/model/tugbot/cmd_vel</topic>
+      </plugin>
+    </gui>
     <scene>
-      <ambient>0.400000006 0.400000006 0.400000006 1</ambient>
-      <background>0.699999988 0.699999988 0.699999988 1</background>
-      <shadows>true</shadows>
+      <ambient>1 1 1 1</ambient>
+      <background>0.3 0.7 0.9 1</background>
+      <shadows>0</shadows>
+      <grid>false</grid>
     </scene>
-    <!-- Hexapod -->
+    <light name="sun" type="directional">
+      <cast_shadows>0</cast_shadows>
+      <pose>-5 -3 10 0 0 0</pose>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>1 1 1 1</specular>
+      <direction>0 0 -1</direction>
+    </light>
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0.0 0.0 1</normal>
+              <size>1 1</size>
+            </plane>
+          </geometry>
+        </collision>
+      </link>
+      <pose>0 0 0 0 0 0</pose>
+    </model>
+    <!-- Base -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Warehouse</uri>
+      <name>warehouse</name>
+      <pose>0 0 -0.09 0 0 0</pose>
+    </include>
+    <!-- Tugbot -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/Tugbot-charging-station</uri>
+      <name>charging_station</name>
+      <pose>14.7 -10.6 -0.04 0 0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/Tugbot</uri>
+      <name>tugbot</name>
+      <pose>13.9 -10.6 0.1 0 0 0</pose>
+    </include>
+    <!-- Carts -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/cart_model_2</uri>
+      <name>cart1</name>
+      <pose>-5.73 15 0.25 0 -0 0</pose>
+    </include>
+    <!-- Objects -->
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf_big</uri>
+      <name>shelf_big_0</name>
+      <pose>-9.34177 -13.5598 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf</name>
+      <pose>-4.41528 -0.690987 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_0</name>
+      <pose>-4.41528 2.30697 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_1</name>
+      <pose>-4.41528 5.30708 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_2</name>
+      <pose>-4.41528 8.34352 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_3</name>
+      <pose>5.60144 8.34352 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_4</name>
+      <pose>5.60144 5.30708 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_5</name>
+      <pose>5.60144 -0.690987 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_6</name>
+      <pose>5.60144 2.30697 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <name>pallet_box_mobile</name>
+      <pose>4.4161 14.6952 0.01 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <name>pallet_box_mobile_0</name>
+      <pose>4.45415 13.6212 0.01 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <name>pallet_box_mobile_1</name>
+      <pose>4.4468 12.229 0.01 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <name>pallet_box</name>
+      <pose>-6.11913 13.7079 0.01 0 -0 0</pose>
+      <static>true</static>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf_big</uri>
+      <name>shelf_big_1</name>
+      <pose>13.9821 15.319 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf_big</uri>
+      <name>shelf_big_2</name>
+      <pose>6.19777 -12.9647 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf_big</uri>
+      <name>shelf_big_3</name>
+      <pose>0.594376 -12.9647 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf_big</uri>
+      <name>shelf_big_4</name>
+      <pose>-5.36284 -12.9647 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_7</name>
+      <pose>13.3818 -21.2416 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_8</name>
+      <pose>13.3818 -19.0028 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_9</name>
+      <pose>13.3818 -16.4478 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/shelf</uri>
+      <name>shelf_10</name>
+      <pose>13.3818 -14.1028 0 0 -0 0</pose>
+    </include>
+    <include>
+      <uri>https://fuel.ignitionrobotics.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <name>pallet_box_0</name>
+      <pose>14.0222 -24.335 0.01 0 -0 0</pose>
+      <static>true</static>
+    </include>
     <include>
       <uri>model://hexapod</uri>
       <pose>0 0 0 0 0 0</pose>
@@ -45,254 +315,5 @@
       <pose>0.025588 -0.019423 0.0449 0 0 0</pose>
       <!-- Attachment point offset -->
     </joint>
-    <!-- Ground plane -->
-    <model name="ground_plane">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <surface>
-            <friction>
-              <ode>
-                <mu>1000000.0</mu>
-                <!-- Max static friction -->
-                <mu2>1000000.0</mu2>
-                <!-- Max dynamic friction -->
-              </ode>
-            </friction>
-            <bounce></bounce>
-            <contact></contact>
-          </surface>
-        </collision>
-        <visual name="visual">
-          <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>100 100</size>
-            </plane>
-          </geometry>
-          <material>
-            <ambient>0.8 0.8 0.8 1</ambient>
-            <diffuse>0.8 0.8 0.8 1</diffuse>
-            <specular>0.8 0.8 0.8 1</specular>
-          </material>
-        </visual>
-        <pose>0 0 0 0 0 0</pose>
-        <inertial>
-          <pose>0 0 0 0 0 0</pose>
-          <mass>1</mass>
-          <inertia>
-            <ixx>1</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>1</iyy>
-            <iyz>0</iyz>
-            <izz>1</izz>
-          </inertia>
-        </inertial>
-        <enable_wind>false</enable_wind>
-      </link>
-      <pose>0 0 0 0 0 0</pose>
-      <self_collide>false</self_collide>
-    </model>
-    <model name="cylinder">
-      <pose>0.5 -0.5 0.15 0 0 0</pose>
-      <link name="cylinder_link">
-        <inertial>
-          <inertia>
-            <ixx>0.145</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.145</iyy>
-            <iyz>0</iyz>
-            <izz>0.125</izz>
-          </inertia>
-          <mass>1</mass>
-          <pose>0 0 0 0 0 0</pose>
-        </inertial>
-        <collision name="cylinder_collision">
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>0.3</length>
-            </cylinder>
-          </geometry>
-          <surface>
-            <friction>
-              <ode></ode>
-            </friction>
-            <bounce></bounce>
-            <contact></contact>
-          </surface>
-        </collision>
-        <visual name="cylinder_visual">
-          <geometry>
-            <cylinder>
-              <radius>0.2</radius>
-              <length>0.3</length>
-            </cylinder>
-          </geometry>
-          <material>
-            <ambient>0.300000012 0.300000012 0.300000012 1</ambient>
-            <diffuse>0.699999988 0.699999988 0.699999988 1</diffuse>
-            <specular>1 1 1 1</specular>
-          </material>
-        </visual>
-        <pose>0 0 0 0 0 0</pose>
-        <enable_wind>false</enable_wind>
-      </link>
-      <static>false</static>
-      <self_collide>false</self_collide>
-    </model>
-    <model name="box">
-      <pose>-0.7 0.5 0.15 0 0 0</pose>
-      <link name="box_link">
-        <inertial>
-          <inertia>
-            <ixx>0.16666</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.16666</iyy>
-            <iyz>0</iyz>
-            <izz>0.16666</izz>
-          </inertia>
-          <mass>1</mass>
-          <pose>0 0 0 0 0 0</pose>
-        </inertial>
-        <collision name="box_collision">
-          <geometry>
-            <box>
-              <size>0.3 0.3 0.3</size>
-            </box>
-          </geometry>
-          <surface>
-            <friction>
-              <ode></ode>
-            </friction>
-            <bounce></bounce>
-            <contact></contact>
-          </surface>
-        </collision>
-        <visual name="box_visual">
-          <geometry>
-            <box>
-              <size>0.3 0.3 0.3</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0.300000012 0.300000012 0.300000012 1</ambient>
-            <diffuse>0.699999988 0.699999988 0.699999988 1</diffuse>
-            <specular>1 1 1 1</specular>
-          </material>
-        </visual>
-        <pose>0 0 0 0 0 0</pose>
-        <enable_wind>false</enable_wind>
-      </link>
-      <static>false</static>
-      <self_collide>false</self_collide>
-    </model>
-    <light name="sun" type="directional">
-      <pose>0 0 10 0 0 0</pose>
-      <cast_shadows>true</cast_shadows>
-      <intensity>1</intensity>
-      <direction>-0.5 0.10000000000000001 -0.90000000000000002</direction>
-      <diffuse>0.800000012 0.800000012 0.800000012 1</diffuse>
-      <specular>0.200000003 0.200000003 0.200000003 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <linear>0.01</linear>
-        <constant>0.90000000000000002</constant>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <spot>
-        <inner_angle>0</inner_angle>
-        <outer_angle>0</outer_angle>
-        <falloff>0</falloff>
-      </spot>
-    </light>
-    <gui fullscreen="0">
-      <!-- 3D scene -->
-      <plugin filename="MinimalScene" name="3D View">
-        <gz-gui>
-          <title>3D View</title>
-          <property key="showTitleBar" type="bool">false</property>
-          <property key="state" type="string">docked</property>
-        </gz-gui>
-        <engine>ogre2</engine>
-        <scene>scene</scene>
-        <ambient_light>0.4 0.4 0.4</ambient_light>
-        <background_color>0.8 0.8 0.8</background_color>
-        <camera_pose>-0.5 0 0.5 0 0.5 0</camera_pose>
-      </plugin>
-      <!-- Plugins that add functionality to the scene -->
-      <plugin filename="EntityContextMenuPlugin" name="Entity context menu">
-        <gz-gui>
-          <property key="state" type="string">floating</property>
-          <property key="width" type="double">5</property>
-          <property key="height" type="double">5</property>
-          <property key="showTitleBar" type="bool">false</property>
-        </gz-gui>
-      </plugin>
-      <plugin filename="GzSceneManager" name="Scene Manager">
-        <gz-gui>
-          <property key="resizable" type="bool">false</property>
-          <property key="width" type="double">5</property>
-          <property key="height" type="double">5</property>
-          <property key="state" type="string">floating</property>
-          <property key="showTitleBar" type="bool">false</property>
-        </gz-gui>
-      </plugin>
-      <plugin filename="InteractiveViewControl" name="Interactive view control">
-        <gz-gui>
-          <property key="resizable" type="bool">false</property>
-          <property key="width" type="double">5</property>
-          <property key="height" type="double">5</property>
-          <property key="state" type="string">floating</property>
-          <property key="showTitleBar" type="bool">false</property>
-        </gz-gui>
-      </plugin>
-      <plugin filename="CameraTracking" name="Camera Tracking">
-        <gz-gui>
-          <property key="resizable" type="bool">false</property>
-          <property key="width" type="double">5</property>
-          <property key="height" type="double">5</property>
-          <property key="state" type="string">floating</property>
-          <property key="showTitleBar" type="bool">false</property>
-        </gz-gui>
-      </plugin>
-      <!-- World control -->
-      <plugin filename="WorldControl" name="World control">
-        <gz-gui>
-          <title>World control</title>
-          <property key="showTitleBar" type="bool">false</property>
-          <property key="resizable" type="bool">false</property>
-          <property key="height" type="double">72</property>
-          <property key="z" type="double">1</property>
-          <property key="state" type="string">floating</property>
-          <anchors target="3D View">
-            <line own="left" target="left"></line>
-            <line own="bottom" target="bottom"></line>
-          </anchors>
-        </gz-gui>
-        <play_pause>true</play_pause>
-        <step>true</step>
-        <start_paused>false</start_paused>
-        <use_event>true</use_event>
-      </plugin>
-      <plugin filename="MarkerManager" name="Marker manager">
-        <gz-gui>
-          <property key="resizable" type="bool">false</property>
-          <property key="width" type="double">5</property>
-          <property key="height" type="double">5</property>
-          <property key="state" type="string">floating</property>
-          <property key="showTitleBar" type="bool">false</property>
-        </gz-gui>
-      </plugin>
-    </gui>
   </world>
 </sdf>

@@ -1,0 +1,81 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters
+#--------------------------------------------------------------------------------------------
+Camera.type: "PinHole"
+
+# Intrinsics (make sure to match with your SDF <camera> parameters or camera_info output)
+Camera.fx: 308.6
+Camera.fy: 308.681
+Camera.cx: 162.318
+Camera.cy: 121.231
+
+# Distortion parameters (assuming perfect pinhole, set to 0)
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0
+
+# Camera resolution
+Camera.width: 320
+Camera.height: 240
+
+# Camera frames per second
+Camera.fps: 30.0
+
+# Color order (0 = BGR, 1 = RGB)
+Camera.RGB: 1
+
+# Image processing scale factor
+Camera.imageScale: 1.0
+
+# Close/Far depth threshold in meters (adjust to your use case)
+ThDepth: 2.5
+
+# bf = baseline * fx (not needed for RGB-D, but still required)
+Camera.bf: 40.0
+
+# Depth map scale factor (usually 5000.0 for mm to meters or 1000.0 for Gazebo-style)
+DepthMapFactor: 1.0
+
+#--------------------------------------------------------------------------------------------
+# IMU Parameters (not used for pure RGB-D but still included)
+IMU.NoiseGyro: 1e-3
+IMU.NoiseAcc: 1e-2
+IMU.GyroWalk: 1e-5
+IMU.AccWalk: 1e-4
+IMU.Frequency: 200
+
+# IMU -> Camera Transform (identity or close to Gazebo setup)
+Tbc: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [1.0, 0.0, 0.0, 0.0,
+          0.0, 1.0, 0.0, 0.0,
+          0.0, 0.0, 1.0, 0.0,
+          0.0, 0.0, 0.0, 1.0]
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -3.5
+Viewer.ViewpointF: 500

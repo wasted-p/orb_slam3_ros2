@@ -30,6 +30,7 @@ Panels:
         - /Grid1
         - /Hexapod1
         - /Arm1
+        - /Image1
         - /TF1/Tree1
       Splitter Ratio: 0.7492957711219788
     Tree Height: 318
@@ -302,7 +303,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /depth_camera/depth/image_raw
+        Value: /camera/color/image_raw
       Value: true
     - Class: rviz_default_plugins/TF
       Enabled: true
